@@ -17,7 +17,6 @@ struct data_t {
 	__u32 pid;
 	__u16 lport;
 	__u16 dport;
-	__u64 ip;
 	char task[TASK_COMM_LEN];
 };
 

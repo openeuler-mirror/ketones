@@ -63,7 +63,6 @@ tcp_ipv4_trace(void *ctx, struct sock *sk, __u32 pid, __u16 lport,
 
 	data4->af = AF_INET;
 	data4->pid = pid;
-	data4->ip = 4;
 	data4->type = type;
 	BPF_CORE_READ_INTO(&data4->saddr_v4, sk, __sk_common.skc_rcv_saddr);
 	BPF_CORE_READ_INTO(&data4->daddr_v4, sk, __sk_common.skc_daddr);
@@ -109,7 +108,6 @@ tcp_ipv6_trace(void *ctx, struct sock *sk, __u32 pid, __u16 lport,
 	data6->lport = lport;
 	data6->dport = dport;
 	data6->type = type;
-	data6->ip = 6;
 	data6->state = state;
 	BPF_CORE_READ_INTO(&data6->saddr_v6, sk,
 			   __sk_common.skc_v6_rcv_saddr.in6_u.u6_addr32);
