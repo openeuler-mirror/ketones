@@ -120,7 +120,7 @@ COMMON_LIBS_OBJ += $(OUTPUT)/blazesym.h
 endif
 
 FSDIST_ALIASES	 := $(addprefix $(BINARIES_DIR)/, btrfsdist ext4dist nfsdist xfsdist zfsdist)
-FSSLOWER_ALIASES := $(addprefix $(BINARIES_DIR)/, btrfsslower ext4slower nfsslower xfsslower)
+FSSLOWER_ALIASES := $(addprefix $(BINARIES_DIR)/, btrfsslower ext4slower nfsslower xfsslower zfsslower)
 SIGSNOOP_ALIAS := $(addprefix $(BINARIES_DIR)/, killsnoop)
 FILESNOOP_ALIAS := $(addprefix $(BINARIES_DIR)/, opensnoop2 closesnoop writesnoop readsnoop statsnoop)
 FUNCCOUNT_ALIAS := $(addprefix $(BINARIES_DIR)/, vfscount)
