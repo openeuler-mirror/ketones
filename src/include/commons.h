@@ -182,7 +182,7 @@ long argp_parse_long(int key, const char *arg, const struct argp_state *state)
 
 	errno = 0;
 	temp = strtol(arg, NULL, 10);
-	if (errno || temp <= 0) {
+	if (errno || temp < 0) {
 		warning("Error arg: %c : %s\n", (char)key, arg);
 		argp_usage(state);
 	}
@@ -925,6 +925,32 @@ find_library_so(const char *binary, const char *library)
 	pclose(f);
 
 	return result;
+}
+
+static inline const char *demangling_cplusplus_function(const char *name)
+{
+	char command[256] = {};
+	FILE *f;
+	char buf[128] = {};
+	const char *ret;
+
+	if (strncmp(name, "_Z", 2) && strncmp(name, "____Z", 5))
+		return name;
+
+	sprintf(command, "c++filt %s", name);
+	f = popen(command, "r");
+	if (!f)
+		return name;
+
+	if (fgets(buf, 128, f) != NULL) {
+		/* drop '\n' */
+		buf[strlen(buf) - 1] = 0;
+		ret = strdup(buf);
+	} else
+		ret = name;
+
+	pclose(f);
+	return ret;
 }
 
 #endif
