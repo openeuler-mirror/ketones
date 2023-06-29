@@ -1,36 +1,60 @@
-# ketones
+## Ketones: A kempt eBPF tool for a new environments
 
-#### Description
-A kempt eBPF tool for a new environments
+Welcome to our software! Below is a detailed description of the software,
+highlighting its features and capabilities.
 
-#### Software Architecture
-Software architecture description
+### Overview
 
-#### Installation
+Our software is a powerful eBPF program assembly designed to help users run
+programs in various environments. It aims to replace the BCC toolset and
+provides additional tools for observing the kernel. With a small footprint,
+easy integration, and compatibility with different kernels, our software is
+versatile and efficient. It supports running in container environments without
+the need for installing a compilation environment.
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+### Key Features
 
-#### Instructions
+**Replacement for BCC Toolset**: Our software's primary goal is to replace the
+BCC toolset. We offer a set of in-house tools that provide enhanced observation
+and analysis of the kernel.
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+**Kernel Observation Tools**: Our software includes self-developed tools
+specifically designed for observing the kernel, allowing you to gain deeper
+insights into the inner workings of your system.
 
-#### Contribution
+**Rapid Fixes and Iterations**: We prioritize quick bug fixes and continuous
+improvements, addressing multiple compatibility issues to ensure you always
+have the most stable and reliable version available.
 
-1.  Fork the repository
-2.  Create Feat_xxx branch
-3.  Commit your code
-4.  Create Pull Request
+**Seamless Compatibility**: Our software seamlessly integrates with the BCC
+toolset, allowing for smooth migration and utilization without any disruptions.
 
+### Key Benefits
 
-#### Gitee Feature
+**Cross-Platform Support**: Our software runs on any operating system, providing
+you with a wide range of usage options.
 
-1.  You can use Readme\_XXX.md to support different languages, such as Readme\_en.md, Readme\_zh.md
-2.  Gitee blog [blog.gitee.com](https://blog.gitee.com)
-3.  Explore open source project [https://gitee.com/explore](https://gitee.com/explore)
-4.  The most valuable open source project [GVP](https://gitee.com/gvp)
-5.  The manual of Gitee [https://gitee.com/help](https://gitee.com/help)
-6.  The most popular members  [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+**Multi-Architecture Support**: Our software supports the ARM64, X86, and
+Loongarch architectures, catering to different hardware platforms.
+
+### Installation and Integration
+
+Our software is designed to be user-friendly with a straightforward installation
+and integration process. To get started, simply follow these steps:
+
+Download the software package and extract it to your target system.
+Configure the runtime environment, as our software does not require additional
+compilation environments. Launch our software within your container environment,
+and you'll immediately benefit from its kernel observation capabilities.
+
+Please note that we provide detailed installation guides and documentation to
+assist you in seamlessly getting up and running with our software.
+
+### How to Contribute
+
+We warmly welcome contributions from the software community! If you have any
+suggestions for improvements or new features, please don't hesitate to reach
+out to us. You can contribute to the software's development by reporting
+issues, submitting requests, or engaging in discussions. Our team will
+collaborate closely with you to ensure a successful contribution.
+
