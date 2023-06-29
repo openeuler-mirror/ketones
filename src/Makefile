@@ -93,6 +93,7 @@ APPS += tcpaccept
 APPS += tcpconnect
 APPS += tcpconnlat
 APPS += tcplife
+APPS += tcplinks
 APPS += tcppktlat
 APPS += tcpretrans
 APPS += tcprtt
