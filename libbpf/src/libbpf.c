@@ -10109,6 +10109,12 @@ static const char *tracefs_available_filter_functions_addrs(void)
 			       TRACEFS"/available_filter_functions_addrs";
 }
 
+static const char *tracefs_available_filter_functions(void)
+{
+	return use_debugfs() ? DEBUGFS"/available_filter_functions" :
+			       TRACEFS"/available_filter_functions";
+}
+
 static void gen_kprobe_legacy_event_name(char *buf, size_t buf_sz,
 					 const char *kfunc_name, size_t offset)
 {
@@ -10424,38 +10430,14 @@ struct kprobe_multi_resolve {
 	size_t cnt;
 };
 
-static int ftrace_resolve_kprobe_multi_cb(unsigned long long sym_addr,
-					  const char *sym_name, void *ctx)
+static bool has_available_filter_functions_addrs()
 {
-	struct kprobe_multi_resolve *res = ctx;
-	int err;
-
-	if (!glob_match(sym_name, res->pattern))
-		return 0;
-
-	err = libbpf_ensure_mem((void **) &res->addrs, &res->cap,
-				sizeof(unsigned long), res->cnt + 1);
-	if (err)
-		return err;
-
-	res->addrs[res->cnt++] = (unsigned long) sym_addr;
-	return 0;
+	return access(tracefs_available_filter_functions_addrs(), R_OK) != -1;
 }
 
-static int
-kallsyms_resolve_kprobe_multi_cb(unsigned long long sym_addr, char sym_type,
-				 const char *sym_name, void *ctx)
+static int libbpf_available_kprobes_parse(struct kprobe_multi_resolve *res)
 {
-	return ftrace_resolve_kprobe_multi_cb(sym_addr, sym_name, ctx);
-}
-
-typedef int (*available_kprobe_cb_t)(unsigned long long sym_addr,
-				     const char *sym_name, void *ctx);
-
-static int
-libbpf_available_kprobes_parse(available_kprobe_cb_t cb, void *ctx)
-{
-	char sym_name[256];
+	char sym_name[500];
 	FILE *f;
 	int ret, err = 0;
 	unsigned long long sym_addr;
@@ -10464,13 +10446,12 @@ libbpf_available_kprobes_parse(available_kprobe_cb_t cb, void *ctx)
 	f = fopen(available_path, "r");
 	if (!f) {
 		err = -errno;
-		pr_warn("failed to open %s, fallback to kallsyms.\n",
-			available_path);
+		pr_warn("failed to open %s.\n", available_path);
 		return err;
 	}
 
 	while (true) {
-		ret = fscanf(f, "%llx %s%*[^\n]\n", &sym_addr, sym_name);
+		ret = fscanf(f, "%llx %499s%*[^\n]\n", &sym_addr, sym_name);
 		if (ret == EOF && feof(f))
 			break;
 		if (ret != 2) {
@@ -10480,22 +10461,125 @@ libbpf_available_kprobes_parse(available_kprobe_cb_t cb, void *ctx)
 			break;
 		}
 
-		err = cb(sym_addr, sym_name, ctx);
+		if (!glob_match(sym_name, res->pattern))
+			continue;
+
+		err = libbpf_ensure_mem((void **) &res->addrs, &res->cap,
+					sizeof(unsigned long), res->cnt + 1);
 		if (err)
 			break;
+
+		res->addrs[res->cnt++] = (unsigned long) sym_addr;
 	}
 
 	fclose(f);
 	return err;
 }
 
-static void kprobe_multi_resolve_reinit(struct kprobe_multi_resolve *res)
+static int qsort_compare_function(const void *a, const void *b)
 {
-	free(res->addrs);
-	/* reset cap to zero, when fallback */
-	res->cap = 0;
-	res->cnt = 0;
-	res->addrs = NULL;
+	return strcmp(*(const char **)a, *(const char **)b);
+}
+
+static int bsearch_compare_function(const void *a, const void *b)
+{
+	return strcmp((const char *)a, *(const char **)b);
+}
+
+static int libbpf_available_kallsyms_parse(struct kprobe_multi_resolve *res)
+{
+	char sym_name[500];
+	const char *available_functions_file = tracefs_available_filter_functions();
+	FILE *f;
+	int err = 0, ret, i;
+	struct function_info {
+		const char **syms;
+		size_t cap;
+		size_t cnt;
+	} infos = {};
+
+	f = fopen(available_functions_file, "r");
+	if (!f) {
+		err = -errno;
+		pr_warn("failed to open %s\n", available_functions_file);
+		return err;
+	}
+
+	while (true) {
+		char *name;
+
+		ret = fscanf(f, "%499s%*[^\n]\n", sym_name);
+		if (ret == EOF && feof(f))
+			break;
+		if (ret != 1) {
+			pr_warn("failed to read available function file entry: %d\n",
+				ret);
+			err = -EINVAL;
+			goto cleanup;
+		}
+
+		if (!glob_match(sym_name, res->pattern))
+			continue;
+
+		err = libbpf_ensure_mem((void **)&infos.syms, &infos.cap,
+					sizeof(void *), infos.cnt + 1);
+		if (err)
+			goto cleanup;
+
+		name = strdup(sym_name);
+		if (!name) {
+			err = -errno;
+			goto cleanup;
+		}
+
+		infos.syms[infos.cnt++] = name;
+	}
+	fclose(f);
+
+	qsort(infos.syms, infos.cnt, sizeof(void *), qsort_compare_function);
+
+	f = fopen("/proc/kallsyms", "r");
+	if (!f) {
+		err = -errno;
+		pr_warn("failed to open /proc/kallsyms\n");
+		goto free_infos;
+	}
+
+	while (true) {
+		unsigned long long sym_addr;
+
+		ret = fscanf(f, "%llx %*c %499s%*[^\n]\n",
+			     &sym_addr, sym_name);
+		if (ret == EOF && feof(f))
+			break;
+		if (ret != 2) {
+			pr_warn("failed to read kallsyms entry: %d\n", ret);
+			err = -EINVAL;
+			break;
+		}
+
+		if (!glob_match(sym_name, res->pattern))
+			continue;
+
+		if (!bsearch(&sym_name, infos.syms, infos.cnt, sizeof(void *),
+			     bsearch_compare_function))
+			continue;
+
+		err = libbpf_ensure_mem((void **)&res->addrs, &res->cap,
+					sizeof(unsigned long), res->cnt + 1);
+		if (err)
+			break;
+
+		res->addrs[res->cnt++] = (unsigned long)sym_addr;
+	}
+cleanup:
+	fclose(f);
+free_infos:
+	for (i = 0; i < infos.cnt; i++)
+		free((char *)infos.syms[i]);
+	free(infos.syms);
+
+	return err;
 }
 
 struct bpf_link *
@@ -10534,15 +10618,12 @@ bpf_program__attach_kprobe_multi_opts(const struct bpf_program *prog,
 		return libbpf_err_ptr(-EINVAL);
 
 	if (pattern) {
-		err = libbpf_available_kprobes_parse(ftrace_resolve_kprobe_multi_cb,
-						     &res);
-		if (err) {
-			kprobe_multi_resolve_reinit(&res);
-			err = libbpf_kallsyms_parse(kallsyms_resolve_kprobe_multi_cb,
-						    &res);
-			if (err)
-				goto error;
-		}
+		if (has_available_filter_functions_addrs())
+			err = libbpf_available_kprobes_parse(&res);
+		else
+			err = libbpf_available_kallsyms_parse(&res);
+		if (err)
+			goto error;
 
 		if (!res.cnt) {
 			err = -ENOENT;
