@@ -34,6 +34,7 @@ ALL_LDFLAGS := $(LDFLAGS) $(EXTRA_LDFLAGS)
 APPS += bashreadline
 APPS += bindsnoop
 APPS += biopattern
+APPS += biosnoop
 
 COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
