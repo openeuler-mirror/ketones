@@ -31,6 +31,8 @@ LDFLAGS += $(OUTPUT)/libblazesym.a -lrt -lpthread -ldl
 endif
 ALL_LDFLAGS := $(LDFLAGS) $(EXTRA_LDFLAGS)
 
+APPS += bashreadline
+
 COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/btf_helpers.o
