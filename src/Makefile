@@ -35,6 +35,7 @@ APPS += bashreadline
 APPS += bindsnoop
 APPS += biopattern
 APPS += biosnoop
+APPS += biostacks
 
 COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
