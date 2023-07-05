@@ -45,6 +45,7 @@ APPS += cpufreq
 APPS += cpuwalk
 APPS += dcsnoop
 APPS += drsnoop
+APPS += execsnoop
 
 COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
