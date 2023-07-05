@@ -39,6 +39,7 @@ APPS += biostacks
 APPS += biotop
 APPS += bitesize
 APPS += cachestat
+APPS += capable
 
 COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
