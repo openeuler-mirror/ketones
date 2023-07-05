@@ -43,6 +43,7 @@ APPS += capable
 APPS += cpudist
 APPS += cpufreq
 APPS += cpuwalk
+APPS += dcsnoop
 
 COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
