@@ -47,6 +47,7 @@ APPS += dcsnoop
 APPS += drsnoop
 APPS += execsnoop
 APPS += exitsnoop
+APPS += filelife
 
 COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
