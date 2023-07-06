@@ -51,6 +51,7 @@ APPS += filelife
 APPS += filetop
 APPS += filesnoop
 APPS += fsdist
+APPS += fsslower
 
 COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
