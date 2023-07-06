@@ -92,6 +92,7 @@ APPS += swapin
 APPS += tcpaccept
 APPS += tcpconnect
 APPS += tcpconnlat
+APPS += tcpdrop
 APPS += tcplife
 APPS += tcplinks
 APPS += tcppktlat
