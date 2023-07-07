@@ -56,6 +56,7 @@ APPS += funccount
 APPS += funclatency
 APPS += funcslower
 APPS += gethostlatency
+APPS += hardirqs
 
 COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
