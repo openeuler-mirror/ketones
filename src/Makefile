@@ -62,6 +62,7 @@ APPS += klockstat
 APPS += ksnoop
 APPS += llcstat
 APPS += loads
+APPS += mdflush
 
 COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
