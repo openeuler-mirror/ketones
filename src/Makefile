@@ -59,6 +59,7 @@ APPS += gethostlatency
 APPS += hardirqs
 APPS += javagc
 APPS += klockstat
+APPS += ksnoop
 
 COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
