@@ -58,6 +58,7 @@ APPS += funcslower
 APPS += gethostlatency
 APPS += hardirqs
 APPS += javagc
+APPS += klockstat
 
 COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
