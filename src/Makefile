@@ -98,6 +98,7 @@ APPS += tcplife
 APPS += tcplinks
 APPS += tcppktlat
 APPS += tcpretrans
+APPS += tcprst
 APPS += tcprtt
 APPS += tcpstates
 APPS += tcpsubnet
