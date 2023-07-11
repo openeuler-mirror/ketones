@@ -66,6 +66,7 @@ APPS += mdflush
 APPS += mountsnoop
 APPS += naptime
 APPS += numamove
+APPS += numasched
 
 COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
