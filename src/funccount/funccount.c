@@ -22,6 +22,7 @@ static struct env {
 	pid_t pid;
 	int duration;
 	bool timestamp;
+	bool use_regex;
 	const char *functions;
 } env = {
 	.interval = 99999999,
@@ -35,13 +36,18 @@ const char argp_program_doc[] =
 "\n"
 "USAGE: funccount [-v] [-i INTERVAL] [-p PID] [-d DURATION] [-T] funcname\n"
 "\n"
-" funccount   func          -- probe a kernel function\n"
-"             lib:func      -- probe a user-space function in the library 'lib\n"
-"             /path:func    -- probe a user-space function in binary '/path'\n"
-"             p::func       -- same thing as 'func'\n"
-"             p:lib:func    -- same thing as 'lib:func'\n"
-"             t:cat:event   -- probe a kernel tracepoint\n"
-"             u:lib:probe   -- probe a USDT tracepoint\n";
+"Example:\n"
+"    funccount 'vfs_*'             # count kernel fns starting with \"vfs\"\n"
+"    funccount -r '^vfs.*'         # same as above, using regular expressions\n"
+"    funccount -Ti 5 'vfs_*'       # output every 5 seconds, with timestamps\n"
+"    funccount -d 10 'vfs_*'       # trace for 10 seconds only\n"
+"    funccount -p 185 'vfs_*'      # count vfs calls for PID 181 only\n"
+"    funccount t:sched:sched_fork  # count calls to the sched_fork tracepoint\n"
+"    funccount -p 185 u:node:gc*   # count all GC USDT probes in node, PID 185\n"
+"    funccount c:malloc            # count all malloc() calls in libc\n"
+"    funccount go:os.*             # count all \"os.*\" calls in libgo\n"
+"    funccount -p 185 go:os.*      # count all \"os.*\" calls in libgo, PID 185\n"
+"    funccount ./test:read*        # count \"read*\" calls in the ./test binary\n";
 
 static const struct argp_option opts[] = {
 	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
@@ -49,6 +55,7 @@ static const struct argp_option opts[] = {
 	{ "pid", 'p', "PID", 0, "Trace process id PID only" },
 	{ "duration", 'd', "DURATION", 0, "total duration of trace, seconds" },
 	{ "timestamp", 'T', NULL, 0, "include timestamp on output" },
+	{ "regexp", 'r', NULL, 0, "use regular expressions" },
 	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
 	{}
 };
@@ -73,6 +80,9 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 		break;
 	case 'd':
 		env.duration = argp_parse_long(key, arg, state);
+		break;
+	case 'r':
+		env.use_regex = true;
 		break;
 	case ARGP_KEY_END:
 		if (env.duration) {
@@ -269,7 +279,12 @@ int main(int argc, char *argv[])
 	}
 
 	obj->rodata->target_pid = env.pid;
-	split_pattern(env.functions, &type, &library, &pattern);
+	if (env.use_regex) {
+		pattern = env.functions;
+		type = KPROBE;
+	} else {
+		split_pattern(env.functions, &type, &library, &pattern);
+	}
 
 	switch (type) {
 	case USDT:
@@ -307,6 +322,7 @@ int main(int argc, char *argv[])
 		cnt = 1;
 		break;
 	case KPROBE:
+		kmopts.use_regex = env.use_regex;
 		obj->links.function_entry = bpf_program__attach_kprobe_multi_opts(
 						obj->progs.function_entry, pattern, &kmopts);
 		if (!obj->links.function_entry) {
