@@ -11,6 +11,10 @@ BPFTOOL ?= $(BPFTOOL_OUTPUT)/bpftool
 LIBBLAZESYM_SRC := $(abspath ../blazesym/target/release/libblazesym.a)
 BINARIES_DIR := $(abspath ./bin)
 
+INSTALL := install
+CP := cp
+LN := ln
+
 ARCH ?= $(shell uname -m | sed 's/x86_64/x86/' | sed 's/aarch64/arm64/' | sed 's/ppc64le/powerpc/' | sed 's/mips.*/mips/' | sed 's/loongarch64/loongarch/')
 VMLINUX := ../vmlinux/$(ARCH)/vmlinux.h
 
@@ -132,8 +136,11 @@ FILESNOOP_ALIAS := $(addprefix $(BINARIES_DIR)/, opensnoop2 closesnoop writesnoo
 FUNCCOUNT_ALIAS := $(addprefix $(BINARIES_DIR)/, vfscount)
 UCALLS_ALIAS := $(addprefix $(BINARIES_DIR)/, javacalls perlcalls phpccalls \
 		pythoncalls rubycalls tclcalls)
+
+ifeq ($(NOALIASES),)
 APP_ALIASES := $(FSDIST_ALIASES) $(FSSLOWER_ALIASES) $(SIGSNOOP_ALIAS) $(FILESNOOP_ALIAS) \
 	       $(FUNCCOUNT_ALIAS) $(UCALLS_ALIAS)
+endif
 
 OUTPUT_BINARIES := $(addprefix $(BINARIES_DIR)/, $(APPS))
 
@@ -236,7 +243,7 @@ $(addprefix $(BINARIES_DIR)/, numasched numamove): ALL_LDFLAGS += -lnuma
 $(addprefix $(BINARIES_DIR)/, tcplinks): ALL_LDFLAGS += -lncurses
 
 # Build user application binary
-bin/bpflist: bpflist/bpflist.c include/commons.h | $(BINARIES_DIR)
+bin/bpflist: bpflist/bpflist.c include/commons.h $(LIBBPF_OBJ) | $(BINARIES_DIR)
 	$(call msg,BINARY,$(notdir $@))
 	$(Q)$(CC) $(CFLAGS) $< $(INCLUDES) -lelf -lz -o $@
 
@@ -246,27 +253,31 @@ endif
 
 $(FSSLOWER_ALIASES): $(addprefix $(BINARIES_DIR)/, fsslower)
 	$(call msg,SYMLINK,$(notdir $@))
-	$(Q)ln -f -s $(notdir $^) $@
+	$(Q)$(LN) -f -s $(notdir $^) $@
 
 $(FSDIST_ALIASES): $(addprefix $(BINARIES_DIR)/, fsdist)
 	$(call msg,SYMLINK,$(notdir $@))
-	$(Q)ln -f -s $(notdir $^) $@
+	$(Q)$(LN) -f -s $(notdir $^) $@
 
 $(SIGSNOOP_ALIAS): $(addprefix $(BINARIES_DIR)/, sigsnoop)
 	$(call msg,SYMLINK,$(notdir $@))
-	$(Q)ln -f -s $(notdir $^) $@
+	$(Q)$(LN) -f -s $(notdir $^) $@
 
 $(FILESNOOP_ALIAS): $(addprefix $(BINARIES_DIR)/, filesnoop)
 	$(call msg,SYMLINK,$(notdir $@))
-	$(Q)ln -f -s $(notdir $^) $@
+	$(Q)$(LN) -f -s $(notdir $^) $@
 
 $(FUNCCOUNT_ALIAS): $(addprefix $(BINARIES_DIR)/, funccount)
 	$(call msg,SYMLINK,$(notdir $@))
-	$(Q)ln -f -s $(notdir $^) $@
+	$(Q)$(LN) -f -s $(notdir $^) $@
 
 $(UCALLS_ALIAS): $(addprefix $(BINARIES_DIR)/, ucalls)
 	$(call msg,SYMLINK,$(notdir $@))
-	$(Q)ln -f -s $(notdir $^) $@
+	$(Q)$(LN) -f -s $(notdir $^) $@
+
+install:
+	$(INSTALL) -d ${bindir}/
+	$(CP) -P bin/* ${bindir}/
 
 # delete failed targets
 .DELETE_ON_ERROR:
