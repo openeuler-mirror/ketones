@@ -1121,6 +1121,30 @@ bool fentry_can_attach(const char *name, const char *mod)
 	return id > 0 && fentry_try_attach(id);
 }
 
+#define DEBUGFS "/sys/kernel/debug/tracing"
+#define TRACEFS "/sys/kernel/tracing"
+
+static bool use_debugfs(void)
+{
+	static int has_debugfs = -1;
+
+	if (has_debugfs < 0)
+		has_debugfs = faccessat(AT_FDCWD, DEBUGFS, F_OK, AT_EACCESS) == 0;
+
+	return has_debugfs == 1;
+}
+
+static const char *tracefs_path(void)
+{
+	return use_debugfs() ? DEBUGFS : TRACEFS;
+}
+
+static const char *tracefs_available_filter_functions(void)
+{
+	return use_debugfs() ? DEBUGFS"/available_filter_functions" :
+			       TRACEFS"/available_filter_functions";
+}
+
 bool kprobe_exists(const char *name)
 {
 	char addr_range[256];
@@ -1148,7 +1172,7 @@ bool kprobe_exists(const char *name)
 	fclose(f);
 
 avail_filter:
-	f = fopen("/sys/kernel/debug/tracing/available_filter_functions", "r");
+	f = fopen(tracefs_available_filter_functions(), "r");
 	if (!f)
 		goto slow_path;
 
@@ -1196,7 +1220,7 @@ bool tracepoint_exists(const char *category, const char *event)
 {
 	char path[PATH_MAX];
 
-	snprintf(path, sizeof(path), "/sys/kernel/debug/tracing/events/%s/%s/format", category, event);
+	snprintf(path, sizeof(path), "%s/events/%s/%s/format", tracefs_path(), category, event);
 	if (!access(path, F_OK))
 		return true;
 	return false;
