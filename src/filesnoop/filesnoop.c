@@ -15,6 +15,7 @@ static struct env {
 	bool timestamp;
 	const char *filename;
 	bool filter_filename;
+	bool print_ppid;
 	enum file_op target_op;
 } env;
 
@@ -23,7 +24,7 @@ const char *argp_program_bug_address = "Jackie Liu <liuyun01@kylinos.cn>";
 const char argp_program_doc[] =
 "Tracking the operational of a specific file.\n"
 "\n"
-"USAGE: filesnoop [-v] [-T] [-f filename] [-o OPEN]\n"
+"USAGE: filesnoop [-v] [-T] [-P] [-f filename] [-o OPEN]\n"
 "\n"
 "EXAMPLE:\n"
 "    filesnoop -o OPEN        # trace open/openat/openat2 syscall\n"
@@ -34,6 +35,7 @@ static const struct argp_option opts[] = {
 	{ "timestamp", 'T', NULL, 0, "Include timestamp on output" },
 	{ "filename", 'f', "FILENAME", 0, "Trace FILENAME only" },
 	{ "operation", 'o', "OPERATION", 0, "Trace OPERATION only" },
+	{ "print-ppid", 'P', NULL, 0, "Trace parent pid" },
 	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
 	{}
 };
@@ -73,6 +75,9 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 		env.filename = arg;
 		env.filter_filename = true;
 		break;
+	case 'P':
+		env.print_ppid = true;
+		break;
 	case 'o':
 		for (int i = 0; i < ARRAY_SIZE(op2string); i++) {
 			if (strcmp(op2string[i], arg) == 0) {
@@ -107,6 +112,7 @@ static int libbpf_print_fn(enum libbpf_print_level level, const char *format,
 static int handle_event(void *ctx, void *data, size_t data_sz)
 {
 	const struct event *e = data;
+	int fd = e->fd;
 
 	if (env.timestamp) {
 		char ts[16];
@@ -115,8 +121,15 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		printf("%-9s ", ts);
 	}
 
+	if ((e->op == F_OPEN || e->op == F_OPENAT || e->op == F_OPENAT2) &&
+	    e->ret < 0)
+		fd = -1;
+
+	if (env.print_ppid)
+		printf("%-8d ", e->ppid);
+
 	printf("%-8d %-16s %-10s %5d %5d %s\n", e->pid, e->comm, op2string[e->op],
-	       e->fd, e->ret, e->filename);
+	       fd, e->ret, e->filename);
 	return 0;
 }
 
@@ -218,6 +231,8 @@ int main(int argc, char *argv[])
 
 	if (env.timestamp)
 		printf("%-9s ", "TIME");
+	if (env.print_ppid)
+		printf("%-8s ", "PPID");
 	printf("%-8s %-16s %-10s %5s %5s %s\n", "PID", "COMM", "OPERATION", "FD",
 	       "RET", "FILENAME");
 

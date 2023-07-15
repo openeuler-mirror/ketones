@@ -29,6 +29,7 @@ enum file_op {
 
 struct event {
 	pid_t pid;
+	pid_t ppid;
 	char comm[TASK_COMM_LEN];
 	enum file_op op;
 	int ret;
