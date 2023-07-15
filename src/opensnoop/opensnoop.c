@@ -27,6 +27,7 @@ static struct env {
 	bool verbose;
 	bool timestamp;
 	bool print_uid;
+	bool print_ppid;
 	bool extended;
 	bool fuller_extended;
 	bool failed;
@@ -89,7 +90,7 @@ const char *argp_program_bug_address = "Jackie Liu <liuyun01@kylinos.cn>";
 const char argp_program_doc[] =
 "Trace open family syscalls\n"
 "\n"
-"USAGE: opensnoop [-h] [-T] [-U] [-x] [-p PID] [-t TID] [-u UID] [-d DURATION]\n"
+"USAGE: opensnoop [-h] [-T] [-U] [-x] [-P] [-p PID] [-t TID] [-u UID] [-d DURATION]\n"
 #ifdef USE_BLAZESYM
 "                 [-n NAME] [-e] [-c]\n"
 #else
@@ -100,6 +101,7 @@ const char argp_program_doc[] =
 "    ./opensnoop           # trace all open() syscalls\n"
 "    ./opensnoop -T        # include timestamps\n"
 "    ./opensnoop -U        # include UID\n"
+"    ./opensnoop -P        # print parent pid\n"
 "    ./opensnoop -x        # only show failed opens\n"
 "    ./opensnoop -p 181    # only trace PID 181\n"
 "    ./opensnoop -t 123    # only trace TID 123\n"
@@ -123,6 +125,7 @@ static const struct argp_option opts[] = {
 	{ "timestamp", 'T', NULL, 0, "Print timestamp" },
 	{ "uid", 'u', "UID", 0, "User ID to trace" },
 	{ "print-uid", 'U', NULL, 0, "Print UID" },
+	{ "print-ppid", 'P', NULL, 0, "Print parent pid" },
 	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
 	{ "failed", 'x', NULL, 0, "Failed opens only" },
 #ifdef USE_BLAZESYM
@@ -166,6 +169,9 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 		break;
 	case 'p':
 		env.pid = argp_parse_pid(key, arg, state);
+		break;
+	case 'P':
+		env.print_ppid = true;
 		break;
 	case 't':
 		env.tid = argp_parse_pid(key, arg, state);
@@ -301,6 +307,11 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		sps_cnt += 8;
 	}
 
+	if (env.print_ppid) {
+		printf("%-6d ", e->ppid);
+		sps_cnt += 7;
+	}
+
 	printf("%-6d %-16s %3d %3d ", e->pid, e->comm, fd, err);
 	sps_cnt += 7 + 17 + 4 + 4;
 
@@ -421,6 +432,8 @@ int main(int argc, char *argv[])
 		printf("%-8s ", "TIME");
 	if (env.print_uid)
 		printf("%-7s ", "UID");
+	if (env.print_ppid)
+		printf("%-6s ", "PPID");
 	printf("%-6s %-16s %3s %3s ", "PID", "COMM", "FD", "ERR");
 	if (env.extended)
 		printf("%-8s %-8s ", "FLAGS", "MODES");

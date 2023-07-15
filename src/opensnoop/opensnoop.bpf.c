@@ -38,8 +38,8 @@ static __always_inline bool trace_allowed(u32 tgid, u32 pid)
 	return true;
 }
 
-SEC("tracepoint/syscalls/sys_enter_open")
-int tracepoint__syscalls__sys_enter_open(struct trace_event_raw_sys_enter *ctx)
+static __always_inline
+int record_args(const char *fname, int flags, umode_t modes)
 {
 	u64 id = bpf_get_current_pid_tgid();
 	pid_t tgid = id >> 32;
@@ -48,30 +48,9 @@ int tracepoint__syscalls__sys_enter_open(struct trace_event_raw_sys_enter *ctx)
 	if (trace_allowed(tgid, pid)) {
 		struct args_t args = {};
 
-		args.fname = (const char *)ctx->args[0];
-		args.flags = (int)ctx->args[1];
-		args.modes = (umode_t)ctx->args[2];
-
-		bpf_map_update_elem(&start, &pid, &args, BPF_ANY);
-	}
-
-	return 0;
-}
-
-SEC("tracepoint/syscalls/sys_enter_openat")
-int tracepoint__syscalls__sys_enter_openat(struct trace_event_raw_sys_enter *ctx)
-{
-	u64 id = bpf_get_current_pid_tgid();
-	pid_t tgid = id >> 32;
-	pid_t pid = (pid_t)id;
-
-	if (trace_allowed(tgid, pid)) {
-		struct args_t args = {};
-
-		args.fname = (const char *)ctx->args[1];
-		args.flags = (int)ctx->args[2];
-		args.modes = (umode_t)ctx->args[3];
-
+		args.fname = fname;
+		args.flags = flags;
+		args.modes = modes;
 		bpf_map_update_elem(&start, &pid, &args, BPF_ANY);
 	}
 
@@ -84,8 +63,8 @@ static __always_inline int trace_exit(struct trace_event_raw_sys_exit *ctx)
 	struct args_t *argsp;
 	uintptr_t stack[3];
 	int ret;
-	u64 id = bpf_get_current_pid_tgid();
-	pid_t pid = (pid_t)id;
+	struct task_struct *task = (void *)bpf_get_current_task();
+	pid_t pid = BPF_CORE_READ(task, pid);
 
 	argsp = bpf_map_lookup_and_delete_elem(&start, &pid);
 	if (!argsp)
@@ -99,7 +78,8 @@ static __always_inline int trace_exit(struct trace_event_raw_sys_exit *ctx)
 	if (!eventp)
 		return 0;
 
-	eventp->pid = id >> 32;
+	eventp->pid = BPF_CORE_READ(task, tgid);
+	eventp->ppid = BPF_CORE_READ(task, real_parent, tgid);
 	eventp->uid = (uid_t)bpf_get_current_uid_gid();
 	bpf_get_current_comm(&eventp->comm, sizeof(eventp->comm));
 	bpf_probe_read_user_str(&eventp->fname, sizeof(eventp->fname), argsp->fname);
@@ -114,6 +94,20 @@ static __always_inline int trace_exit(struct trace_event_raw_sys_exit *ctx)
 
 	submit_buf(ctx, eventp, sizeof(*eventp));
 	return 0;
+}
+
+SEC("tracepoint/syscalls/sys_enter_open")
+int tracepoint__syscalls__sys_enter_open(struct trace_event_raw_sys_enter *ctx)
+{
+	return record_args((const char *)ctx->args[0], (int)ctx->args[1],
+			   (umode_t)ctx->args[2]);
+}
+
+SEC("tracepoint/syscalls/sys_enter_openat")
+int tracepoint__syscalls__sys_enter_openat(struct trace_event_raw_sys_enter *ctx)
+{
+	return record_args((const char *)ctx->args[1], (int)ctx->args[2],
+			   (umode_t)ctx->args[3]);
 }
 
 SEC("tracepoint/syscalls/sys_exit_open")
