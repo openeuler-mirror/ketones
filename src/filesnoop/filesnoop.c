@@ -41,17 +41,11 @@ static const struct argp_option opts[] = {
 };
 
 const char *op2string[] = {
-	[F_ALL] = "NONE",
-	[F_OPEN] = "OPEN",
-	[F_OPENAT] = "OPENAT",
-	[F_OPENAT2] = "OPENAT2",
+	[F_NONE] = "NONE",
 	[F_WRITE] = "WRITE",
 	[F_WRITEV] = "WRITEV",
 	[F_READ] = "READ",
 	[F_READV] = "READV",
-	[F_STATX] = "STATX",
-	[F_FSTATFS] = "FSTATFS",
-	[F_NEWFSTAT] = "NEWFSTAT",
 	[F_RENAMEAT] = "RENAMEAT",
 	[F_RENAMEAT2] = "RENAMEAT2",
 	[F_UNLINKAT] = "UNLINKAT",
@@ -84,7 +78,7 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 				env.target_op = i;
 			}
 		}
-		if (env.target_op == F_ALL) {
+		if (env.target_op == F_NONE) {
 			warning("%s is not valid operation\n", arg);
 			argp_usage(state);
 		}
@@ -121,10 +115,6 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		printf("%-9s ", ts);
 	}
 
-	if ((e->op == F_OPEN || e->op == F_OPENAT || e->op == F_OPENAT2) &&
-	    e->ret < 0)
-		fd = -1;
-
 	if (env.print_ppid)
 		printf("%-8d ", e->ppid);
 
@@ -142,16 +132,12 @@ static void alias_parse(char *prog)
 {
 	char *name = basename(prog);
 
-	if (!strcmp(name, "opensnoop2"))
-		env.target_op = F_OPEN;
-	else if (!strcmp(name, "closesnoop"))
+	if (!strcmp(name, "closesnoop"))
 		env.target_op = F_CLOSE;
 	else if (!strcmp(name, "writesnoop"))
 		env.target_op = F_WRITE;
 	else if (!strcmp(name, "readsnoop"))
 		env.target_op = F_READ;
-	else if (!strcmp(name, "statsnoop2"))
-		env.target_op = F_STATX;
 }
 
 int main(int argc, char *argv[])
@@ -166,6 +152,9 @@ int main(int argc, char *argv[])
 	int err;
 
 	alias_parse(argv[0]);
+	if (env.target_op == F_NONE)
+		warning("Not set target operation\n");
+
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
 	if (err)
 		return err;

@@ -9,7 +9,7 @@
 #define FSFILENAME_MAX	255
 
 enum file_op {
-	F_ALL,
+	F_NONE,
 	F_OPEN,
 	F_OPENAT,
 	F_OPENAT2,
@@ -17,9 +17,6 @@ enum file_op {
 	F_WRITEV,
 	F_READ,
 	F_READV,
-	F_STATX,
-	F_FSTATFS,
-	F_NEWFSTAT,
 	F_RENAMEAT,
 	F_RENAMEAT2,
 	F_UNLINKAT,
