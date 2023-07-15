@@ -38,9 +38,8 @@ static __always_inline int probe_entry(void *ctx, const char *pathname)
 
 static __always_inline int probe_return(void *ctx, int ret)
 {
-	__u64 id = bpf_get_current_pid_tgid();
-	__u32 pid = id >> 32;
-	__u32 tid = (__u32)id;
+	struct task_struct *task = (void *)bpf_get_current_task();
+	__u32 tid = BPF_CORE_READ(task, pid);
 	const char **pathname;
 	struct event *eventp;
 
@@ -55,7 +54,8 @@ static __always_inline int probe_return(void *ctx, int ret)
 	if (!eventp)
 		return 0;
 
-	eventp->pid = pid;
+	eventp->pid = BPF_CORE_READ(task, tgid);
+	eventp->ppid = BPF_CORE_READ(task, real_parent, tgid);
 	eventp->ret = ret;
 	bpf_get_current_comm(&eventp->comm, sizeof(eventp->comm));
 	bpf_probe_read_user_str(&eventp->pathname, sizeof(eventp->pathname), *pathname);

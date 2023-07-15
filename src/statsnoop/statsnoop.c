@@ -12,13 +12,14 @@ static pid_t target_pid = 0;
 static bool trace_failed_only = false;
 static bool emit_timestamp = false;
 static bool verbose = false;
+static bool print_ppid = false;
 
 const char *argp_program_version = "statsnoop 0.1";
 const char *argp_program_bug_address = "Jackie Liu <liuyun01@kylinos.cn>";
 const char argp_program_doc[] =
 "Trace stat syscalls.\n"
 "\n"
-"USAGE: statsnoop [-h] [-t] [-x] [-p PID]\n"
+"USAGE: statsnoop [-h] [-t] [-P] [-x] [-p PID]\n"
 "\n"
 "EXAMPLES:\n"
 "    statsnoop             # trace all stat syscalls\n"
@@ -30,6 +31,7 @@ static const struct argp_option opts[] = {
 	{ "pid", 'p', "PID", 0, "Process ID to trace" },
 	{ "failed", 'x', NULL, 0, "Only show failed stats" },
 	{ "timestamp", 't', NULL, 0, "Include timestamp on output" },
+	{ "print-ppid", 'P', NULL, 0, "Print parent pid" },
 	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
 	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
 	{},
@@ -40,6 +42,9 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 	switch (key) {
 	case 'p':
 		target_pid = argp_parse_pid(key, arg, state);
+		break;
+	case 'P':
+		print_ppid = true;
 		break;
 	case 'x':
 		trace_failed_only = true;
@@ -88,6 +93,8 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 
 	if (emit_timestamp)
 		printf("%-14.9f ", time_since_start());
+	if (print_ppid)
+		printf("%-7d ", e->ppid);
 	printf("%-7d %-20s %4d %8s %-s\n", e->pid, e->comm, fd, strerrno(err), e->pathname);
 
 	return 0;
@@ -188,6 +195,8 @@ int main(int argc, char *argv[])
 
 	if (emit_timestamp)
 		printf("%-14s ", "TIME(s)");
+	if (print_ppid)
+		printf("%-7s ", "PPID");
 	printf("%-7s %-20s %4s %8s %-s\n", "PID", "COMM", "RET", "ERR", "PATH");
 
 	while (!exiting) {
