@@ -12,6 +12,7 @@ const volatile bool filter_memcg = false;
 const volatile bool target_queued = false;
 const volatile bool filter_dev = false;
 const volatile __u32 target_dev = 0;
+const volatile __u64 min_ns = 0;
 
 extern __u32 LINUX_KERNEL_VERSION __kconfig;
 
@@ -184,7 +185,7 @@ static __always_inline int probe_block_rq_complete(void *ctx, struct request *rq
 		return 0;
 
 	delta = (s64)(ts - stagep->issue);
-	if (delta < 0)
+	if (delta < 0 || delta < min_ns)
 		goto cleanup;
 
 	piddatap = bpf_map_lookup_elem(&infobyreq, &rq);
