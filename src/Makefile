@@ -90,6 +90,7 @@ APPS += softirqs
 APPS += solisten
 APPS += stackcount
 APPS += stacksnoop
+APPS += statsnoop
 APPS += syncsnoop
 APPS += syscount
 APPS += swapin
@@ -132,7 +133,7 @@ endif
 FSDIST_ALIASES	 := $(addprefix $(BINARIES_DIR)/, btrfsdist ext4dist nfsdist xfsdist zfsdist)
 FSSLOWER_ALIASES := $(addprefix $(BINARIES_DIR)/, btrfsslower ext4slower nfsslower xfsslower zfsslower)
 SIGSNOOP_ALIAS := $(addprefix $(BINARIES_DIR)/, killsnoop)
-FILESNOOP_ALIAS := $(addprefix $(BINARIES_DIR)/, opensnoop2 closesnoop writesnoop readsnoop statsnoop)
+FILESNOOP_ALIAS := $(addprefix $(BINARIES_DIR)/, opensnoop2 closesnoop writesnoop readsnoop statsnoop2)
 FUNCCOUNT_ALIAS := $(addprefix $(BINARIES_DIR)/, vfscount)
 UCALLS_ALIAS := $(addprefix $(BINARIES_DIR)/, javacalls perlcalls phpccalls \
 		pythoncalls rubycalls tclcalls)
