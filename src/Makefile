@@ -113,6 +113,7 @@ APPS += tcptracer
 APPS += threadsnoop
 APPS += ttysnoop
 APPS += ucalls
+APPS += unlinksnoop
 APPS += vfsstat
 APPS += wakeuptime
 APPS += writeback
