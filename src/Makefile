@@ -72,6 +72,7 @@ APPS += oomkill
 APPS += pidpersec
 APPS += readahead
 APPS += runqlen
+APPS += runqslower
 
 COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
