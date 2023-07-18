@@ -52,6 +52,7 @@ APPS += cpudist
 APPS += cpufreq
 APPS += cpuwalk
 APPS += dcsnoop
+APPS += dcstat
 APPS += drsnoop
 APPS += execsnoop
 APPS += exitsnoop
