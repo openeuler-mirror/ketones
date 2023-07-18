@@ -70,6 +70,7 @@ APPS += numasched
 APPS += offcputime
 APPS += oomkill
 APPS += pidpersec
+APPS += readahead
 
 COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
