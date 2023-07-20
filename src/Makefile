@@ -80,6 +80,7 @@ APPS += slabratetop
 APPS += softirqs
 APPS += solisten
 APPS += stacksnoop
+APPS += statsnoop
 
 COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
