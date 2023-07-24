@@ -98,6 +98,7 @@ APPS += tcptracer
 APPS += threadsnoop
 APPS += ttysnoop
 APPS += vfsstat
+APPS += wakeuptime
 
 COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
