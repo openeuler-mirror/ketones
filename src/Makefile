@@ -95,6 +95,7 @@ APPS += tcpstates
 APPS += tcpsynbl
 APPS += tcptop
 APPS += tcptracer
+APPS += threadsnoop
 
 COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
