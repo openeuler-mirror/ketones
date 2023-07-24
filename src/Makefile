@@ -86,6 +86,7 @@ APPS += syscount
 APPS += swapin
 APPS += tcpaccept
 APPS += tcpconnect
+APPS += tcpconnlat
 
 COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
