@@ -36,6 +36,7 @@ BZ_APPS += opensnoop
 
 APPS += bashreadline
 APPS += bindsnoop
+APPS += biolatency
 APPS += biopattern
 APPS += biosnoop
 APPS += biostacks
