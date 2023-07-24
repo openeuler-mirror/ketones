@@ -85,6 +85,7 @@ APPS += runqlen
 APPS += runqslower
 APPS += runqueue-latency
 APPS += setuids
+APPS += shmsnoop
 APPS += sigsnoop
 APPS += slabratetop
 APPS += softirqs
