@@ -99,6 +99,7 @@ APPS += threadsnoop
 APPS += ttysnoop
 APPS += vfsstat
 APPS += wakeuptime
+APPS += writeback
 
 COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
