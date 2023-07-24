@@ -32,6 +32,7 @@ endif
 ALL_LDFLAGS := $(LDFLAGS) $(EXTRA_LDFLAGS)
 
 BZ_APPS += memleak
+BZ_APPS += opensnoop
 
 APPS += bashreadline
 APPS += bindsnoop
