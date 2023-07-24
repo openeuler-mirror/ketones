@@ -31,6 +31,8 @@ LDFLAGS += $(OUTPUT)/libblazesym.a -lrt -lpthread -ldl
 endif
 ALL_LDFLAGS := $(LDFLAGS) $(EXTRA_LDFLAGS)
 
+BZ_APPS += memleak
+
 APPS += bashreadline
 APPS += bindsnoop
 APPS += biopattern
@@ -100,6 +102,7 @@ APPS += ttysnoop
 APPS += vfsstat
 APPS += wakeuptime
 APPS += writeback
+APPS += $(BZ_APPS)
 
 COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
