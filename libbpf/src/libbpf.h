@@ -665,11 +665,12 @@ struct usdt_note {
 
 struct usdt_array{
 	size_t nr;
-	struct usdt_note **notes;
+	size_t capacity;
+	struct usdt_note *notes;
 };
 
 void free_usdt_notes(struct usdt_array *usdt_notes);
-void probe_usdt_notes(const char *path, struct usdt_array *usdt_notes);
+struct usdt_array* probe_usdt_notes(const char *path);
 
 /**
  * @brief **bpf_program__attach_usdt()** is just like
