@@ -77,6 +77,7 @@ APPS += naptime
 APPS += numamove
 APPS += numasched
 APPS += offcputime
+APPS += offwaketime
 APPS += oomkill
 APPS += pidpersec
 APPS += profile
