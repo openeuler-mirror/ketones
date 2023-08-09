@@ -10,8 +10,6 @@
 #define MAX_EVENT_SIZE		10240
 #define RINGBUF_SIZE		(1024 * 256)
 
-extern __u32 LINUX_KERNEL_VERSION __kconfig;
-
 #ifndef __has_builtin		// Optional of course.
   #define __has_builtin(x) 0	// Compatibility with non-clang compilers.
 #endif
@@ -28,15 +26,35 @@ struct {
 	__uint(max_entries, RINGBUF_SIZE);
 } events SEC(".maps");
 
+/*
+ * In some systems, ringbuf support is backported, but because clang does not
+ * support bpf_core_type_exists (clang < 12), it is impossible to correctly
+ * determine whether ringbuf is supported, and identify whether ringbuf is
+ * supported through certain workarounds.
+ * see:
+ *    https://github.com/torvalds/linux/commit/457f44363a88
+ */
+struct bpf_reg_state___x {
+	u32 mem_size;
+} __attribute__((preserve_access_index));
+
+static __always_inline bool has_ringbuf(void)
+{
+#if __has_builtin(__builtin_preserve_type_info)
+	if (bpf_core_type_exists(struct bpf_ringbuf))
+		return true;
+#endif
+	if (bpf_core_field_exists(struct bpf_reg_state___x, mem_size))
+		return true;
+
+	return false;
+}
+
 static __always_inline void *reserve_buf(__u64 size)
 {
 	static const int zero = 0;
 
-#if __has_builtin(__builtin_preserve_type_info)
-	if (bpf_core_type_exists(struct bpf_ringbuf))
-		return bpf_ringbuf_reserve(&events, size, 0);
-#endif
-	if (LINUX_KERNEL_VERSION >= KERNEL_VERSION(5, 18, 0))
+	if (has_ringbuf())
 		return bpf_ringbuf_reserve(&events, size, 0);
 
 	return bpf_map_lookup_elem(&heap, &zero);
@@ -46,13 +64,7 @@ static __always_inline void *discard_buf(void *buf)
 {
 	static const int zero = 0;
 
-#if __has_builtin(__builtin_preserve_type_info)
-        if (bpf_core_type_exists(struct bpf_ringbuf)) {
-		bpf_ringbuf_discard(buf, 0);
-		return 0;
-	}
-#endif
-	if (LINUX_KERNEL_VERSION >= KERNEL_VERSION(5, 8, 0)) {
+	if (has_ringbuf()) {
 		bpf_ringbuf_discard(buf, 0);
 		return 0;
 	}
@@ -63,13 +75,7 @@ static __always_inline void *discard_buf(void *buf)
 
 static __always_inline long submit_buf(void *ctx, void *buf, __u64 size)
 {
-#if __has_builtin(__builtin_preserve_type_info)
-	if (bpf_core_type_exists(struct bpf_ringbuf)) {
-		bpf_ringbuf_submit(buf, 0);
-		return 0;
-	}
-#endif
-	if (LINUX_KERNEL_VERSION >= KERNEL_VERSION(5, 8, 0)) {
+	if (has_ringbuf()) {
 		bpf_ringbuf_submit(buf, 0);
 		return 0;
 	}
