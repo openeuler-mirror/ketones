@@ -114,6 +114,7 @@ APPS += tcptracer
 APPS += threadsnoop
 APPS += ttysnoop
 APPS += ucalls
+APPS += uthreads
 APPS += unlinksnoop
 APPS += uobjnew
 APPS += vfsstat
@@ -142,10 +143,11 @@ FUNCCOUNT_ALIAS := $(addprefix $(BINARIES_DIR)/, vfscount)
 UCALLS_ALIAS := $(addprefix $(BINARIES_DIR)/, javacalls perlcalls phpccalls \
 		pythoncalls rubycalls tclcalls)
 UOBJNEW_ALIAS := $(addprefix $(BINARIES_DIR)/, cobjnew javaobjnew rubyobjnew tclobjnew)
+UTHREADS_ALIAS := $(addprefix $(BINARIES_DIR)/, javathreads)
 
 ifeq ($(NOALIASES),)
 APP_ALIASES := $(FSDIST_ALIASES) $(FSSLOWER_ALIASES) $(SIGSNOOP_ALIAS) $(FILESNOOP_ALIAS) \
-	       $(FUNCCOUNT_ALIAS) $(UCALLS_ALIAS) $(UOBJNEW_ALIAS)
+	       $(FUNCCOUNT_ALIAS) $(UCALLS_ALIAS) $(UOBJNEW_ALIAS) $(UTHREADS_ALIAS)
 endif
 
 OUTPUT_BINARIES := $(addprefix $(BINARIES_DIR)/, $(APPS))
@@ -286,6 +288,10 @@ $(UCALLS_ALIAS): $(addprefix $(BINARIES_DIR)/, ucalls)
 	$(Q)$(LN) -f -s $(notdir $^) $@
 
 $(UOBJNEW_ALIAS): $(addprefix $(BINARIES_DIR)/, uobjnew)
+	$(call msg,SYMLINK,$(notdir $@))
+	$(Q)$(LN) -f -s $(notdir $^) $@
+
+$(UTHREADS_ALIAS): $(addprefix $(BINARIES_DIR)/, uthreads)
 	$(call msg,SYMLINK,$(notdir $@))
 	$(Q)$(LN) -f -s $(notdir $^) $@
 
