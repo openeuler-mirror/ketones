@@ -18,6 +18,7 @@ static struct env {
 	long state;
 	int duration;
 	bool verbose;
+	bool folded;
 } env = {
 	.pid = -1,
 	.tid = -1,
@@ -34,12 +35,13 @@ const char *argp_program_bug_address = "Jackie Liu <liuyun01@kylinos.cn>";
 const char argp_program_doc[] =
 "Summarize off-CPU time by stack trace.\n"
 "\n"
-"USAGE: offcputime [--help] [-p PID | -u | -k] [-m MIN-BLOCK-TIME] "
+"USAGE: offcputime [--help] [-p PID | -u | -k] [-m MIN-BLOCK-TIME] [-f] "
 "[-M MAX-BLOCK-TIME] [--state] [--perf-max-stack-depth] [--stack-storage-size] "
 "[duration]\n\n"
 "EXAMPLES:\n"
 "    offcputime             # trace off-CPU stack time until Ctrl-C\n"
 "    offcputime 5           # trace for 5 seconds only\n"
+"    offcputime -f 5        # 5 seconds, and output in folded format\n"
 "    offcputime -m 1000     # trace only events that last more than 1000 usec\n"
 "    offcputime -M 10000    # trace only events that last less than 10000 usec\n"
 "    offcputime -p 185      # only trace threads for PID 185\n"
@@ -75,6 +77,7 @@ static const struct argp_option opts[] = {
 	{ "state", OPT_STATE, "STATE", 0,
 	  "filter on this thread state bitmask (eg, 2 == TASK_UNINTERRUPTIBLE) see include/linux/sched.h" },
 	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
+	{ "folded", 'f', NULL, 0, "output folded format" },
 	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
 	{},
 };
@@ -89,6 +92,9 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 		break;
 	case 'v':
 		env.verbose = true;
+		break;
+	case 'f':
+		env.folded = true;
 		break;
 	case 'p':
 		env.pid = argp_parse_pid(key, arg, state);
@@ -182,6 +188,14 @@ static int libbpf_print_fn(enum libbpf_print_level level, const char *format,
 static void sig_handler(int sig)
 {}
 
+#define folded_printf(format, ...)		\
+({						\
+	if (!env.folded)			\
+		printf("    ");			\
+	printf(format, ##__VA_ARGS__);		\
+	printf("%s", env.folded ? ";" : "\n");  \
+})
+
 static void print_map(struct ksyms *ksyms, struct syms_cache *syms_cache,
 		      struct offcputime_bpf *bpf_obj)
 {
@@ -214,11 +228,16 @@ static void print_map(struct ksyms *ksyms, struct syms_cache *syms_cache,
 		if (val.delta == 0)
 			continue;
 
+		if (env.folded) {
+			env.verbose = false;
+			printf("%s;", val.comm);
+		}
+
 		if (next_key.kernel_stack_id == -EFAULT)
 			goto print_ustack;
 
 		if (bpf_map_lookup_elem(sfd, &next_key.kernel_stack_id, ip) != 0) {
-			warning("    [Missed Kernel Stack]\n");
+			folded_printf("[Missed Kernel Stack]");
 			goto print_ustack;
 		}
 
@@ -226,7 +245,7 @@ static void print_map(struct ksyms *ksyms, struct syms_cache *syms_cache,
 			const struct ksym *ksym = ksyms__map_addr(ksyms, ip[i]);
 
 			if (!env.verbose) {
-				printf("    %s\n", ksym ? ksym->name : "Unknown");
+				folded_printf("%s", ksym ? ksym->name : "Unknown");
 			} else {
 				if (ksym)
 					printf("    #%-2d 0x%lx %s+0x%lx\n", idx, ip[i], ksym->name, ip[i] - ksym->addr);
@@ -241,7 +260,7 @@ print_ustack:
 			goto skip_ustack;
 
 		if (bpf_map_lookup_elem(sfd, &next_key.user_stack_id, ip) != 0) {
-			warning("     [Missing User Stack] %d\n", next_key.user_stack_id);
+			folded_printf("[Missing User Stack]");
 			goto skip_ustack;
 		}
 
@@ -262,9 +281,9 @@ print_ustack:
 			if (!env.verbose) {
 				sym = syms__map_addr(syms, ip[i]);
 				if (sym)
-					printf("    %s\n", sym->name);
+					folded_printf("%s", sym->name);
 				else
-					printf("    [unknown]\n");
+					folded_printf("[unknown]");
 			} else {
 				char *dso_name;
 				unsigned long dso_offset;
@@ -280,8 +299,12 @@ print_ustack:
 		}
 
 skip_ustack:
-		printf("    %-16s %s (%d)\n", "-", val.comm, next_key.pid);
-		printf("        %lld\n\n", val.delta);
+		if (!env.folded) {
+			printf("    %-16s %s (%d)\n", "-", val.comm, next_key.pid);
+			printf("        %lld\n\n", val.delta);
+		} else {
+			printf(" %lld\n", val.delta);
+		}
 	}
 
 cleanup:
@@ -394,11 +417,13 @@ int main(int argc, char *argv[])
 
 	signal(SIGINT, sig_handler);
 
-	printf("Tracing off-CPU time (us) of all threads by %s stack", stack_context());
-	if (env.duration < 99999999)
-		printf(" for %d secs\n", env.duration);
-	else
-		printf("... Hit Ctrl-C to end.\n");
+	if (!env.folded) {
+		printf("Tracing off-CPU time (us) of all threads by %s stack", stack_context());
+		if (env.duration < 99999999)
+			printf(" for %d secs\n", env.duration);
+		else
+			printf("... Hit Ctrl-C to end.\n");
+	}
 
 	/*
 	 * We'll get sleep interrupted when someone presses Ctrl-C (which will
