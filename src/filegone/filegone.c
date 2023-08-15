@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
 // Copyright @ 2023 - Kylin
 // Author: Jackie Liu <liuyun01@kylinos.cn>
+//
+// Base on filegone.py - Curu Wong
 
 #include "commons.h"
 #include "compat.h"
-#include "unlinksnoop.h"
-#include "unlinksnoop.skel.h"
+#include "filegone.h"
+#include "filegone.skel.h"
 #include "btf_helpers.h"
+#include "trace_helpers.h"
 
 static volatile sig_atomic_t exiting = 0;
 
@@ -17,12 +20,12 @@ static struct {
 	bool print_ppid;
 } env;
 
-const char *argp_program_version = "unlinksnoop 0.1";
+const char *argp_program_version = "filegone 0.1";
 const char *argp_protram_bug_address = "Jackie Liu <liuyun01@kylinos.cn>";
 const char argp_program_doc[] =
-"Trace unlink syscalls\n"
+"Trace why file gone (deleted or renamed).\n"
 "\n"
-"USAGE: unlinksnoop [-h] [-p PID] [-v]\n";
+"USAGE: filegone [-h] [-p PID] [-v]\n";
 
 static const struct argp_option opts[] = {
 	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
@@ -80,7 +83,11 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	if (env.print_ppid)
 		printf("%-10d ", e->ppid);
 
-	printf("%-10d %-16s %s\n", e->pid, e->comm, e->filename);
+	printf("%-10d %-16s %6s %s", e->pid, e->comm,
+	       e->action == 'D' ? "DELETE" : "RENAME", e->fname);
+	if (e->action == 'R')
+		printf(" > %s", e->fname2);
+	printf("\n");
 
 	return 0;
 }
@@ -95,7 +102,7 @@ static void sig_handler(int sig)
 	exiting = 1;
 }
 
-static int print_event(struct unlinksnoop_bpf *obj, struct bpf_buffer *buf)
+static int print_event(struct filegone_bpf *obj, struct bpf_buffer *buf)
 {
 	int err = 0;
 
@@ -131,7 +138,7 @@ int main(int argc, char *argv[])
 		.options = opts,
 		.doc = argp_program_doc,
 	};
-	struct unlinksnoop_bpf *obj;
+	struct filegone_bpf *obj;
 	struct bpf_buffer *buf = NULL;
 	int err;
 
@@ -150,7 +157,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = unlinksnoop_bpf__open_opts(&open_opts);
+	obj = filegone_bpf__open_opts(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		goto cleanup;
@@ -165,13 +172,26 @@ int main(int argc, char *argv[])
 
 	obj->rodata->target_pid = env.pid;
 
-	err = unlinksnoop_bpf__load(obj);
+	if (!tracepoint_exists("syscalls", "sys_enter_unlink"))
+		bpf_program__set_autoload(obj->progs.tracepoint_enter_unlink, false);
+	if (!tracepoint_exists("syscalls", "sys_enter_unlinkat"))
+		bpf_program__set_autoload(obj->progs.tracepoint_enter_unlinkat, false);
+	if (!tracepoint_exists("syscalls", "sys_enter_rename"))
+		bpf_program__set_autoload(obj->progs.tracepoint_enter_rename, false);
+	if (!tracepoint_exists("syscalls", "sys_enter_renameat"))
+		bpf_program__set_autoload(obj->progs.tracepoint_enter_renameat, false);
+	if (!tracepoint_exists("syscalls", "sys_enter_renameat2"))
+		bpf_program__set_autoload(obj->progs.tracepoint_enter_renameat2, false);
+	if (!tracepoint_exists("syscalls", "sys_enter_rmdir"))
+		bpf_program__set_autoload(obj->progs.tracepoint_enter_rmdir, false);
+
+	err = filegone_bpf__load(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
 	}
 
-	err = unlinksnoop_bpf__attach(obj);
+	err = filegone_bpf__attach(obj);
 	if (err) {
 		warning("Failed to attach BPF object: %d\n", err);
 		goto cleanup;
@@ -189,7 +209,7 @@ int main(int argc, char *argv[])
 
 cleanup:
 	bpf_buffer__free(buf);
-	unlinksnoop_bpf__destroy(obj);
+	filegone_bpf__destroy(obj);
 	cleanup_core_btf(&open_opts);
 
 	return err != 0;
