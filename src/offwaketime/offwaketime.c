@@ -22,6 +22,7 @@ static struct env {
 	long state;
 	int duration;
 	bool verbose;
+	bool folded;
 } env = {
 	.pid = -1,
 	.tid = -1,
@@ -38,13 +39,14 @@ const char *argp_program_bug_address = "Youling Tang <tangyouling@kylinos.cn>";
 const char argp_program_doc[] =
 "Summarize blocked time by kernel stack trace + waker stack.\n"
 "\n"
-"USAGE: [-h] [-p PID | -t TID | -u | -k] [-U | -K] [-d] "
+"USAGE: [-h] [-p PID | -t TID | -u | -k] [-U | -K] [-d] [-f] "
 "[--stack-storage-size STACK_STORAGE_SIZE] "
 "[-m MIN_BLOCK_TIME] [-M MAX_BLOCK_TIME] [--state STATE] "
 "[duration]\n\n"
 "EXAMPLES:\n"
 "    offwaketime             # trace off-CPU + waker stack time until Ctrl-C\n"
 "    offwaketime 5           # trace for 5 seconds only\n"
+"    offwaketime -f 5        # 5 seconds, and output in folded format\n"
 "    offwaketime -m 1000     # trace only events that last more than 1000 usec\n"
 "    offwaketime -M 10000    # trace only events that last less than 10000 usec\n"
 "    offwaketime -p 185      # only trace threads for PID 185\n"
@@ -80,6 +82,7 @@ static const struct argp_option opts[] = {
 	{ "state", OPT_STATE, "STATE", 0,
 	  "filter on this thread state bitmask (eg, 2 == TASK_UNINTERRUPTIBLE) see include/linux/sched.h" },
 	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
+	{ "folded", 'f', NULL, 0, "output folded format" },
 	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
 	{},
 };
@@ -92,6 +95,9 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 		break;
 	case 'v':
 		env.verbose = true;
+		break;
+	case 'f':
+		env.folded = true;
 		break;
 	case 'p':
 		env.pid = argp_parse_pid(key, arg, state);
@@ -165,6 +171,9 @@ static void print_map(struct ksyms *ksyms, struct syms_cache *syms_cache,
 		return;
 	}
 
+	if (env.folded)
+		env.verbose = false;
+
 	counts_fd = bpf_map__fd(bpf_obj->maps.counts);
 	stack_traces_fd = bpf_map__fd(bpf_obj->maps.stackmap);
 
@@ -183,13 +192,16 @@ static void print_map(struct ksyms *ksyms, struct syms_cache *syms_cache,
 		if (val == 0)
 			continue;
 
-		printf("    %-16s %s (%d)\n", "waker", next_key.waker, next_key.w_pid);
+		if (!env.folded)
+			printf("    %-16s %s (%d)\n", "waker", next_key.waker, next_key.w_pid);
+		else
+			printf("%s;", next_key.waker);
 
 		if (next_key.w_k_stack_id == -EFAULT)
 			goto print_ustack;
 
 		if (bpf_map_lookup_elem(stack_traces_fd, &next_key.w_k_stack_id, ip) != 0) {
-			printf("    [Missed Kernel Stack]\n");
+			folded_printf(env.folded, "[Missed Kernel Stack]");
 			goto print_ustack;
 		}
 
@@ -197,7 +209,7 @@ static void print_map(struct ksyms *ksyms, struct syms_cache *syms_cache,
 			const struct ksym *ksym = ksyms__map_addr(ksyms, ip[i]);
 
 			if (!env.verbose) {
-				printf("    %s\n", ksym ? ksym->name : "Unknown");
+				folded_printf(env.folded, "%s", ksym ? ksym->name : "Unknown");
 			} else {
 				if (ksym)
 					printf("    #%-2d 0x%lx %s+0x%lx\n", idx, ip[i], ksym->name,
@@ -213,7 +225,7 @@ print_ustack:
 			goto skip_ustack;
 
 		if (bpf_map_lookup_elem(stack_traces_fd, &next_key.w_u_stack_id, ip) != 0) {
-			printf("    [Missing User Stack] %lld\n", next_key.w_u_stack_id);
+			folded_printf(env.folded, "[Missing User Stack]");
 			goto skip_ustack;
 		}
 
@@ -233,7 +245,7 @@ print_ustack:
 
 			if (!env.verbose) {
 				sym = syms__map_addr(syms, ip[i]);
-				printf("    %s\n", sym ? sym->name : "[unknown]" );
+				folded_printf(env.folded, "%s", sym ? sym->name : "[unknown]" );
 			} else {
 				char *dso_name;
 				unsigned long dso_offset;
@@ -251,13 +263,16 @@ print_ustack:
 
 skip_ustack:
 		/* print waker/wakee delimiter */
-		printf("    %-16s %s", "--", "--\n");
+		if (!env.folded)
+			printf("    %-16s %s", "--", "--\n");
+		else
+			printf("--;");
 
 		if (next_key.t_k_stack_id == -EFAULT)
 			goto print_target_ustack;
 
 		if (bpf_map_lookup_elem(stack_traces_fd, &next_key.t_k_stack_id, ip) != 0) {
-			printf("    [Missed Kernel Stack]\n");
+			folded_printf(env.folded, "[Missed Kernel Stack]");
 			goto print_target_ustack;
 		}
 
@@ -265,7 +280,7 @@ skip_ustack:
 			const struct ksym *ksym = ksyms__map_addr(ksyms, ip[i]);
 
 			if (!env.verbose) {
-				printf("    %s\n", ksym ? ksym->name : "Unknown");
+				folded_printf(env.folded, "%s", ksym ? ksym->name : "Unknown");
 			} else {
 				if (ksym)
 					printf("    #%-2d 0x%lx %s+0x%lx\n", idx_target, ip[i],
@@ -281,7 +296,7 @@ print_target_ustack:
 			goto skip_target_ustack;
 
 		if (bpf_map_lookup_elem(stack_traces_fd, &next_key.t_u_stack_id, ip) != 0) {
-			printf("    [Missing User Stack]\n");
+			folded_printf(env.folded, "[Missing User Stack]");
 			goto skip_target_ustack;
 		}
 
@@ -301,7 +316,7 @@ print_target_ustack:
 
 			if (!env.verbose) {
 				sym = syms__map_addr(syms, ip[i]);
-				printf("    %s\n", sym ? sym->name : "[unknown]" );
+				folded_printf(env.folded, "%s", sym ? sym->name : "[unknown]" );
 			} else {
 				char *dso_name;
 				unsigned long dso_offset;
@@ -318,8 +333,13 @@ print_target_ustack:
 		}
 
 skip_target_ustack:
-		printf("    %-16s %s (%lld)\n", "target", next_key.target, next_key.t_pid);
-		printf("        %lld\n\n", val);
+		if (!env.folded) {
+			printf("    %-16s %s (%lld)\n", "target", next_key.target, next_key.t_pid);
+			printf("        %lld\n\n", val);
+		} else {
+			printf("%s;", next_key.target);
+			printf(" %lld\n", val);
+		}
 	}
 
 cleanup:
@@ -432,11 +452,13 @@ int main(int argc, char *argv[])
 
 	signal(SIGINT, sig_handler);
 
-	printf("Tracing blocked time (us) by %s off-CPU and waker stack", stack_context());
-	if (env.duration < 99999999)
-		printf(" for %d secs\n", env.duration);
-	else
-		printf("... Hit Ctrl-C to end.\n");
+	if (!env.folded) {
+		printf("Tracing blocked time (us) by %s off-CPU and waker stack", stack_context());
+		if (env.duration < 99999999)
+			printf(" for %d secs\n", env.duration);
+		else
+			printf("... Hit Ctrl-C to end.\n");
+	}
 
 	/*
 	 * We'll get sleep interrupted when someone presses Ctrl-C (which will
