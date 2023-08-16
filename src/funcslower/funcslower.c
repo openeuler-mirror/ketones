@@ -442,7 +442,9 @@ int main(int argc, char *argv[])
 	if (!env.folded) {
 		printf("Tracing function calls slower than %g %s... Ctrl+C to quit.\n",
 		       env.duration_ns / (env.ms ? 1e6 : 1e3), env.ms ? "ms" : "us");
-		printf("%-10s %-16s %-10s %10s %16s %s", "TIME", "COMM", "PID",
+		if (env.time || env.timestamp)
+			printf("%-10s ", "TIME");
+		printf("%-16s %-10s %10s %16s %s", "COMM", "PID",
 		       env.ms ? "LAT(ms)" : "LAT(us)", "RETVAL", "FUNC");
 		if (env.need_grab_args)
 			printf(" ARGS");

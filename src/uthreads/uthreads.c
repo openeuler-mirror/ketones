@@ -4,10 +4,10 @@
 //
 // Based on uthreads.py - Sasha Goldshtein
 
+#include "commons.h"
 #include "btf_helpers.h"
 #include "uprobe_helpers.h"
 #include "trace_helpers.h"
-#include "commons.h"
 #include "compat.h"
 #include "uthreads.h"
 #include "uthreads.skel.h"
