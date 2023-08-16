@@ -28,6 +28,7 @@ static struct env {
 	bool timestamp;
 	bool time;
 	bool verbose;
+	bool folded;
 	int arguments;
 	const char *functions[MAX_FUNCTIONS];
 	int perf_max_stack_depth;
@@ -44,7 +45,7 @@ const char argp_program_doc[] =
 "funcslower  Trace slow kernel or user function calls.\n"
 "\n"
 "USAGE: funcslower [-h] [-p PID] [-m MIN_MS] [-u MIN_US] [-a ARGUMENTS]\n"
-"                  [-T] [-t] [-v] function [function ...]\n"
+"                  [-T] [-t] [-v] [-f] function [function ...]\n"
 "\n"
 "Example:\n"
 "  ./funcslower vfs_write        # trace vfs_write calls slower than 1ms\n"
@@ -53,6 +54,7 @@ const char argp_program_doc[] =
 "  ./funcslower -p 135 c:open    # trace pid 135 only\n"
 "  ./funcslower c:malloc c:free  # trace both malloc and free slower than 1ms\n"
 "  ./funcslower -a 2 c:open      # show first two arguments to open\n"
+"  ./funcslower -f -UK c:open    # Output in folded format for flame graphs\n"
 "  ./funcslower -UK -m 10 c:open # Show user and kernel stack frame of open calls slower than 10ms\n";
 
 #define OPT_PERF_MAX_STACK_DEPTH	1	/* --perf-max-stack-depth */
@@ -60,6 +62,7 @@ const char argp_program_doc[] =
 
 const struct argp_option opts[] = {
 	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
+	{ "folded", 'f', NULL, 0, "output folded format, one line per stack (for flame graphs)" },
 	{ "pid", 'p', "PID", 0, "trace this PID only" },
 	{ "min-ms", 'm', "MIN-MS", 0, "minimum duration to trace (ms)" },
 	{ "min-us", 'u', "MIN-US", 0, "minimum duration to trace (us)" },
@@ -90,6 +93,9 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 		break;
 	case 'v':
 		env.verbose = true;
+		break;
+	case 'f':
+		env.folded = true;
 		break;
 	case 'p':
 		env.pid = argp_parse_pid(key, arg, state);
@@ -252,17 +258,22 @@ static int print_stack(struct funcslower_bpf *obj, struct event *e)
 
 	if (bpf_map_lookup_elem(bpf_map__fd(obj->maps.stack_trace),
 				&e->kernel_stack_id, ip)) {
-		warning("    [Missed Kernel Stack]\n");
+		folded_printf(env.folded, "[Missed Kernel Stack]");
 		goto print_ustack;
 	}
 
 	for (int i = 0; i < env.perf_max_stack_depth && ip[i]; i++) {
 		const struct ksym *ksym = ksyms__map_addr(ksyms, ip[i]);
 
-		if (ksym)
-			printf("    #%-2d 0x%lx %s+0x%lx\n", idx++, ip[i], ksym->name, ip[i] - ksym->addr);
-		else
-			printf("    #%-2d 0x%lx [unknown]\n", idx++, ip[i]);
+		if (!env.folded) {
+			if (ksym)
+				printf("    #%-2d 0x%lx %s+0x%lx\n", idx++, ip[i], ksym->name,
+					ip[i] - ksym->addr);
+			else
+				printf("    #%-2d 0x%lx [unknown]\n", idx++, ip[i]);
+		} else {
+			printf("%s;", ksym ? ksym->name : "[unknown]");
+		}
 	}
 
 print_ustack:
@@ -271,20 +282,28 @@ print_ustack:
 
 	if (bpf_map_lookup_elem(bpf_map__fd(obj->maps.stack_trace),
 				&e->user_stack_id, ip)) {
-		warning("    [Missed User Stack]\n");
+		folded_printf(env.folded, "[Missed User Stack]");
 		goto out;
 	}
 
 	syms = syms_cache__get_syms(syms_cache, e->pid_tgid >> 32);
 	for (int i = 0; i < env.perf_max_stack_depth && ip[i]; i++) {
-		if (!syms)
-			printf("    #%-2d 0x%016lx [unknown]\n", idx++, ip[i]);
-		else {
+		if (!syms) {
+			if (!env.folded)
+				printf("    #%-2d 0x%016lx [unknown]\n", idx++, ip[i]);
+			else
+				printf("%s;", "[unknown]");
+		} else {
 			const struct sym *sym;
 			char *dso_name;
 			unsigned long dso_offset;
 
 			sym = syms__map_addr_dso(syms, ip[i], &dso_name, &dso_offset);
+			if (env.folded) {
+				printf("%s;", sym ? sym->name : "[unknown]");
+				continue;
+			}
+
 			printf("    #%-2d 0x%016lx", idx++, ip[i]);
 			if (sym) {
 				printf(" %s+0x%lx", sym->name, sym->offset);
@@ -296,6 +315,8 @@ print_ustack:
 			printf("\n");
 		}
 	}
+	if (env.folded)
+		printf("\n");
 
 out:
 	free(ip);
@@ -326,11 +347,14 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	char retval[20];
 	sprintf(retval, "0x%llx", e->retval);
 
-	printf("%-16s %-10lld %10.2f %16s %s", e->comm, e->pid_tgid >> 32,
-	       e->duration_ns / (env.ms ? 1e6 : 1e3), retval,
-	       env.functions[e->id]);
+	if (!env.folded) {
+		printf("%-16s %-10lld %10.2f %16s %s", e->comm, e->pid_tgid >> 32,
+		       e->duration_ns / (env.ms ? 1e6 : 1e3), retval,
+		       env.functions[e->id]);
 
-	print_args(e->args);
+		print_args(e->args);
+	}
+
 	print_stack(obj, e);
 	return 0;
 }
@@ -415,13 +439,15 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	printf("Tracing function calls slower than %g %s... Ctrl+C to quit.\n",
-	       env.duration_ns / (env.ms ? 1e6 : 1e3), env.ms ? "ms" : "us");
-	printf("%-10s %-16s %-10s %10s %16s %s", "TIME", "COMM", "PID",
-	       env.ms ? "LAT(ms)" : "LAT(us)", "RETVAL", "FUNC");
-	if (env.need_grab_args)
-		printf(" ARGS");
-	printf("\n");
+	if (!env.folded) {
+		printf("Tracing function calls slower than %g %s... Ctrl+C to quit.\n",
+		       env.duration_ns / (env.ms ? 1e6 : 1e3), env.ms ? "ms" : "us");
+		printf("%-10s %-16s %-10s %10s %16s %s", "TIME", "COMM", "PID",
+		       env.ms ? "LAT(ms)" : "LAT(us)", "RETVAL", "FUNC");
+		if (env.need_grab_args)
+			printf(" ARGS");
+		printf("\n");
+	}
 
 	while (!exiting) {
 		err = bpf_buffer__poll(buf, POLL_TIMEOUT_MS);
