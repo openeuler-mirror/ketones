@@ -426,6 +426,7 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
+	perf_buffer__free(pb);
 	capable_bpf__destroy(obj);
 	syms_cache__free(syms_cache);
 	ksyms__free(ksyms);
