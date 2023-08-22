@@ -180,6 +180,21 @@ void handle_lost_events(void *ctx, int cpu, __u64 lost_cnt)
 	warning("lost %llu events on CPU #%d!\n", lost_cnt, cpu);
 }
 
+static void blk_account_io_set_attach_target(struct biosnoop_bpf *obj)
+{
+	if (fentry_can_attach("blk_account_io_start", NULL)) {
+		bpf_program__set_attach_target(obj->progs.blk_account_io_start, 0,
+					       "blk_account_io_start");
+		bpf_program__set_autoload(obj->progs.kprobe_blk_account_io_start, false);
+	} else if (fentry_can_attach("__blk_account_io_start", NULL)) {
+		bpf_program__set_attach_target(obj->progs.blk_account_io_start, 0,
+					       "__blk_account_io_start");
+		bpf_program__set_autoload(obj->progs.kprobe_blk_account_io_start, false);
+	} else {
+		bpf_program__set_autoload(obj->progs.blk_account_io_start, false);
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	const struct partition *partition;
@@ -229,16 +244,12 @@ int main(int argc, char *argv[])
 	obj->rodata->filter_memcg = env.cg;
 	obj->rodata->min_ns = env.min_lat_ms * 1000000;
 
-	if (fentry_can_attach("blk_account_io_start", NULL)) {
-		bpf_program__set_attach_target(obj->progs.blk_account_io_start, 0,
-					       "blk_account_io_start");
-		bpf_program__set_autoload(obj->progs.kprobe_blk_account_io_start, false);
-	} else if (fentry_can_attach("__blk_account_io_start", NULL)) {
-		bpf_program__set_attach_target(obj->progs.blk_account_io_start, 0,
-					       "__blk_account_io_start");
+	if (tracepoint_exists("block", "block_io_start")) {
+		bpf_program__set_autoload(obj->progs.blk_account_io_start, false);
 		bpf_program__set_autoload(obj->progs.kprobe_blk_account_io_start, false);
 	} else {
-		bpf_program__set_autoload(obj->progs.blk_account_io_start, false);
+		bpf_program__set_autoload(obj->progs.block_io_start, false);
+		blk_account_io_set_attach_target(obj);
 	}
 
 	ksyms = ksyms__load();

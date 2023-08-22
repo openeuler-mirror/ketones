@@ -84,6 +84,12 @@ int BPF_PROG(blk_account_io_merge_bio, struct request *rq)
 	return trace_start(ctx, rq, true);
 }
 
+SEC("tp_btf/block_io_start")
+int BPF_PROG(block_io_start, struct request *rq)
+{
+	return trace_start(ctx, rq, false);
+}
+
 static __always_inline int probe_blk_account_io_done(struct request *rq)
 {
 	u64 slot, ts = bpf_ktime_get_ns();
@@ -126,6 +132,12 @@ int BPF_PROG(blk_account_io_done, struct request *rq)
 
 SEC("kprobe/blk_account_io_done")
 int BPF_KPROBE(kprobe_blk_account_io_done, struct request *rq)
+{
+	return probe_blk_account_io_done(rq);
+}
+
+SEC("tp_btf/block_io_done")
+int BPF_PROG(block_io_done, struct request *rq)
 {
 	return probe_blk_account_io_done(rq);
 }

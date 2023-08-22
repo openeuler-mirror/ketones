@@ -118,6 +118,53 @@ static void print_map(struct ksyms *ksyms, struct partitions *partitions, int fd
 	return;
 }
 
+static bool has_block_io_tracepoints(void)
+{
+	return tracepoint_exists("block", "block_io_start") &&
+		tracepoint_exists("block", "block_io_done");
+}
+
+static void disable_blk_io_tracepoints(struct biostacks_bpf *obj)
+{
+	bpf_program__set_autoload(obj->progs.block_io_start, false);
+	bpf_program__set_autoload(obj->progs.block_io_done, false);
+}
+
+static bool has_block_io_fentry(void)
+{
+	return fentry_can_attach("blk_account_io_start", NULL) ||
+		fentry_can_attach("__blk_account_io_start", NULL);
+}
+
+static void disable_blk_account_io_fentry(struct biostacks_bpf *obj)
+{
+	bpf_program__set_autoload(obj->progs.blk_account_io_start, false);
+	bpf_program__set_autoload(obj->progs.blk_account_io_done, false);
+}
+
+static void disable_blk_io_kprobe(struct biostacks_bpf *obj)
+{
+	bpf_program__set_autoload(obj->progs.kprobe_blk_account_io_start, false);
+	bpf_program__set_autoload(obj->progs.kprobe_blk_account_io_done, false);
+}
+
+static void blk_account_io_set_attach_target(struct biostacks_bpf *obj)
+{
+	if (fentry_can_attach("blk_account_io_start", NULL)) {
+		bpf_program__set_attach_target(obj->progs.blk_account_io_start,
+					       0, "blk_account_io_start");
+		bpf_program__set_attach_target(obj->progs.blk_account_io_done,
+					       0, "blk_account_io_done");
+	} else if (fentry_can_attach("__blk_account_io_start", NULL)) {
+		bpf_program__set_attach_target(obj->progs.blk_account_io_start,
+					       0, "__blk_account_io_start");
+		bpf_program__set_attach_target(obj->progs.blk_account_io_done,
+					       0, "__blk_account_io_done");
+	} else {
+		disable_blk_account_io_fentry(obj);
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	struct partitions *partitions = NULL;
@@ -162,23 +209,16 @@ int main(int argc, char *argv[])
 
 	obj->rodata->target_ms = env.milliseconds;
 
-	if (fentry_can_attach("blk_account_io_start", NULL)) {
-		bpf_program__set_attach_target(obj->progs.blk_account_io_start, 0,
-					       "blk_account_io_start");
-		bpf_program__set_attach_target(obj->progs.blk_account_io_done, 0,
-					       "blk_account_io_done");
-		bpf_program__set_autoload(obj->progs.kprobe_blk_account_io_start, false);
-		bpf_program__set_autoload(obj->progs.kprobe_blk_account_io_done, false);
-	} else if (fentry_can_attach("__blk_account_io_start", NULL)) {
-		bpf_program__set_attach_target(obj->progs.blk_account_io_start, 0,
-					       "__blk_account_io_start");
-		bpf_program__set_attach_target(obj->progs.blk_account_io_done, 0,
-					       "__blk_account_io_done");
-		bpf_program__set_autoload(obj->progs.kprobe_blk_account_io_start, false);
-		bpf_program__set_autoload(obj->progs.kprobe_blk_account_io_done, false);
+	if (has_block_io_tracepoints()) {
+		disable_blk_io_kprobe(obj);
+		disable_blk_account_io_fentry(obj);
+	} else if (has_block_io_fentry()) {
+		disable_blk_io_tracepoints(obj);
+		disable_blk_io_kprobe(obj);
+		blk_account_io_set_attach_target(obj);
 	} else {
-		bpf_program__set_autoload(obj->progs.blk_account_io_start, false);
-		bpf_program__set_autoload(obj->progs.blk_account_io_done, false);
+		disable_blk_io_tracepoints(obj);
+		disable_blk_account_io_fentry(obj);
 	}
 
 	ksyms = ksyms__load();
