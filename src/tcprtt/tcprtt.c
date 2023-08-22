@@ -54,8 +54,6 @@ static const struct argp_option opts[] = {
 	{ "rport", 'P', "RPORT", 0, "filter for remote port" },
 	{ "laddr", 'a', "LADDR", 0, "filter for local address" },
 	{ "raddr", 'A', "RADDR", 0, "filter for remote address" },
-	{ "laddr-v6", 'c', "LADDR_V6", 0, "filter for local IPv6 address" },
-	{ "raddr-v6", 'C', "RADDR_V6", 0, "filter for remote IPv6 address" },
 	{ "byladdr", 'b', NULL, 0,
 	  "show sockets histogram by local address" },
 	{ "byraddr", 'B', NULL, 0,
@@ -96,20 +94,31 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 		env.rport = htons(argp_parse_long(key, arg, state));
 		break;
 	case 'a':
-	case 'A':
-	{
-		struct in_addr addr;
-
-		if (inet_aton(arg, &addr) < 0) {
-			warning("Invalid address: %s\n", arg);
-			argp_usage(state);
+		if (strchr(arg, ':')) {
+			if (inet_pton(AF_INET6, arg, &env.laddr_v6) < 1) {
+				warning("Invalid local IPv6 address: %s\n", arg);
+				argp_usage(state);
+			}
+		} else {
+			if (inet_pton(AF_INET, arg, &env.laddr) < 0) {
+				warning("Invalid local address: %s\n", arg);
+				argp_usage(state);
+			}
 		}
-		if (key == 'a')
-			env.laddr = addr.s_addr;
-		else
-			env.raddr = addr.s_addr;
 		break;
-	}
+	case 'A':
+		if (strchr(arg, ':')) {
+			if (inet_pton(AF_INET6, arg, &env.raddr_v6) < 1) {
+				warning("Invalid remote address: %s\n", arg);
+				argp_usage(state);
+			}
+		} else {
+			if (inet_pton(AF_INET, arg, &env.raddr) < 0) {
+				warning("Invalid remote address: %s\n", arg);
+				argp_usage(state);
+			}
+		}
+		break;
 	case 'c':
 		if (inet_pton(AF_INET6, arg, &addr_v6) < 1) {
 			warning("invalid local IPv6 address: %s\n", arg);
