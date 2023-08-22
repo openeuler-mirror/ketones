@@ -117,7 +117,7 @@ static void sig_handler(int sig)
 static int handle_event(void *ctx, void *data, size_t data_sz)
 {
 	const struct event *e = data;
-	char saddr[26], daddr[26];
+	char saddr[39], daddr[39];
 
 	if (env.emit_timestamp) {
 		char ts[32];
@@ -132,7 +132,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	if (env.wide_output) {
 		int family = e->family == AF_INET ? 4 : 6;
 
-		printf("%-16llx %-7d %-16s %-2d %-26s %5d %-26s %-5d %-11s -> %-11s %.3f\n",
+		printf("%-16llx %-7d %-16s %-2d %-39s %5d %-39s %-5d %-11s -> %-11s %.3f\n",
 		       e->skaddr, e->pid, e->task, family, saddr, e->sport, daddr, e->dport,
 		       tcp_states[e->oldstate], tcp_states[e->newstate],
 		       (double)e->delta_us / 1000);
@@ -249,12 +249,12 @@ int main(int argc, char *argv[])
 		printf("%-8s ", "TIME(s)");
 
 	if (env.wide_output)
-		printf("%-16s %-7s %-16s %-2s %-26s %-5s %-26s %-5s %-11s -> %-11s %s\n",
+		printf("%-16s %-7s %-16s %-2s %-39s %-5s %-39s %-5s %-11s -> %-11s %s\n",
 		       "SKADDR", "PID", "COMM", "IP", "LADDR", "LPORT",
 		       "RADDR", "RPORT", "OLDSTATE", "NEWSTATE", "MS");
 	else
 		printf("%-16s %-7s %-10s %-15s %-5s %-15s %-5s %-11s -> %-11s %s\n",
-		       "SKADDR", "PID", "COMM", "LADDR", "LPORT", 
+		       "SKADDR", "PID", "COMM", "LADDR", "LPORT",
 		       "RADDR", "RPORT", "OLDSTATE", "NEWSTATE", "MS");
 
 	while (!exiting) {

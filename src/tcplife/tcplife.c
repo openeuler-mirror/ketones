@@ -61,7 +61,7 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 		env.target_family = AF_INET6;
 		break;
 	case 'w':
-		env.column_width = 26;
+		env.column_width = 39;
 		break;
 	case 'L':
 	case 'R':
