@@ -55,6 +55,7 @@ APPS += cachetop
 APPS += capable
 APPS += cpudist
 APPS += cpufreq
+APPS += cpuunclaimed
 APPS += cpuwalk
 APPS += criticalstat
 APPS += dbslower
