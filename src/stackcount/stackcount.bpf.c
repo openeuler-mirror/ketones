@@ -38,7 +38,7 @@ static int handle_entry(void *ctx)
 	if (target_pid && target_pid != pid)
 		return 0;
 
-	if (target_cpu != -1 && pid != target_cpu)
+	if (target_cpu != -1 && cpu != target_cpu)
 		return 0;
 
 	if (!target_per_pid) {
