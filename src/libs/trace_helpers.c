@@ -1134,7 +1134,7 @@ static bool use_debugfs(void)
 	return has_debugfs == 1;
 }
 
-static const char *tracefs_path(void)
+const char *tracefs_path(void)
 {
 	return use_debugfs() ? DEBUGFS : TRACEFS;
 }

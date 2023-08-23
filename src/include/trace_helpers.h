@@ -95,6 +95,8 @@ bool fentry_can_attach(const char *name, const char *mod);
  * If this file does not exist, it fallbacks to parse /proc/kallsyms,
  * which is slower.
  */
+const char *tracefs_path(void);
+
 bool kprobe_exists(const char *name);
 bool tracepoint_exists(const char *category, const char *event);
 

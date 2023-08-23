@@ -186,7 +186,7 @@ $(call allow-override,CC,$(CROSS_COMPILE)cc)
 $(call allow-override,LD,$(CROSS_COMPILE)ld)
 
 .PHONY: all
-all: $(OUTPUT_BINARIES) $(APP_ALIASES) bin/bpflist bin/tplist
+all: $(OUTPUT_BINARIES) $(APP_ALIASES) bin/bpflist bin/tplist bin/reset-trace
 
 .PHONY: clean
 clean:
@@ -257,6 +257,10 @@ bin/bpflist: bpflist/bpflist.c include/commons.h $(LIBBPF_OBJ) | $(BINARIES_DIR)
 	$(Q)$(CC) $(CFLAGS) $< $(INCLUDES) -lelf -lz -o $@
 
 bin/tplist: tplist/tplist.c $(COMMON_LIBS_OBJ) $(LIBBPF_OBJ) | $(BINARIES_DIR)
+	$(call msg,BINARY,$(notdir $@))
+	$(Q)$(CC) $(CFLAGS) $^ $(INCLUDES) -lelf -lz -o $@
+
+bin/reset-trace: reset-trace/reset-trace.c $(COMMON_LIBS_OBJ) $(LIBBPF_OBJ) | $(BINARIES_DIR)
 	$(call msg,BINARY,$(notdir $@))
 	$(Q)$(CC) $(CFLAGS) $^ $(INCLUDES) -lelf -lz -o $@
 
