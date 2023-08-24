@@ -1,4 +1,11 @@
 // SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
+// Copyright (c) 2020 Wenbo Zhang
+//
+// Based on filelife(8) from BCC by Brendan Gregg & Allan McAleavy.
+// 20-Mar-2020   Wenbo Zhang   Created this.
+// 13-Nov-2022   Rong Tao      Check btf struct field for CO-RE and add vfs_open()
+// 23-Aug-2023   Rong Tao      Add vfs_* 'struct mnt_idmap' support.(CO-RE)
+
 #include "commons.h"
 #include "filelife.h"
 #include "filelife.skel.h"
