@@ -17,6 +17,7 @@ struct event {
 	char comm[TASK_COMM_LEN];
 	char fname[DNAME_INLINE_LEN];
 	char fname2[DNAME_INLINE_LEN];
+	int ret;
 };
 
 #endif // __FILEGONE_H
