@@ -108,14 +108,14 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	int fd = *(int *)ctx;
 
 	if (env.verbose)
-		printf("%-18s %-12s %-6s %-3s %s\n", "TIME(s)", "COMM", "PID",
+		printf("%-18s %-12s %-7s %-3s %s\n", "TIME(s)", "COMM", "PID",
 		       "CPU", "FUNCTION");
 	else
 		printf("%-18s %s\n", "TIME(s)", "FUNCTION");
 
 	printf("%-18.9f ", time_since_start());
 	if (env.verbose)
-		printf("%-12.12s %-6d %-3d %s\n",
+		printf("%-12.12s %-7d %-3d %s\n",
 		       e->comm, e->pid, e->cpu, env.function);
 	else
 		printf("%s\n", env.function);

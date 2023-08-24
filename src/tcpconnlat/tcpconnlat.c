@@ -117,13 +117,13 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	}
 
 	if (env.lport) {
-		printf("%-6d %-16.16s v%d %-16s %-6d %-16s %-5d %.2f\n", e->tgid,
+		printf("%-7d %-16.16s v%d %-16s %-6d %-16s %-5d %.2f\n", e->tgid,
 		       e->comm, e->af == AF_INET ? 4 : 6,
 		       inet_ntop(e->af, &s, src, sizeof(src)), e->lport,
 		       inet_ntop(e->af, &d, dst, sizeof(dst)), ntohs(e->dport),
 		       e->delta_us / 1000.0);
 	} else {
-		printf("%-6d %-16.16s v%d %-16s %-16s %-5d %.2f\n", e->tgid, e->comm,
+		printf("%-7d %-16.16s v%d %-16s %-16s %-5d %.2f\n", e->tgid, e->comm,
 		       e->af == AF_INET ? 4 : 6,
 		       inet_ntop(e->af, &s, src, sizeof(src)),
 		       inet_ntop(e->af, &d, dst, sizeof(dst)), ntohs(e->dport),
@@ -210,10 +210,10 @@ int main(int argc, char *argv[])
 	if (env.timestamp)
 		printf("%-9s ", "TIME(s)");
 	if (env.lport)
-		printf("%-6s %-16s %-2s %-16s %-6s %-16s %-5s %s\n",
+		printf("%-7s %-16s %-2s %-16s %-6s %-16s %-5s %s\n",
 		       "PID", "COMM", "IP", "SADDR", "LPORT", "DADDR", "DPORT", "LAT(ms)");
 	else
-		printf("%-6s %-16s %-2s %-16s %-16s %-5s %s\n",
+		printf("%-7s %-16s %-2s %-16s %-16s %-5s %s\n",
 		       "PID", "COMM", "IP", "SADDR", "DADDR", "DPORT", "LAT(ms)");
 
 	if (signal(SIGINT, sig_handler) == SIG_ERR) {

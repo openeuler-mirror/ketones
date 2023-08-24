@@ -126,7 +126,7 @@ static void print_events_header()
 		printf("%-9s", "TIME(s)");
 	if (env.print_uid)
 		printf("%-6s", "UID");
-	printf("%s %-6s %-12s %-2s %-16s %-16s %-4s %-4s\n",
+	printf("%s %-7s %-12s %-2s %-16s %-16s %-4s %-4s\n",
 	       "T", "PID", "COMM", "IP", "SADDR", "DADDR", "SPORT", "DPORT");
 }
 
@@ -170,7 +170,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		break;
 	}
 
-	printf("%c %-6d %-12.12s %-2d %-16s %-16s %-4d %-4d\n",
+	printf("%c %-7d %-12.12s %-2d %-16s %-16s %-4d %-4d\n",
 	       type, e->pid, e->task, e->af == AF_INET ? 4 : 6,
 	       inet_ntop(e->af, &s, src, sizeof(src)),
 	       inet_ntop(e->af, &d, dst, sizeof(dst)),

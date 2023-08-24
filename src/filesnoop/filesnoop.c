@@ -116,9 +116,9 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	}
 
 	if (env.print_ppid)
-		printf("%-8d ", e->ppid);
+		printf("%-7d ", e->ppid);
 
-	printf("%-8d %-16s %-10s %5d %5d %s\n", e->pid, e->comm, op2string[e->op],
+	printf("%-7d %-16s %-10s %5d %5d %s\n", e->pid, e->comm, op2string[e->op],
 	       fd, e->ret, e->filename);
 	return 0;
 }
@@ -221,8 +221,8 @@ int main(int argc, char *argv[])
 	if (env.timestamp)
 		printf("%-9s ", "TIME");
 	if (env.print_ppid)
-		printf("%-8s ", "PPID");
-	printf("%-8s %-16s %-10s %5s %5s %s\n", "PID", "COMM", "OPERATION", "FD",
+		printf("%-7s ", "PPID");
+	printf("%-7s %-16s %-10s %5s %5s %s\n", "PID", "COMM", "OPERATION", "FD",
 	       "RET", "FILENAME");
 
 	while (!exiting) {

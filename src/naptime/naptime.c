@@ -65,7 +65,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		printf("%-8s ", ts);
 	}
 
-	printf("%-6d %-16s %-6d %-16s %lld.%03lld\n",
+	printf("%-7d %-16s %-7d %-16s %lld.%03lld\n",
 	       e->ppid, e->pcomm, e->pid, e->comm, e->tv_sec, e->tv_nsec / 1000000);
 
 	return 0;
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
 
 	if (timestamp)
 		printf("%-8s ", "TIME");
-	printf("%-6s %-16s %-6s %-16s %s\n",
+	printf("%-7s %-16s %-7s %-16s %s\n",
 	       "PPID", "PCOMM", "PID", "COMM", "SECONDS");
 
 	while (!exiting) {

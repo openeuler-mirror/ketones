@@ -65,7 +65,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		printf("%-8s ", ts);
 	}
 
-	printf("%-6d %-16s %-6d ", e->pid, e->comm, e->uid);
+	printf("%-7d %-16s %-6d ", e->pid, e->comm, e->uid);
 
 	switch (e->type) {
 	case UID:
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
 	printf("Tracing setuid(2) family syscalls. Hit Ctrl-C to end.\n");
 	if (env.timestamp)
 		printf("%-8s ", "TIME");
-	printf("%-6s %-16s %-6s %-9s %s\n", "PID", "COMM", "UID", "SYSCALL",
+	printf("%-7s %-16s %-6s %-9s %s\n", "PID", "COMM", "UID", "SYSCALL",
 	       "ARGS (RET)");
 
 	while (!exiting) {

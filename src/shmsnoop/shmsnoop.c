@@ -175,7 +175,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 
 	if (env.emit_timestamp)
 		printf("%-14.3f ", time_since_start());
-	printf("%-6d %-16s %6s %16lx ", e->pid, e->comm, sys_name(e->sys), e->ret);
+	printf("%-7d %-16s %6s %16lx ", e->pid, e->comm, sys_name(e->sys), e->ret);
 	print_args(e);
 
 	return 0;
@@ -269,10 +269,7 @@ int main(int argc, char *argv[])
 
 	if (env.emit_timestamp)
 		printf("%-14s ", "TIME(s)");
-	if(env.tid)
-		printf("%-6s ", "TID");
-	else
-		printf("%-6s ", "PID");
+	printf("%-7s ", env.tid ? "TID" : "PID");
 	printf("%-16s %6s %16s %-s\n", "COMM", "SYS", "RET", "ARGs");
 
 	err = bpf_buffer__open(buf, handle_event, handle_lost_events, NULL);

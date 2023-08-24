@@ -215,7 +215,7 @@ static void handle_event(void *ctx, int cpu, void *data, __u32 data_sz)
 	if (env.print_uid)
 		printf("%-6d ", e->uid);
 
-	printf("%-16s %-8d %-8d %3d ", e->comm, e->pid, e->ppid, e->retval);
+	printf("%-16s %-7d %-7d %3d ", e->comm, e->pid, e->ppid, e->retval);
 	print_args(e, env.quote);
 	putchar('\n');
 }
@@ -308,7 +308,7 @@ int main(int argc, char *argv[])
 	if (env.print_uid)
 		printf("%-6s ", "UID");
 
-	printf("%-16s %-8s %-8s %3s %s\n", "PCOMM", "PID", "PPID", "RET", "ARGS");
+	printf("%-16s %-7s %-7s %3s %s\n", "PCOMM", "PID", "PPID", "RET", "ARGS");
 
 	pb = perf_buffer__new(bpf_map__fd(bpf_obj->maps.events), PERF_BUFFER_PAGES,
 			      handle_event, handle_lost_events, NULL, NULL);

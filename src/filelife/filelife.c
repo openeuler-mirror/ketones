@@ -73,7 +73,7 @@ void handle_event(void *ctx, int cpu, void *data, __u32 data_sz)
 	char ts[32];
 
 	strftime_now(ts, sizeof(ts), "%H:%M:%S");
-	printf("%-8s %-6d %-16s %-7.2f %s\n",
+	printf("%-8s %-7d %-16s %-7.2f %s\n",
 		ts, e->tgid, e->task, (double)e->delta_ns / 1e9,
 		e->file);
 }
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
 	}
 
 	printf("Tracing the lifespan of short-lived files ... Hit Ctrl-C to end.\n");
-	printf("%-8s %-6s %-16s %-7s %s\n", "TIME", "PID", "COMM", "AGE(s)", "FILE");
+	printf("%-8s %-7s %-16s %-7s %s\n", "TIME", "PID", "COMM", "AGE(s)", "FILE");
 
 	pb = perf_buffer__new(bpf_map__fd(obj->maps.events), PERF_BUFFER_PAGES,
 			      handle_event, handle_lost_events, NULL, NULL);

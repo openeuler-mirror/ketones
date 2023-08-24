@@ -109,7 +109,7 @@ static int compare_latency(const void *dx, const void *dy)
 static const char *agg_col(struct data_ext_t *val, char *buf, size_t size)
 {
 	if (env.process) {
-		snprintf(buf, size, "%-6u %-15s", val->key, val->comm);
+		snprintf(buf, size, "%-7u %-16s", val->key, val->comm);
 	} else {
 		syscall_name(val->key, buf, size);
 	}
@@ -118,7 +118,7 @@ static const char *agg_col(struct data_ext_t *val, char *buf, size_t size)
 
 static const char *agg_colname(void)
 {
-	return (env.process) ? "PID    COMM" : "SYSCALL";
+	return (env.process) ? "PID     COMM" : "SYSCALL";
 }
 
 static const char *time_colname(void)
@@ -128,12 +128,12 @@ static const char *time_colname(void)
 
 static void print_latency_header(void)
 {
-	printf("%-22s %8s %16s\n", agg_colname(), "COUNT", time_colname());
+	printf("%-24s %8s %16s\n", agg_colname(), "COUNT", time_colname());
 }
 
 static void print_count_header(void)
 {
-	printf("%-22s %8s\n", agg_colname(), "COUNT");
+	printf("%-24s %8s\n", agg_colname(), "COUNT");
 }
 
 static void print_latency(struct data_ext_t *vals, size_t count)
@@ -143,7 +143,7 @@ static void print_latency(struct data_ext_t *vals, size_t count)
 
 	print_latency_header();
 	for (int i = 0; i < count && i < env.top; i++) {
-		printf("%-22s %8llu %16.3lf\n",
+		printf("%-24s %8llu %16.3lf\n",
 		       agg_col(&vals[i], buf, sizeof(buf)),
 		       vals[i].count, vals[i].total_ns / div);
 	}
@@ -156,7 +156,7 @@ static void print_count(struct data_ext_t *vals, size_t count)
 
 	print_count_header();
 	for (int i = 0; i < count && i < env.top; i++)
-		printf("%-22s %8llu\n",
+		printf("%-24s %8llu\n",
 		       agg_col(&vals[i], buf, sizeof(buf)), vals[i].count);
 	printf("\n");
 }

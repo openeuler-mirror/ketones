@@ -104,7 +104,7 @@ static void handle_event(void *ctx, int cpu, void *data, __u32 data_sz)
 		printf("%-8s ", ts);
 	}
 
-	printf("%-16s %-10d %-10d %8d -> %-8d\n", e->comm, e->pid, e->tid,
+	printf("%-16s %-7d %-7d %8d -> %-8d\n", e->comm, e->pid, e->tid,
 	       e->prev_numa_node_id, e->numa_node_id);
 }
 
@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
 	if (env.timestamp)
 		printf("%-9s", "TIME");
 
-	printf("%-16s %-10s %-10s %8s    %-8s\n", "COMM", "PID", "TID", "SRC_NID",
+	printf("%-16s %-7s %-7s %8s    %-8s\n", "COMM", "PID", "TID", "SRC_NID",
 		"DST_NID");
 
 	pb = perf_buffer__new(bpf_map__fd(bpf_obj->maps.events), PERF_BUFFER_PAGES,

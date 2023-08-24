@@ -64,7 +64,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		sym = syms__map_addr(syms, e->function_addr);
 
 	strftime_now(ts, sizeof(ts), "%H:%M:%S");
-	printf("%-10s %-6d %-16s ", ts, e->pid, e->comm);
+	printf("%-10s %-7d %-16s ", ts, e->pid, e->comm);
 
 	if (sym)
 		printf("%s\n", demangling_cplusplus_function(sym->name));
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	printf("%-10s %-6s %-16s %s\n", "TIME(ms)", "PID", "COMM", "FUNC");
+	printf("%-10s %-7s %-16s %s\n", "TIME(ms)", "PID", "COMM", "FUNC");
 
 	while (!exiting) {
 		err = bpf_buffer__poll(buf, POLL_TIMEOUT_MS);
