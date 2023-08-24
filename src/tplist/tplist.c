@@ -109,10 +109,11 @@ static void print_tpoint(const char *category, const char *event)
 static void print_tracepoints()
 {
 	char category[MAX_PATH_LEN];
+	char event_root[MAX_PATH_LEN];
 	DIR *dir, *cat_dir, *evt_dir;
 	struct dirent *entry, *cat_entry;
-	const char *event_root = "/sys/kernel/debug/tracing/events";
 
+	snprintf(event_root, sizeof(event_root), "%s/events", tracefs_path());
 	dir = opendir(event_root);
 	if(!dir)
 		return;
