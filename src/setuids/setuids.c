@@ -68,13 +68,13 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	printf("%-7d %-16s %-6d ", e->pid, e->comm, e->uid);
 
 	switch (e->type) {
-	case UID:
+	case SU_UID:
 		printf("%-9s uid=%d (%d)\n", "setuid", e->setuid, e->ret);
 		break;
-	case FSUID:
+	case SU_FSUID:
 		printf("%-9s uid=%d (prevuid=%d)\n", "setfsuid", e->setuid, e->ret);
 		break;
-	case REUID:
+	case SU_REUID:
 		printf("%-9s ruid=%d euid=%d suid=%d (%d)\n", "setreuid",
 		       e->ruid, e->euid, e->suid, e->ret);
 		break;
