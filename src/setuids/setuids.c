@@ -3,6 +3,7 @@
 #include "setuids.h"
 #include "setuids.skel.h"
 #include "compat.h"
+#include <pwd.h>
 
 static volatile sig_atomic_t exiting;
 
@@ -57,6 +58,7 @@ static void sig_handler(int sig)
 static int handle_event(void *ctx, void *data, size_t data_sz)
 {
 	const struct event *e = data;
+	struct passwd *passwd;
 
 	if (env.timestamp) {
 		char ts[16];
@@ -65,7 +67,13 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		printf("%-8s ", ts);
 	}
 
-	printf("%-7d %-16s %-6d ", e->pid, e->comm, e->uid);
+	passwd = getpwuid(e->uid);
+	if (!passwd) {
+		warning("getpwuid() failed: %s\n", strerror(errno));
+		return -1;
+	}
+
+	printf("%-7d %-16s %-7s ", e->pid, e->comm, passwd->pw_name);
 
 	switch (e->type) {
 	case SU_UID:
@@ -150,7 +158,7 @@ int main(int argc, char *argv[])
 	printf("Tracing setuid(2) family syscalls. Hit Ctrl-C to end.\n");
 	if (env.timestamp)
 		printf("%-8s ", "TIME");
-	printf("%-7s %-16s %-6s %-9s %s\n", "PID", "COMM", "UID", "SYSCALL",
+	printf("%-7s %-16s %-7s %-9s %s\n", "PID", "COMM", "UID", "SYSCALL",
 	       "ARGS (RET)");
 
 	while (!exiting) {

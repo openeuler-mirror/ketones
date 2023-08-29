@@ -4,6 +4,7 @@
 #include "execsnoop.h"
 #include "trace_helpers.h"
 #include "btf_helpers.h"
+#include <pwd.h>
 
 #define MAX_ARGS_KEY		259
 
@@ -212,8 +213,15 @@ static void handle_event(void *ctx, int cpu, void *data, __u32 data_sz)
 	if (env.timestamp)
 		printf("%-8.3f", time_since_start());
 
-	if (env.print_uid)
-		printf("%-6d ", e->uid);
+	if (env.print_uid) {
+		struct passwd *passwd;
+		passwd = getpwuid(e->uid);
+		if (!passwd) {
+			warning("getpwuid() failed: %s\n", strerror(errno));
+			return;
+		}
+		printf("%-7s ", passwd->pw_name);
+	}
 
 	printf("%-16s %-7d %-7d %3d ", e->comm, e->pid, e->ppid, e->retval);
 	print_args(e, env.quote);
@@ -306,7 +314,7 @@ int main(int argc, char *argv[])
 	if (env.timestamp)
 		printf("%-8s ", "TIME(s)");
 	if (env.print_uid)
-		printf("%-6s ", "UID");
+		printf("%-7s ", "UID");
 
 	printf("%-16s %-7s %-7s %3s %s\n", "PCOMM", "PID", "PPID", "RET", "ARGS");
 
