@@ -114,6 +114,7 @@ APPS += tcpsynbl
 APPS += tcptop
 APPS += tcptracer
 APPS += threadsnoop
+APPS += trace
 APPS += ttysnoop
 APPS += ucalls
 APPS += uthreads
