@@ -5,7 +5,6 @@
 #include "trace_helpers.h"
 #include <sys/stat.h>
 #include <sys/syscall.h>
-#include <pwd.h>
 
 struct argument {
 	char *cgroupspath;
@@ -248,7 +247,6 @@ cleanup:
 static void handle_event(void *ctx, int cpu, void *data, __u32 data_sz)
 {
 	const struct cap_event *e = data;
-	struct passwd *passwd;
 	char ts[32];
 
 	strftime_now(ts, sizeof(ts), "%H:%M:%S");
@@ -257,19 +255,13 @@ static void handle_event(void *ctx, int cpu, void *data, __u32 data_sz)
 	if (!e->ret)
 		verdict = "allow";
 
-	passwd = getpwuid(e->uid);
-	if (!passwd) {
-		warning("getpwuid() failed: %s\n", strerror(errno));
-		return;
-	}
-
 	if (((struct context *)ctx)->argument->extra_fields)
 		printf("%-8s %-7s %-7d %-7d %-16s %-7d %-20s %-7d %-7s %-7d\n",
-		       ts, passwd->pw_name, e->pid, e->tgid, e->task, e->cap, cap_name[e->cap],
-		       e->audit, verdict, e->insetid);
+		       ts, get_uid_name(e->uid), e->pid, e->tgid, e->task, e->cap,
+		       cap_name[e->cap], e->audit, verdict, e->insetid);
 	else
 		printf("%-8s %-7s %-7d %-16s %-7d %-20s %-7d %-7s\n", ts,
-		       passwd->pw_name, e->pid, e->task, e->cap, cap_name[e->cap],
+		       get_uid_name(e->uid), e->pid, e->task, e->cap, cap_name[e->cap],
 		       e->audit, verdict);
 
 	print_map(ksyms, syms_cache, ctx);
