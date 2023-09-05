@@ -450,7 +450,7 @@ int main(int argc, char *argv[])
 		if (err)
 			goto cleanup;
 
-		if (exiting || !env.count--)
+		if (exiting || !--env.count)
 			goto cleanup;
 	}
 
