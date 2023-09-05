@@ -47,6 +47,7 @@ APPS += biostacks
 APPS += biotop
 APPS += bitesize
 APPS += cachestat
+APPS += cachetop
 APPS += capable
 APPS += cpudist
 APPS += cpufreq
