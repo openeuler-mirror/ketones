@@ -143,7 +143,7 @@ FSSLOWER_ALIASES := $(addprefix $(BINARIES_DIR)/, btrfsslower ext4slower nfsslow
 SIGSNOOP_ALIAS := $(addprefix $(BINARIES_DIR)/, killsnoop)
 FILESNOOP_ALIAS := $(addprefix $(BINARIES_DIR)/, closesnoop writesnoop readsnoop)
 FUNCCOUNT_ALIAS := $(addprefix $(BINARIES_DIR)/, vfscount)
-UCALLS_ALIAS := $(addprefix $(BINARIES_DIR)/, javacalls perlcalls phpccalls \
+UCALLS_ALIAS := $(addprefix $(BINARIES_DIR)/, javacalls perlcalls phpcalls \
 		pythoncalls rubycalls tclcalls)
 UOBJNEW_ALIAS := $(addprefix $(BINARIES_DIR)/, cobjnew javaobjnew rubyobjnew tclobjnew)
 UTHREADS_ALIAS := $(addprefix $(BINARIES_DIR)/, javathreads)

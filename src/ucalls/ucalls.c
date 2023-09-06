@@ -394,7 +394,7 @@ static void alias_parse(char *prog)
 		env.language = LA_JAVA;
 	else if (!strcmp(name, "perlcalls"))
 		env.language = LA_PERL;
-	else if (!strcmp(name, "phpccalls"))
+	else if (!strcmp(name, "phpcalls"))
 		env.language = LA_PHP;
 	else if (!strcmp(name, "pythoncalls"))
 		env.language = LA_PYTHON;
