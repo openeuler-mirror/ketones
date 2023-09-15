@@ -121,6 +121,7 @@ APPS += threadsnoop
 APPS += trace
 APPS += ttysnoop
 APPS += ucalls
+APPS += ugc
 APPS += uflow
 APPS += uthreads
 APPS += uobjnew
@@ -151,13 +152,14 @@ UCALLS_ALIAS := $(addprefix $(BINARIES_DIR)/, javacalls perlcalls phpcalls \
 		pythoncalls rubycalls tclcalls)
 UFLOW_ALIAS := $(addprefix $(BINARIES_DIR)/, javaflow perlflow phpflow \
 		pythonflow rubyflow tclflow)
+UGC_ALIAS := $(addprefix $(BINARIES_DIR)/, nodegc pythongc rubygc)
 UOBJNEW_ALIAS := $(addprefix $(BINARIES_DIR)/, cobjnew javaobjnew rubyobjnew tclobjnew)
 UTHREADS_ALIAS := $(addprefix $(BINARIES_DIR)/, javathreads)
 
 ifeq ($(NOALIASES),)
 APP_ALIASES := $(FSDIST_ALIASES) $(FSSLOWER_ALIASES) $(SIGSNOOP_ALIAS) $(FILESNOOP_ALIAS) \
 	       $(FUNCCOUNT_ALIAS) $(UCALLS_ALIAS) $(UOBJNEW_ALIAS) $(UTHREADS_ALIAS) \
-	       $(UFLOW_ALIAS)
+	       $(UFLOW_ALIAS) $(UGC_ALIAS)
 endif
 
 OUTPUT_BINARIES := $(addprefix $(BINARIES_DIR)/, $(APPS))
@@ -304,6 +306,10 @@ $(UCALLS_ALIAS): $(addprefix $(BINARIES_DIR)/, ucalls)
 $(UFLOW_ALIAS): $(addprefix $(BINARIES_DIR)/, uflow)
 	$(call msg,SYMLINK,$(notdir $@))
 	$(Q)$(LN) -f -s $(notdir $^) $@
+
+$(UGC_ALIAS): $(addprefix $(BINARIES_DIR)/, ugc)
+	$(call msg,SYMLINK,$(notdir $@))
+	$(Q)ln -f -s $(notdir $^) $@
 
 $(UOBJNEW_ALIAS): $(addprefix $(BINARIES_DIR)/, uobjnew)
 	$(call msg,SYMLINK,$(notdir $@))
