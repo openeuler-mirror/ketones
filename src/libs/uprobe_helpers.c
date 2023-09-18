@@ -14,6 +14,8 @@
 #include <errno.h>
 #include <limits.h>
 #include <gelf.h>
+#include <regex.h>
+#include <stdbool.h>
 
 #define warn(...) fprintf(stderr, __VA_ARGS__)
 
@@ -225,8 +227,7 @@ void close_elf(Elf *e, int fd_close)
 	close(fd_close);
 }
 
-/* Returns the offset of a function in the elf file `path`, or -1 on failure. */
-off_t get_elf_func_offset(const char *path, const char *func)
+off_t get_regex_elf_func_offset(const char *path, const char *func, bool regex, char *out)
 {
 	off_t ret = -1;
 	int i, fd = -1;
@@ -239,6 +240,12 @@ off_t get_elf_func_offset(const char *path, const char *func)
 	GElf_Sym sym[1];
 	size_t shstrndx, nhdrs;
 	char *n;
+	regex_t oregex;
+
+	if (regex) {
+		if (regcomp(&oregex, func, REG_EXTENDED | REG_NOSUB) != 0)
+			return -1;
+	}
 
 	e = open_elf(path, &fd);
 
@@ -262,9 +269,18 @@ off_t get_elf_func_offset(const char *path, const char *func)
 					continue;
 				if (GELF_ST_TYPE(sym->st_info) != STT_FUNC)
 					continue;
-				if (!strcmp(n, func)) {
-					ret = sym->st_value;
-					goto check;
+				if (regex) {
+					if (!regexec(&oregex, n, 0, NULL, 0)) {
+						ret = sym->st_value;
+						if (out)
+							strcpy(out, n);
+						goto check;
+					}
+				} else {
+					if (!strcmp(n, func)) {
+						ret = sym->st_value;
+						goto check;
+					}
 				}
 			}
 		}
@@ -290,5 +306,13 @@ check:
 	}
 out:
 	close_elf(e, fd);
+	if (regex)
+		regfree(&oregex);
 	return ret;
+}
+
+/* Returns the offset of a function in the elf file `path`, or -1 on failure. */
+off_t get_elf_func_offset(const char *path, const char *func)
+{
+	return get_regex_elf_func_offset(path, func, false, NULL);
 }
