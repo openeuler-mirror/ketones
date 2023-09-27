@@ -153,6 +153,7 @@ static int get_meminfo(__u64 *buffers, __u64 *cached)
 		}
 	}
 
+	free(buffer);
 	fclose(f);
 	return 0;
 }
