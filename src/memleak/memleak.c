@@ -453,7 +453,7 @@ static int print_stack_frames(struct allocation *allocs, size_t nr_allocs, int s
 		if (env.show_allocs) {
 			struct allocation_node *it = alloc->allocations;
 
-			while (!it) {
+			while (it) {
 				printf("\taddr = %#lx size = %zu\n", it->address, it->size);
 				it = it->next;
 			}
