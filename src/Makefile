@@ -72,6 +72,7 @@ APPS += funcslower
 APPS += gethostlatency
 APPS += hardirqs
 APPS += icstat
+APPS += inject
 APPS += javagc
 APPS += klockstat
 APPS += ksnoop
