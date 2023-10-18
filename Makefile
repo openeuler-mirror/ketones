@@ -1,4 +1,11 @@
 NAME=ketones
+TOP := $(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
+SPECFILE=$(TOP)/$(NAME).spec
+VERSION=$(shell awk '/Version:/ { print $$2 }' $(SPECFILE))
+VERSION_MAJOR=$(shell echo $(VERSION) | cut -d. -f1)
+VERSION_MINOR=$(shell echo $(VERSION) | cut -d. -f2)
+TAG = $(NAME)-$(VERSION)
+RPMBUILD=$(shell `which rpmbuild >&/dev/null` && echo "rpmbuild" || echo "rpm")
 
 prefix=/usr
 includedir=${prefix}/include
@@ -25,3 +32,10 @@ install:
 		libdir=$(DESTDIR)$(libdir) \
 		libdevdir=$(DESTDIR)$(libdevdir) \
 		bindir=$(DESTDIR)$(bindir)
+
+create-archive:
+	@git archive --prefix=$(NAME)-$(VERSION)/ -o $(NAME)-$(VERSION).tar.gz $(TAG)
+	@echo "The final archive is ./$(NAME)-$(VERSION).tar.gz."
+
+srpm: create-archive
+	$(RPMBUILD) --define "_sourcedir `pwd`" --define "_srcrpmdir `pwd`" --nodeps -bs $(SPECFILE)
