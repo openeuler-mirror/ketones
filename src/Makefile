@@ -98,6 +98,7 @@ APPS += setuids
 APPS += shmsnoop
 APPS += sigsnoop
 APPS += slabratetop
+APPS += sofdsnoop
 APPS += softirqs
 APPS += solisten
 APPS += stackcount
