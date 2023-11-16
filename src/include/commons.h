@@ -14,6 +14,7 @@
 #include <signal.h>
 #include <time.h>
 #include <bpf/bpf.h>
+#include <bpf/btf.h>
 #include <bpf/libbpf.h>
 
 #define warning(...) fprintf(stderr, __VA_ARGS__)
