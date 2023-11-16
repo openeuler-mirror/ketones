@@ -90,29 +90,36 @@ static void sig_handler(int sig)
 
 static void handle_event(void *ctx, int cpu, void *data, __u32 data_sz)
 {
-	struct event *e = data;
+	struct event e;
 	const struct argument *argument = ctx;
+
+	if (data_sz < sizeof(e)) {
+		printf("Error: packet too small\n");
+		return;
+	}
+
+	/* Copy data as alignment in the perf buffer isn't guaranteed. */
+	memcpy(&e, data, sizeof(e));
 
 	if (argument->emit_timestamp) {
 		char ts[32];
 
 		strftime_now(ts, sizeof(ts), "%H:%M:%S");
-
 		printf("%8s ", ts);
 	}
 
-	double age = (e->exit_time - e->start_time) / 1e9;
+	double age = (e.exit_time - e.start_time) / 1e9;
 	printf("%-16s %-7d %-7d %-7d %-7.2f ",
-	       e->comm, e->pid, e->ppid, e->tid, age);
+	       e.comm, e.pid, e.ppid, e.tid, age);
 
-	if (!e->sig) {
-		if (!e->exit_code)
+	if (!e.sig) {
+		if (!e.exit_code)
 			printf("0\n");
 		else
-			printf("code %d\n", e->exit_code);
+			printf("code %d\n", e.exit_code);
 	} else {
-		int sig = e->sig & 0x7f;
-		int coredump = e->sig & 0x80;
+		int sig = e.sig & 0x7f;
+		int coredump = e.sig & 0x80;
 
 		if (sig)
 			printf("signal %d (%s)", sig, strsignal(sig));
