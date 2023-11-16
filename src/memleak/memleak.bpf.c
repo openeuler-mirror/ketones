@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
 #include "vmlinux.h"
 #include <bpf/bpf_core_read.h>
 #include <bpf/bpf_tracing.h>
@@ -19,7 +19,7 @@ const volatile bool wa_missing_free = false;
 struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
 	__uint(max_entries, 10240);
-	__type(key, pid_t);
+	__type(key, u32);
 	__type(value, u64);
 } sizes SEC(".maps");
 
@@ -96,8 +96,8 @@ static __always_inline int gen_alloc_enter(size_t size)
 			return 0;
 	}
 
-	const pid_t pid = bpf_get_current_pid_tgid() >> 32;
-	bpf_map_update_elem(&sizes, &pid, &size, BPF_ANY);
+	const u32 tid = bpf_get_current_pid_tgid();
+	bpf_map_update_elem(&sizes, &tid, &size, BPF_ANY);
 
 	if (trace_all)
 		bpf_printk("alloc entered, size = %lu\n", size);
@@ -107,10 +107,10 @@ static __always_inline int gen_alloc_enter(size_t size)
 
 static __always_inline int gen_alloc_exit2(void *ctx, u64 address)
 {
-	const pid_t pid = bpf_get_current_pid_tgid() >> 32;
+	const u32 tid = bpf_get_current_pid_tgid();
 	struct alloc_info info = {};
 
-	const u64 *size = bpf_map_lookup_and_delete_elem(&sizes, &pid);
+	const u64 *size = bpf_map_lookup_and_delete_elem(&sizes, &tid);
 	if (!size)
 		return 0;
 
@@ -218,9 +218,9 @@ SEC("uprobe")
 int BPF_KPROBE(posix_memalign_enter, void **memptr, size_t alignment, size_t size)
 {
 	const __u64 memptr64 = (__u64)(size_t)memptr;
-	const __u64 pid = bpf_get_current_pid_tgid() >> 32;
+	const u32 tid = bpf_get_current_pid_tgid();
 
-	bpf_map_update_elem(&memptrs, &pid, &memptr64, BPF_ANY);
+	bpf_map_update_elem(&memptrs, &tid, &memptr64, BPF_ANY);
 
 	return gen_alloc_enter(size);
 }
@@ -228,10 +228,10 @@ int BPF_KPROBE(posix_memalign_enter, void **memptr, size_t alignment, size_t siz
 SEC("uretprobe")
 int BPF_KRETPROBE(posix_memalign_exit)
 {
-	const __u64 pid = bpf_get_current_pid_tgid() >> 32;
+	const u32 tid = bpf_get_current_pid_tgid();
 	__u64 *memptr64;
 
-	memptr64 = bpf_map_lookup_and_delete_elem(&memptrs, &pid);
+	memptr64 = bpf_map_lookup_and_delete_elem(&memptrs, &tid);
 	if (!memptr64)
 		return 0;
 
