@@ -92,7 +92,9 @@ static void handle_lost_events(void *ctx, int cpu, __u64 lost_cnt)
 static int get_libc_path(char *path)
 {
 	FILE *fp;
-	char buf[PATH_MAX] = {};
+	char buf[PATH_MAX-50] = {};
+	char map_fname[PATH_MAX] = {};
+	char proc_path[PATH_MAX] = {};
 	char *filename;
 	float version;
 
@@ -101,7 +103,12 @@ static int get_libc_path(char *path)
 		return 0;
 	}
 
-	fp = fopen("/proc/self/maps", "r");
+	if (env.pid == 0) {
+		fp = fopen("/proc/self/maps", "r");
+	} else {
+		snprintf(map_fname, sizeof(map_fname), "/proc/%d/maps", env.pid);
+		fp = fopen(map_fname, "r");
+	}
 	if (!fp)
 		return -errno;
 
@@ -111,7 +118,12 @@ static int get_libc_path(char *path)
 		filename = strrchr(buf, '/') + 1;
 		if (sscanf(filename, "libc-%f.so", &version) == 1 ||
 		    sscanf(filename, "libc.so.%f", &version) == 1) {
-			memcpy(path, buf, strlen(buf));
+			if (env.pid == 0) {
+				memcpy(path, buf, strlen(buf));
+			} else {
+				snprintf(proc_path, sizeof(proc_path), "/proc/%d/root%s", env.pid, buf);
+				memcpy(path, proc_path, strlen(proc_path));
+			}
 			fclose(fp);
 			return 0;
 		}
