@@ -51,32 +51,6 @@ static void sig_handler(int sig)
 	exiting = 1;
 }
 
-static const char *demangling_cplusplus_function(const char *name)
-{
-	char command[256] = {};
-	FILE *f;
-	char buf[128] = {};
-	const char *ret;
-
-	if (strncmp(name, "_Z", 2) && strncmp(name, "____Z", 5))
-		return name;
-
-	sprintf(command, "c++filt %s", name);
-	f = popen(command, "r");
-	if (!f)
-		return name;
-
-	if (fgets(buf, 128, f) != NULL) {
-		/* drop '\n' */
-		buf[strlen(buf) - 1] = 0;
-		ret = strdup(buf);
-	} else
-		ret = name;
-
-	pclose(f);
-	return ret;
-}
-
 static int handle_event(void *ctx, void *data, size_t data_sz)
 {
 	const struct event *e = data;
