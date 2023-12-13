@@ -31,52 +31,40 @@ struct {
 } ports SEC(".maps");
 
 static __always_inline void
-tcp_ipv4_trace(void *ctx, struct sock *sk, __u32 pid, __u16 lport, __u16 dport)
+tcp_ip_trace(void *ctx, struct sock *sk, __u32 pid, __u16 lport,
+	     __u16 dport, __u16 family)
 {
-	struct data_t *data4;
+	struct data_t *data;
 
-	data4 = reserve_buf(sizeof(*data4));
-	if (!data4)
+	data = reserve_buf(sizeof(*data));
+	if (!data)
 		return;
 
-	data4->af = AF_INET;
-	data4->pid = pid;
-	BPF_CORE_READ_INTO(&data4->saddr_v4, sk, __sk_common.skc_rcv_saddr);
-	BPF_CORE_READ_INTO(&data4->daddr_v4, sk, __sk_common.skc_daddr);
-	data4->lport = lport;
-	data4->dport = dport;
-	bpf_get_current_comm(&data4->task, sizeof(data4->task));
+	if (family == AF_INET) {
+		BPF_CORE_READ_INTO(&data->saddr_v4, sk,
+				   __sk_common.skc_rcv_saddr);
+		BPF_CORE_READ_INTO(&data->daddr_v4, sk, __sk_common.skc_daddr);
+	} else {
+		BPF_CORE_READ_INTO(&data->saddr_v6, sk,
+				   __sk_common.skc_v6_rcv_saddr.in6_u.u6_addr32);
+		BPF_CORE_READ_INTO(&data->daddr_v6, sk,
+				   __sk_common.skc_v6_daddr.in6_u.u6_addr32);
+	}
 
-	submit_buf(ctx, data4, sizeof(*data4));
-}
+	data->af = family;
+	data->pid = pid;
+	data->lport = lport;
+	data->dport = dport;
+	bpf_get_current_comm(&data->task, sizeof(data->task));
 
-static __always_inline void
-tcp_ipv6_trace(void *ctx, struct sock *sk, __u32 pid, __u16 lport, __u16 dport)
-{
-	struct data_t *data6;
-
-	data6 = reserve_buf(sizeof(*data6));
-	if (!data6)
-		return;
-
-	data6->af = AF_INET6;
-	data6->pid = pid;
-	BPF_CORE_READ_INTO(&data6->saddr_v6, sk,
-			   __sk_common.skc_v6_rcv_saddr.in6_u.u6_addr32);
-	BPF_CORE_READ_INTO(&data6->daddr_v6, sk,
-			   __sk_common.skc_v6_daddr.in6_u.u6_addr32);
-	data6->lport = lport;
-	data6->dport = dport;
-	bpf_get_current_comm(&data6->task, sizeof(data6->task));
-
-	submit_buf(ctx, data6, sizeof(*data6));
+	submit_buf(ctx, data, sizeof(*data));
 }
 
 static __always_inline int
 trace_event(void *ctx, struct sock *sk)
 {
-	__u16 *port;
 	__u32 pid = bpf_get_current_pid_tgid() >> 32;
+	__u16 family, lport, dport;
 
 	if (trace_pid && trace_pid != pid)
 		return 0;
@@ -87,18 +75,17 @@ trace_event(void *ctx, struct sock *sk)
 	if (BPF_CORE_READ_BITFIELD_PROBED(sk, sk_protocol) != IPPROTO_TCP)
 		return 0;
 
-	__u16 family = BPF_CORE_READ(sk, __sk_common.skc_family);
-	__u16 lport = BPF_CORE_READ(sk, __sk_common.skc_num);
-	__u16 dport = BPF_CORE_READ(sk, __sk_common.skc_dport);
-
-	port = bpf_map_lookup_elem(&ports, &lport);
-	if (filter_by_port && !port)
+	family = BPF_CORE_READ(sk, __sk_common.skc_family);
+	if (family != AF_INET && family != AF_INET6)
 		return 0;
 
-	if (family == AF_INET)
-		tcp_ipv4_trace(ctx, sk, pid, lport, dport);
-	else if (family == AF_INET6)
-		tcp_ipv6_trace(ctx, sk, pid, lport, dport);
+	lport = BPF_CORE_READ(sk, __sk_common.skc_num);
+	dport = BPF_CORE_READ(sk, __sk_common.skc_dport);
+
+	if (filter_by_port && !bpf_map_lookup_elem(&ports, &lport))
+		return 0;
+
+	tcp_ip_trace(ctx, sk, pid, lport, dport, family);
 
 	return 0;
 }
