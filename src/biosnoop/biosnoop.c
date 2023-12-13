@@ -8,6 +8,7 @@
 static volatile sig_atomic_t exiting;
 
 static struct env {
+	__u64 min_lat_ms;
 	char *disk;
 	int duration;
 	bool timestamp;
@@ -29,23 +30,25 @@ const char argp_program_doc[] =
 "EXAMPLES:\n"
 "    biosnoop              # trace all block I/O\n"
 "    biosnoop -Q           # include OS queued time in I/O time\n"
+"    biosnoop -t           # use timestamps instead\n"
 "    biosnoop 10           # trace for 10 seconds only\n"
 "    biosnoop -d sdc       # trace sdc only\n"
-"    biosnoop -c CG        # Trace process under cgroupsPath CG\n";
+"    biosnoop -c CG        # Trace process under cgroupsPath CG\n"
+"    biosnoop -m 1         # trace for slower than 1ms\n";
 
 static const struct argp_option opts[] = {
 	{ "queued", 'Q', NULL, 0, "Include OS queued time in I/O time" },
 	{ "disk", 'd', "DISK", 0, "Trace this disk only" },
 	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
 	{ "cgroup", 'c', "/sys/fs/cgroup/unified/CG", 0, "Trace process in cgroup path" },
+	{ "min", 'm', "MIN", 0, "Min latency to trace, in ms" },
+	{ "timestamp", 't', NULL, 0, "Include timestamp on output" },
 	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
 	{}
 };
 
 static error_t parse_arg(int key, char *arg, struct argp_state *state)
 {
-	static int pos_args;
-
 	switch (key) {
 	case 'h':
 		argp_state_help(state, stderr, ARGP_HELP_STD_HELP);
@@ -67,19 +70,19 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 			argp_usage(state);
 		}
 		break;
+	case 'm':
+		env.min_lat_ms = argp_parse_long(key, arg, state);
+		break;
+	case 't':
+		env.timestamp = true;
+		break;
 	case ARGP_KEY_ARG:
-		errno = 0;
-		if (pos_args == 0) {
-			env.duration = strtoll(arg, NULL, 10);
-			if (errno || env.duration <= 0) {
-				warning("Invalid delay (in us): %s\n", arg);
-				argp_usage(state);
-			}
+		if (state->arg_num == 0) {
+			env.duration = argp_parse_long(key, arg, state);
 		} else {
 			warning("Unrecognized positional argument: %s\n", arg);
 			argp_usage(state);
 		}
-		pos_args++;
 		break;
 	default:
 		return ARGP_ERR_UNKNOWN;
@@ -150,13 +153,20 @@ void handle_event(void *ctx, int cpu, void *data, __u32 data_sz)
 	const struct event *e = data;
 	char rwbs[RWBS_LEN];
 
-	if (!start_ts)
-		start_ts = e->ts;
+	if (env.timestamp) {
+		char ts[16];
+
+		strftime_now(ts, sizeof(ts), "%H:%M:%S");
+		printf("%-8s ", ts);
+	} else {
+		if (!start_ts)
+			start_ts = e->ts;
+		printf("%-11.6f ", (e->ts - start_ts) / 1000000000.0);
+	}
 
 	blk_fill_rwbs(rwbs, e->cmd_flags);
 	partition = partitions__get_by_dev(partitions, e->dev);
-	printf("%-11.6f %-14.14s %-7d %-7s %-4s %-10lld %-7d ",
-	       (e->ts - start_ts) / 1000000000.0,
+	printf("%-14.14s %-7d %-7s %-4s %-10lld %-7d ",
 	       e->comm, e->pid, partition ? partition->name : "Unknown", rwbs,
 	       e->sector, e->len);
 	if (env.queued)
@@ -217,6 +227,7 @@ int main(int argc, char *argv[])
 	}
 	obj->rodata->target_queued = env.queued;
 	obj->rodata->filter_memcg = env.cg;
+	obj->rodata->min_ns = env.min_lat_ms * 1000000;
 
 	if (fentry_can_attach("blk_account_io_start", NULL)) {
 		bpf_program__set_attach_target(obj->progs.blk_account_io_start, 0,
@@ -293,8 +304,13 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	printf("%-11s %-14s %-7s %-7s %-4s %-10s %-7s ",
-	       "TIME(s)", "COMM", "PID", "DISK", "T", "SECTOR", "BYTES");
+	if (env.timestamp) {
+		printf("%-8s ", "TIMESTAMP");
+	} else {
+		printf("%-11s ", "TIME(s)");
+	}
+	printf("%-14s %-7s %-7s %-4s %-10s %-7s ",
+	       "COMM", "PID", "DISK", "T", "SECTOR", "BYTES");
 	if (env.queued)
 		printf("%7s ", "QUE(ms)");
 	printf("%7s\n", "LAT(ms)");
