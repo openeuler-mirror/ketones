@@ -12,6 +12,7 @@ enum fs_type {
 	EXT4,
 	NFS,
 	XFS,
+	ZFS,
 };
 
 static struct fs_config {
@@ -41,6 +42,12 @@ static struct fs_config {
 		[F_WRITE] = "xfs_file_write_iter",
 		[F_OPEN] = "xfs_file_open",
 		[F_FSYNC] = "xfs_file_fsync",
+	}},
+	[ZFS] = { "zfs", {
+		[F_READ] = "zpl_iter_read",
+		[F_WRITE] = "zpl_iter_write",
+		[F_OPEN] = "zpl_open",
+		[F_FSYNC] = "zpl_fsync",
 	}},
 };
 
@@ -78,7 +85,7 @@ static const struct argp_option opts[] = {
 	{ "duration", 'd', "DURATION", 0, "Total duration of trace in seconds" },
 	{ "pid", 'p', "PID", 0, "Process ID to trace" },
 	{ "min", 'm', "MIN", 0, "Min latency to trace, in ms (default 10)" },
-	{ "type", 't', "Filesystem", 0, "Which filesystem to trace, [btrfs/ext4/nfs/xfs]" },
+	{ "type", 't', "Filesystem", 0, "Which filesystem to trace, [btrfs/ext4/nfs/xfs/zfs]" },
 	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
 	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
 	{}
@@ -118,6 +125,8 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 			fs_type = NFS;
 		} else if (!strcmp(arg, "xfs")) {
 			fs_type = XFS;
+		} else if (!strcmp(arg, "zfs")) {
+			fs_type = ZFS;
 		} else {
 			warning("Invalid filesystem\n");
 			argp_usage(state);
@@ -147,6 +156,8 @@ static void alias_parse(char *prog)
 		fs_type = NFS;
 	else if (!strcmp(name, "xfsslower"))
 		fs_type = XFS;
+	else if (!strcmp(name, "zfsslower"))
+		fs_type = ZFS;
 }
 
 static int libbpf_print_fn(enum libbpf_print_level level, const char *format,
