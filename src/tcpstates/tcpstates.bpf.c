@@ -42,7 +42,7 @@ handle_set_state(void *ctx, const struct sock *sk,
 {
 	__u64 delta_us;
 
-	if (BPF_CORE_READ(sk, sk_protocol) != IPPROTO_TCP)
+	if (BPF_CORE_READ_BITFIELD_PROBED(sk, sk_protocol) != IPPROTO_TCP)
 		return 0;
 
 	__u16 family = BPF_CORE_READ(sk, __sk_common.skc_family);
