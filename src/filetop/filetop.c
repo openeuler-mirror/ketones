@@ -287,7 +287,7 @@ int main(int argc, char *argv[])
 		if (err)
 			goto cleanup;
 
-		if (exiting || !argument.count--)
+		if (exiting || !--argument.count)
 			break;
 	}
 
