@@ -125,7 +125,8 @@ handle_file_syscall_open_enter(struct trace_event_raw_sys_enter *ctx, enum file_
 static __always_inline int
 handle_file_syscall_open_exit(struct trace_event_raw_sys_exit *ctx, enum file_op op)
 {
-	pid_t tid = bpf_get_current_pid_tgid();
+	struct task_struct *task = (void *)bpf_get_current_task();
+	pid_t tid = BPF_CORE_READ(task, pid);
 	struct fsfilename *filename;
 	int fd = ctx->ret;
 
@@ -139,7 +140,8 @@ handle_file_syscall_open_exit(struct trace_event_raw_sys_exit *ctx, enum file_op
 		if (!event)
 			return 0;
 
-		event->pid = tid;
+		event->pid = BPF_CORE_READ(task, tgid);
+		event->ppid = BPF_CORE_READ(task, real_parent, tgid);
 		bpf_get_current_comm(&event->comm, sizeof(event->comm));
 		event->op = op;
 		event->ret = ctx->ret;
@@ -156,7 +158,6 @@ handle_file_syscall_open_exit(struct trace_event_raw_sys_exit *ctx, enum file_op
 	}
 
 	return 0;
-
 }
 
 static __always_inline int
@@ -189,7 +190,8 @@ handle_file_syscall_enter(void *ctx, enum file_op op, int fd)
 static __always_inline int
 handle_file_syscall_exit(void *ctx, enum file_op op, int ret)
 {
-	pid_t tid = bpf_get_current_pid_tgid();
+	struct task_struct *task = (void *)bpf_get_current_task();
+	pid_t tid = BPF_CORE_READ(task, pid);
 	struct event *event;
 
 	/* Not record by enter */
@@ -206,7 +208,8 @@ handle_file_syscall_exit(void *ctx, enum file_op op, int ret)
 		bpf_probe_read(&event->filename, sizeof(event->filename),
 			       &val->filename->name);
 
-		event->pid = tid;
+		event->pid = BPF_CORE_READ(task, tgid);
+		event->ppid = BPF_CORE_READ(task, real_parent, tgid);
 		bpf_get_current_comm(&event->comm, sizeof(event->comm));
 		event->op = op;
 		event->ret = ret;
@@ -218,10 +221,8 @@ handle_file_syscall_exit(void *ctx, enum file_op op, int ret)
 	/* value->filename is pointer of files map, we must delete
 	 * files map after CLOSE operation finish
 	 */
-	if (op == F_CLOSE) {
-		bpf_map_delete_elem(&opens, &tid);
+	if (op == F_CLOSE)
 		bpf_map_delete_elem(&files, &val->key);
-	}
 
 	return 0;
 }
