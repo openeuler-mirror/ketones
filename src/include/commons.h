@@ -953,4 +953,32 @@ static inline const char *demangling_cplusplus_function(const char *name)
 	return ret;
 }
 
+#define MAX_PATH_LENGTH 256
+#define MAX_NAME_LENGTH 256
+
+static inline int get_process_executable_name(pid_t pid, char *executable_name)
+{
+	char cmdline_path[MAX_PATH_LENGTH];
+	snprintf(cmdline_path, MAX_PATH_LENGTH, "/proc/%d/cmdline", pid);
+
+	FILE *fp = fopen(cmdline_path, "r");
+	if (fp == NULL)
+		return -1;
+
+	char line[MAX_NAME_LENGTH];
+	if (fgets(line, MAX_NAME_LENGTH, fp) != NULL) {
+		char *name_start = line;
+		char *token = strtok(line, " ");
+		if (token)
+			name_start = token;
+
+		strncpy(executable_name, name_start, MAX_NAME_LENGTH);
+		fclose(fp);
+		return 0;
+	}
+
+	fclose(fp);
+	return -1;
+}
+
 #endif
