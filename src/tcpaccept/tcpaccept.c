@@ -147,6 +147,9 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	} else if (event->af == AF_INET6) {
 		memcpy(&s.x6.s6_addr, event->saddr_v6, sizeof(s.x6.s6_addr));
 		memcpy(&d.x6.s6_addr, event->daddr_v6, sizeof(d.x6.s6_addr));
+	} else {
+		warning("Broken event: event->af=%d\n", event->af);
+		return 0;
 	}
 
 	if (env.time) {
@@ -157,10 +160,10 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	if (env.timestamp)
 		printf("%-8.3f ", time_since_start());
 
-	printf("%-7d %-12.12s %-2lld %-16s %-5d %-16s %-5d\n",
+	printf("%-7d %-12.12s %-2d %-16s %-5d %-16s %-5d\n",
 	       event->pid,
 	       event->task,
-	       event->ip,
+	       event->af == AF_INET ? 4 : 6,
 	       inet_ntop(event->af, &d, dst, sizeof(dst)),
 	       ntohs(event->dport),
 	       inet_ntop(event->af, &s, src, sizeof(src)),

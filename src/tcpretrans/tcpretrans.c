@@ -214,6 +214,9 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	} else if (event->af == AF_INET6) {
 		memcpy(&s.x6.s6_addr, event->saddr_v6, sizeof(s.x6.s6_addr));
 		memcpy(&d.x6.s6_addr, event->daddr_v6, sizeof(d.x6.s6_addr));
+	} else {
+		warning("Broken event: event->af=%d\n", event->af);
+		return 0;
 	}
 
 	strftime_now(time_now, sizeof(time_now), "%H:%M:%S");
@@ -222,10 +225,10 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	sprintf(dst, "%s:%d", inet_ntop(event->af, &d, dst, sizeof(dst)),
 			      ntohs(event->dport));
 
-	printf("%-8s %-7d %-2lld %-20s %1s> %-20s %-4s ",
+	printf("%-8s %-7d %-2d %-20s %1s> %-20s %-4s ",
 	       time_now,
 	       event->pid,
-	       event->ip,
+	       event->af == AF_INET ? 4 : 6,
 	       src,
 	       tcp_type[event->type],
 	       dst,

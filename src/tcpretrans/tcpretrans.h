@@ -37,7 +37,6 @@ struct event {
 	__u16 dport;
 	__u8 state;
 	__u64 type;
-	__u64 ip;
 };
 
 #endif
