@@ -10489,7 +10489,7 @@ libbpf_available_kprobes_parse(available_kprobe_cb_t cb, void *ctx)
 	return err;
 }
 
-static void kprobe_multi_resolve_free(struct kprobe_multi_resolve *res)
+static void kprobe_multi_resolve_reinit(struct kprobe_multi_resolve *res)
 {
 	free(res->addrs);
 	/* reset cap to zero, when fallback */
@@ -10537,7 +10537,7 @@ bpf_program__attach_kprobe_multi_opts(const struct bpf_program *prog,
 		err = libbpf_available_kprobes_parse(ftrace_resolve_kprobe_multi_cb,
 						     &res);
 		if (err) {
-			kprobe_multi_resolve_free(&res);
+			kprobe_multi_resolve_reinit(&res);
 			err = libbpf_kallsyms_parse(kallsyms_resolve_kprobe_multi_cb,
 						    &res);
 			if (err)
@@ -10577,12 +10577,12 @@ bpf_program__attach_kprobe_multi_opts(const struct bpf_program *prog,
 	}
 	link->fd = link_fd;
 	OPTS_SET(opts, cnt, res.cnt);
-	kprobe_multi_resolve_free(&res);
+	free(res.addrs);
 	return link;
 
 error:
 	free(link);
-	kprobe_multi_resolve_free(&res);
+	free(res.addrs);
 	return libbpf_err_ptr(err);
 }
 
