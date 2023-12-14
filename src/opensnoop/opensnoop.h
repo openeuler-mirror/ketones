@@ -13,9 +13,8 @@ struct args_t {
 };
 
 struct event {
-	/* user terminology for pid */
-	__u64 ts;
 	pid_t pid;
+	pid_t ppid;
 	uid_t uid;
 	int ret;
 	int flags;
