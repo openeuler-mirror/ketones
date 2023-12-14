@@ -299,9 +299,14 @@ static __always_inline bool has_kmem_alloc_node()
  */
 static __always_inline __u64 get_sock_ident(struct sock *sk)
 {
+#if __has_builtin(__builtin_preserve_enum_value)
 	if (bpf_core_enum_value_exists(enum bpf_func_id, BPF_FUNC_check_mtu)) {
 		return bpf_get_socket_cookie(sk);
 	}
+#endif
+	if (LINUX_KERNEL_VERSION >= KERNEL_VERSION(5, 12, 0))
+		return bpf_get_socket_cookie(sk);
+
 	return (__u64)sk;
 }
 
