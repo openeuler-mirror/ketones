@@ -6,6 +6,7 @@
 #define NAME_MAX	255
 
 struct event {
+	__u32 ppid;
 	__u32 pid;
 	int ret;
 	char comm[TASK_COMM_LEN];
