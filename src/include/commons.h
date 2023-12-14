@@ -981,4 +981,59 @@ static inline int get_process_executable_name(pid_t pid, char *executable_name)
 	return -1;
 }
 
+static inline const char *detect_language(int pid)
+{
+	const char *languages[] = {"java", "node", "perl", "php", "python", "ruby"};
+	const char *language_c = "c";
+	char procfilename[24], line[4096], pathname[32], *str;
+	FILE *procfile;
+	int i, ret;
+
+	/* Look for clues in the absolute path to the executable. */
+	snprintf(procfilename, sizeof(procfilename), "/proc/%ld/exe", (long)pid);
+	if (realpath(procfilename, line)) {
+		for (i = 0; i < ARRAY_SIZE(languages); i++)
+			if (strstr(line, languages[i]))
+				return languages[i];
+	}
+
+	snprintf(procfilename, sizeof(procfilename), "/proc/%ld/maps", (long)pid);
+	procfile = fopen(procfilename, "r");
+	if (!procfile)
+		return NULL;
+
+	/* Look for clues in memory mappings. */
+	bool libc = false;
+	do {
+		char perm[8], dev[8];
+		long long begin, end, size, inode;
+		ret = fscanf(procfile, "%llx-%llx %s %llx %s %lld", &begin, &end, perm,
+			     &size, dev, &inode);
+		if (!fgets(line, sizeof(line), procfile))
+			break;
+		if (ret == 6) {
+			char *mapname = line;
+			char *newline = strchr(line, '\n');
+			if (newline)
+				newline[0] = '\0';
+			while (isspace(mapname[0])) mapname++;
+			for (i = 0; i < ARRAY_SIZE(languages); i++) {
+				snprintf(pathname, sizeof(pathname), "/lib%s", languages[i]);
+				if (strstr(mapname, pathname)) {
+					fclose(procfile);
+					return languages[i];
+				}
+				if ((str = strstr(mapname, "libc")) &&
+				    (str[4] == '-' || str[4] == '.'))
+					libc = true;
+			}
+		}
+	} while (ret && ret != EOF);
+
+	fclose(procfile);
+
+	/* Return C as the language if libc was found and nothing else. */
+	return libc ? language_c : NULL;
+}
+
 #endif
