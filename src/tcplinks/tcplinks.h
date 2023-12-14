@@ -18,6 +18,7 @@ struct link {
 	__u16 sport;
 	__u16 dport;
 	__u16 family;
+	bool mark;
 };
 
 #endif

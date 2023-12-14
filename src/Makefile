@@ -228,6 +228,7 @@ $(BINARIES_DIR)/%: $(OUTPUT)/%.o $(COMMON_LIBS_OBJ) $(LIBBPF_OBJ) | $(OUTPUT) $(
 	$(Q)$(CC) $(CFLAGS) $^ $(ALL_LDFLAGS) -lelf -lz -o $@
 
 $(addprefix $(BINARIES_DIR)/, numasched numamove): ALL_LDFLAGS += -lnuma
+$(addprefix $(BINARIES_DIR)/, tcplinks): ALL_LDFLAGS += -lncurses
 
 # Build user application binary
 bin/bpflist: bpflist/bpflist.c include/commons.h | $(BINARIES_DIR)
