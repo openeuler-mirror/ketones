@@ -150,7 +150,7 @@ static void alias_parse(char *prog)
 		env.target_op = F_WRITE;
 	else if (!strcmp(name, "readsnoop"))
 		env.target_op = F_READ;
-	else if (!strcmp(name, "statsnoop"))
+	else if (!strcmp(name, "statsnoop2"))
 		env.target_op = F_STATX;
 }
 
