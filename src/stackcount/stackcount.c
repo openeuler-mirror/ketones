@@ -40,6 +40,7 @@ static struct env {
 	bool need_kernel_stack;
 	bool need_user_stack;
 	bool delimiter;
+	bool use_regex;
 	int stack_storage_size;
 	int perf_max_stack_depth;
 	const char *functions;
@@ -67,6 +68,7 @@ const char argp_program_doc[] =
 "    stackcount -s ip_output       # show symbol offsets\n"
 "    stackcount -sv ip_output      # show offsets and raw addresses (verbose)\n"
 "    stackcount 'tcp_send*'        # count stacks for funcs matching tcp_send*\n"
+"    stackcount -r '^tcp_send.*'   # same as above, using regular expressions\n"
 "    stackcount -Ti 5 ip_output    # output every 5 seconds, with timestamps\n"
 "    stackcount -p 185 ip_output   # count ip_output stacks for PID 185 only\n"
 "    stackcount -c 1 put_prev_entity   # count put_prev_entity stacks for CPU 1 only\n"
@@ -83,6 +85,7 @@ static struct argp_option opts[] = {
 	{ "interval", 'i', "INTERVAL", 0, "Output interval, in seconds" },
 	{ "pid", 'p', "PID", 0, "Trace process PID only" },
 	{ "cpu", 'c', "CPU", 0, "Trace this CPU only" },
+	{ "regex", 'r', NULL, 0, "use regular expressions" },
 	{ "duration", 'D', "DURATION", 0, "Total duration of trace, seconds" },
 	{ "timestamp", 'T', NULL, 0, "Include timestamp on output" },
 	{ "offset", 's', NULL, 0, "Show address offsets" },
@@ -121,6 +124,9 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 		break;
 	case 'd':
 		env.delimiter = true;
+		break;
+	case 'r':
+		env.use_regex = true;
 		break;
 	case 'D':
 		env.duration = argp_parse_long(key, arg, state);
@@ -351,6 +357,7 @@ static int attach_kprobe(struct stackcount_bpf *obj,
 			 const char *pattern,
 			 struct bpf_kprobe_multi_opts *kmopts)
 {
+	kmopts->use_regex = env.use_regex;
 	obj->links.function_entry =
 		bpf_program__attach_kprobe_multi_opts(obj->progs.function_entry,
 						      pattern, kmopts);
@@ -447,7 +454,12 @@ int main(int argc, char *argv[])
 				env.perf_max_stack_depth * sizeof(unsigned long));
 	bpf_map__set_max_entries(obj->maps.stacks, env.stack_storage_size);
 
-	split_pattern(env.functions, &type, &library, &pattern);
+	if (env.use_regex) {
+		pattern = env.functions;
+		type = KPROBE;
+	} else {
+		split_pattern(env.functions, &type, &library, &pattern);
+	}
 
 	switch (type) {
 	case USDT:
