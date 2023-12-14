@@ -12,7 +12,7 @@
 
 const volatile __u64 target_filename_sz = 0;
 const volatile bool filter_filename = false;
-const volatile int target_op = F_ALL;
+const volatile int target_op = F_NONE;
 
 #define MAX_ENTRIES	1024
 
@@ -77,14 +77,6 @@ static __always_inline bool is_target_operation(enum file_op op)
 	case F_WRITE:
 	case F_WRITEV:
 		return op == F_WRITE || op == F_WRITEV;
-	case F_OPEN:
-	case F_OPENAT:
-	case F_OPENAT2:
-		return op == F_OPEN || op == F_OPENAT || op == F_OPENAT2;
-	case F_STATX:
-	case F_FSTATFS:
-	case F_NEWFSTAT:
-		return op == F_STATX || op == F_FSTATFS || op == F_NEWFSTAT;
 	case F_RENAMEAT:
 	case F_RENAMEAT2:
 		return op == F_RENAMEAT || op == F_RENAMEAT2;
@@ -134,25 +126,8 @@ handle_file_syscall_open_exit(struct trace_event_raw_sys_exit *ctx, enum file_op
 	if (!filename)
 		return 0;
 
-	/* op is F_OPEN/F_OPENAT/F_OPENAT2 only */
-	if (is_target_operation(op)) {
-		struct event *event = reserve_buf(sizeof(*event));
-		if (!event)
-			return 0;
-
-		event->pid = BPF_CORE_READ(task, tgid);
-		event->ppid = BPF_CORE_READ(task, real_parent, tgid);
-		bpf_get_current_comm(&event->comm, sizeof(event->comm));
-		event->op = op;
-		event->ret = ctx->ret;
-		event->fd = ctx->ret;
-		bpf_probe_read(&event->filename, FSFILENAME_MAX,
-			       &filename->name);
-		submit_buf(ctx, event, sizeof(*event));
-	}
-
 	/* make sure open is not failed and not only filter open syscall*/
-	if (fd >= 0 && (target_op == F_ALL || !is_target_operation(op))) {
+	if (fd >= 0 && !is_target_operation(op)) {
 		struct key_t key = { .tid = tid, .fd = fd, };
 		bpf_map_update_elem(&files, &key, filename, BPF_ANY);
 	}
@@ -199,7 +174,7 @@ handle_file_syscall_exit(void *ctx, enum file_op op, int ret)
 	if (!val)
 		return 0;
 
-	/* Only F_CLOSE, F_ALL or target_op can arrive here */
+	/* Only F_CLOSE, target_op can arrive here */
 	if (is_target_operation(op)) {
 		event = reserve_buf(sizeof(*event));
 		if (!event)
@@ -309,42 +284,6 @@ SEC("tracepoint/syscalls/sys_exit_readv")
 int tracepoint_sys_exit_readv(struct trace_event_raw_sys_exit *ctx)
 {
 	return handle_file_syscall_exit(ctx, F_READV, ctx->ret);
-}
-
-SEC("tracepoint/syscalls/sys_enter_statx")
-int tracepoint_sys_enter_statx(struct trace_event_raw_sys_enter *ctx)
-{
-	return handle_file_syscall_enter(ctx, F_STATX, (int)ctx->args[0]);
-}
-
-SEC("tracepoint/syscalls/sys_exit_statx")
-int tracepoint_sys_exit_statx(struct trace_event_raw_sys_exit *ctx)
-{
-	return handle_file_syscall_exit(ctx, F_STATX, ctx->ret);
-}
-
-SEC("tracepoint/syscalls/sys_enter_fstatfs")
-int tracepoint_sys_enter_fstatfs(struct trace_event_raw_sys_enter *ctx)
-{
-	return handle_file_syscall_enter(ctx, F_FSTATFS, (int)ctx->args[0]);
-}
-
-SEC("tracepoint/syscalls/sys_exit_fstatfs")
-int tracepoint_sys_exit_fstatfs(struct trace_event_raw_sys_exit *ctx)
-{
-	return handle_file_syscall_exit(ctx, F_FSTATFS, ctx->ret);
-}
-
-SEC("tracepoint/syscalls/sys_exit_newfstat")
-int tracepoint_sys_enter_newfstat(struct trace_event_raw_sys_enter *ctx)
-{
-	return handle_file_syscall_enter(ctx, F_NEWFSTAT, (int)ctx->args[0]);
-}
-
-SEC("tracepoint/syscalls/sys_exit_newfstat")
-int tracepoint_sys_exit_newfstat(struct trace_event_raw_sys_exit *ctx)
-{
-	return handle_file_syscall_exit(ctx, F_NEWFSTAT, ctx->ret);
 }
 
 SEC("tracepoint/syscalls/sys_enter_unlinkat")
