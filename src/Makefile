@@ -74,6 +74,7 @@ APPS += numasched
 APPS += offcputime
 APPS += oomkill
 APPS += pidpersec
+APPS += profile
 APPS += readahead
 APPS += runqlen
 APPS += runqslower
