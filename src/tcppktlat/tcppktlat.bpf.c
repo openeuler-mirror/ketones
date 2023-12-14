@@ -5,6 +5,7 @@
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
 #include "compat.bpf.h"
+#include "core_fixes.bpf.h"
 #include "maps.bpf.h"
 #include "tcppktlat.h"
 
@@ -28,7 +29,7 @@ static __always_inline int
 handle_tcp_probe(struct sock *sk, struct sk_buff *skb)
 {
 	const struct inet_sock *inet = (struct inet_sock *)sk;
-	u64 sock_cookie, ts, len, doff;
+	u64 sock_ident, ts, len, doff;
 	const struct tcphdr *th;
 
 	if (target_family && target_family != BPF_CORE_READ(sk, __sk_common.skc_family))
@@ -43,9 +44,9 @@ handle_tcp_probe(struct sock *sk, struct sk_buff *skb)
 	/* `doff * 4` means `__tcp_hdrlen` */
 	if (len <= doff * 4)
 		return 0;
-	sock_cookie = bpf_get_socket_cookie(sk);
+	sock_ident = get_sock_ident(sk);
 	ts = bpf_ktime_get_ns();
-	bpf_map_update_elem(&start, &sock_cookie, &ts, BPF_ANY);
+	bpf_map_update_elem(&start, &sock_ident, &ts, BPF_ANY);
 
 	return 0;
 }
@@ -54,14 +55,14 @@ static __always_inline int
 handle_tcp_rcv_space_adjust(void *ctx, struct sock *sk)
 {
 	const struct inet_sock *inet = (struct inet_sock *)sk;
-	u64 sock_cookie = bpf_get_socket_cookie(sk);
+	u64 sock_ident = get_sock_ident(sk);
 	u64 id = bpf_get_current_pid_tgid(), *tsp;
 	u32 pid = id >> 32, tid = id;
 	struct event *eventp;
 	s64 delta_us;
 	u16 family;
 
-	tsp = bpf_map_lookup_and_delete_elem(&start, &sock_cookie);
+	tsp = bpf_map_lookup_and_delete_elem(&start, &sock_ident);
 	if (!tsp)
 		return 0;
 
@@ -98,6 +99,14 @@ handle_tcp_rcv_space_adjust(void *ctx, struct sock *sk)
 	return 0;
 }
 
+static int handle_tcp_destroy_sock(void *ctx, struct sock *sk)
+{
+	u64 sock_ident = get_sock_ident(sk);
+
+	bpf_map_delete_elem(&start, &sock_ident);
+	return 0;
+}
+
 SEC("tp_btf/tcp_probe")
 int BPF_PROG(tcp_probe_btf, struct sock *sk, struct sk_buff *skb)
 {
@@ -110,6 +119,12 @@ int BPF_PROG(tcp_rcv_space_adjust_btf, struct sock *sk)
 	return handle_tcp_rcv_space_adjust(ctx, sk);
 }
 
+SEC("tp_btf/tcp_destroy_sock")
+int BPF_PROG(tcp_destroy_sock_btf, struct sock *sk)
+{
+	return handle_tcp_destroy_sock(ctx, sk);
+}
+
 SEC("raw_tp/tcp_probe")
 int BPF_PROG(tcp_probe_raw, struct sock *sk, struct sk_buff *skb)
 {
@@ -120,6 +135,12 @@ SEC("raw_tp/tcp_rcv_space_adjust")
 int BPF_PROG(tcp_rcv_space_adjust_raw, struct sock *sk)
 {
 	return handle_tcp_rcv_space_adjust(ctx, sk);
+}
+
+SEC("raw_tp/tcp_destroy_sock")
+int BPF_PROG(tcp_destroy_sock_raw, struct sock *sk)
+{
+	return handle_tcp_destroy_sock(ctx, sk);
 }
 
 char LICENSE[] SEC("license") = "GPL";
