@@ -86,7 +86,6 @@ APPS += softirqs
 APPS += solisten
 APPS += stackcount
 APPS += stacksnoop
-APPS += statsnoop
 APPS += syncsnoop
 APPS += syscount
 APPS += swapin
