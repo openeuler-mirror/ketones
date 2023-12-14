@@ -98,6 +98,7 @@ APPS += tcppktlat
 APPS += tcpretrans
 APPS += tcprtt
 APPS += tcpstates
+APPS += tcpsubnet
 APPS += tcpsynbl
 APPS += tcptop
 APPS += tcptracer
