@@ -10598,10 +10598,8 @@ static int libbpf_available_kallsyms_parse(struct kprobe_multi_resolve *res)
 	}
 
 	/* not found entry, return direct */
-	if (!cnt) {
-		fclose(f);
+	if (!cnt)
 		goto cleanup;
-	}
 
 	/* sort available functions */
 	qsort(syms, cnt, sizeof(void *), avail_compare_function);
