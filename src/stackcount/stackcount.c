@@ -60,8 +60,8 @@ const char *argp_program_bug_address = "Jackie Liu <liuyun01@kylinos.cn>";
 const char argp_program_doc[] =
 "stackcount    Count events and their stack traces.\n"
 "\n"
-"USAGE: stackcount.py [-h] [-p PID] [-c CPU] [-i INTERVAL] [-D DURATION] [-T]\n"
-"                     [-s] [-P] [-K] [-U] [-v] [-f]\n"
+"USAGE: stackcount [-h] [-p PID] [-c CPU] [-i INTERVAL] [-D DURATION] [-T]\n"
+"                  [-s] [-P] [-K] [-U] [-v] [-f]\n"
 "\n"
 "Example:\n"
 "    stackcount submit_bio         # count kernel stack traces for submit_bio\n"
@@ -143,11 +143,19 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 		env.per_pid = true;
 		break;
 	case 'K':
-		env.need_kernel_stack = true;
+		if (!env.need_kernel_stack) {
+			warning("-K and -U are mutually exclusive. If you want both stacks,"
+				" that is the default.\n");
+			return 1;
+		}
 		env.need_user_stack = false;
 		break;
 	case 'U':
-		env.need_user_stack = true;
+		if (!env.need_user_stack) {
+			warning("-K and -U are mutually exclusive. If you want both stacks,"
+				" that is the default.\n");
+			return 1;
+		}
 		env.need_kernel_stack = false;
 		break;
 	case OPT_PERF_MAX_STACK_DEPTH:
