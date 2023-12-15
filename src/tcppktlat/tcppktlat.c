@@ -73,10 +73,10 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 		env.tid = argp_parse_pid(key, arg, state);
 		break;
 	case 'l':
-		env.lport = argp_parse_long(key, arg, state);
+		env.lport = htons(argp_parse_long(key, arg, state));
 		break;
 	case 'r':
-		env.rport = argp_parse_long(key, arg, state);
+		env.rport = htons(argp_parse_long(key, arg, state));
 		break;
 	case 'W':
 		env.column_width = argp_parse_long(key, arg, state);
@@ -129,8 +129,8 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	inet_ntop(e->family, &e->daddr, daddr, sizeof(daddr));
 
 	printf("%-7d %-7d %-16s %-*s %-5d %-*s %-5d %-.2f\n",
-	       e->pid, e->tid, e->comm, env.column_width, saddr, e->sport,
-	       env.column_width, daddr, e->dport, e->delta_us / 1e3);
+	       e->pid, e->tid, e->comm, env.column_width, saddr, htons(e->sport),
+	       env.column_width, daddr, htons(e->dport), e->delta_us / 1e3);
 
 	return 0;
 }
