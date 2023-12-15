@@ -81,8 +81,8 @@ int get_pid_lib_path(pid_t pid, const char *lib, char *path, size_t path_sz)
 		if (strncmp(lib, p, strlen(lib)))
 			continue;
 		p += strlen(lib);
-		/* libraries can have - or . after the name */
-		if (*p != '.' && *p != '-')
+		/* libraries can have - , . or number after the name */
+		if (*p != '.' && *p != '-' && !isdigit(*p))
 			continue;
 		if (strnlen(path_buf, 1024) >= path_sz) {
 			warn("path size too small\n");
