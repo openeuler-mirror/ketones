@@ -107,13 +107,13 @@ handle_syscall_exit_uid_fsuid(struct trace_event_raw_sys_exit *ctx,
 SEC("tracepoint/syscalls/sys_exit_setuid")
 int tracepoint_syscall_exit_setuid(struct trace_event_raw_sys_exit *ctx)
 {
-	return handle_syscall_exit_uid_fsuid(ctx, UID);
+	return handle_syscall_exit_uid_fsuid(ctx, SU_UID);
 }
 
 SEC("tracepoint/syscalls/sys_exit_setfsuid")
 int tracepoint_syscall_exit_setfsuid(struct trace_event_raw_sys_exit *ctx)
 {
-	return handle_syscall_exit_uid_fsuid(ctx, FSUID);
+	return handle_syscall_exit_uid_fsuid(ctx, SU_FSUID);
 }
 
 SEC("tracepoint/syscalls/sys_exit_setreuid")
@@ -135,7 +135,7 @@ int tracepoint_syscall_exit_setreuid(struct trace_event_raw_sys_exit *ctx)
 	eventp->pid = pid;
 	bpf_get_current_comm(&eventp->comm, sizeof(eventp->comm));
 	eventp->uid = d->prev_uid;
-	eventp->type = REUID;
+	eventp->type = SU_REUID;
 	eventp->ruid = d->ruid;
 	eventp->euid = d->euid;
 	eventp->suid = d->suid;

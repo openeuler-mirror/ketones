@@ -5,9 +5,9 @@
 #define TASK_COMM_LEN	16
 
 enum UID_TYPE {
-	UID,
-	FSUID,
-	REUID,
+	SU_UID,
+	SU_FSUID,
+	SU_REUID,
 };
 
 struct event {
