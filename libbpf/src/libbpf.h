@@ -651,6 +651,26 @@ struct bpf_usdt_opts {
 };
 #define bpf_usdt_opts__last_field usdt_cookie
 
+struct usdt_note {
+	const char *provider;
+	const char *name;
+	/* USDT args specification string, e.g.:
+	 * "-4@%esi -4@-24(%rbp) -4@%ecx 2@%ax 8@%rdx"
+	 */
+	const char *args;
+	long loc_addr;
+	long base_addr;
+	long sema_addr;
+};
+
+struct usdt_array{
+	size_t nr;
+	struct usdt_note **notes;
+};
+
+void free_usdt_notes(struct usdt_array *usdt_notes);
+void probe_usdt_notes(const char *path, struct usdt_array *usdt_notes);
+
 /**
  * @brief **bpf_program__attach_usdt()** is just like
  * bpf_program__attach_uprobe_opts() except it covers USDT (User-space

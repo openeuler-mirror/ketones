@@ -180,7 +180,7 @@ $(call allow-override,CC,$(CROSS_COMPILE)cc)
 $(call allow-override,LD,$(CROSS_COMPILE)ld)
 
 .PHONY: all
-all: $(OUTPUT_BINARIES) $(APP_ALIASES) bin/bpflist
+all: $(OUTPUT_BINARIES) $(APP_ALIASES) bin/bpflist bin/tplist
 
 .PHONY: clean
 clean:
@@ -249,6 +249,10 @@ $(addprefix $(BINARIES_DIR)/, tcplinks): ALL_LDFLAGS += -lncurses
 bin/bpflist: bpflist/bpflist.c include/commons.h $(LIBBPF_OBJ) | $(BINARIES_DIR)
 	$(call msg,BINARY,$(notdir $@))
 	$(Q)$(CC) $(CFLAGS) $< $(INCLUDES) -lelf -lz -o $@
+
+bin/tplist: tplist/tplist.c $(COMMON_LIBS_OBJ) $(LIBBPF_OBJ) | $(BINARIES_DIR)
+	$(call msg,BINARY,$(notdir $@))
+	$(Q)$(CC) $(CFLAGS) $^ $(INCLUDES) -lelf -lz -o $@
 
 ifeq ($(USE_BLAZESYM),1)
 $(patsubst %,$(OUTPUT)/%.o,$(BZ_APPS)): $(OUTPUT)/blazesym.h
