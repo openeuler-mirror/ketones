@@ -308,11 +308,11 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	}
 
 	if (env.print_ppid) {
-		printf("%-6d ", e->ppid);
+		printf("%-7d ", e->ppid);
 		sps_cnt += 7;
 	}
 
-	printf("%-6d %-16s %3d %3d ", e->pid, e->comm, fd, err);
+	printf("%-7d %-16s %3d %3d ", e->pid, e->comm, fd, err);
 	sps_cnt += 7 + 17 + 4 + 4;
 
 	if (env.extended && !env.fuller_extended) {
@@ -433,8 +433,8 @@ int main(int argc, char *argv[])
 	if (env.print_uid)
 		printf("%-7s ", "UID");
 	if (env.print_ppid)
-		printf("%-6s ", "PPID");
-	printf("%-6s %-16s %3s %3s ", "PID", "COMM", "FD", "ERR");
+		printf("%-7s ", "PPID");
+	printf("%-7s %-16s %3s %3s ", "PID", "COMM", "FD", "ERR");
 	if (env.extended)
 		printf("%-8s %-8s ", "FLAGS", "MODES");
 	printf("%s", "PATH");

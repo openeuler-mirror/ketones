@@ -107,9 +107,9 @@ void handle_event(void *ctx, int cpu, void *data, __u32 data_sz)
 
 	strftime_now(ts, sizeof(ts), "%H:%M:%S");
 	if (env.previous)
-		printf("%-8s %-16s %-6d %-14llu %-16s %-6d\n", ts, e->task, e->pid, e->delta_us, e->prev_task, e->prev_pid);
+		printf("%-8s %-16s %-7d %-14llu %-16s %-7d\n", ts, e->task, e->pid, e->delta_us, e->prev_task, e->prev_pid);
 	else
-		printf("%-8s %-16s %-6d %-14llu\n", ts, e->task, e->pid, e->delta_us);
+		printf("%-8s %-16s %-7d %-14llu\n", ts, e->task, e->pid, e->delta_us);
 }
 
 void handle_lost_events(void *ctx, int cpu, __u64 lost_cnt)
@@ -172,9 +172,9 @@ int main(int argc, char *argv[])
 
 	printf("Tracing run queue latency higher than %llu us\n", env.min_us);
 	if (env.previous)
-		printf("%-8s %-16s %-6s %-14s %-16s %-6s\n", "TIME", "COMM", "TID", "LAT(us)", "PREV-COMM", "PREV-TID");
+		printf("%-8s %-16s %-7s %-14s %-16s %-7s\n", "TIME", "COMM", "TID", "LAT(us)", "PREV-COMM", "PREV-TID");
 	else
-		printf("%-8s %-16s %-6s %-14s\n", "TIME", "COMM", "PID", "LAT(us)");
+		printf("%-8s %-16s %-7s %-14s\n", "TIME", "COMM", "PID", "LAT(us)");
 
 	pb = perf_buffer__new(bpf_map__fd(bpf_obj->maps.events), 64,
 			      handle_event, handle_lost_events, NULL, NULL);

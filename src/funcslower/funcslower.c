@@ -348,7 +348,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	sprintf(retval, "0x%llx", e->retval);
 
 	if (!env.folded) {
-		printf("%-16s %-10lld %10.2f %16s %s", e->comm, e->pid_tgid >> 32,
+		printf("%-16s %-7lld %10.2f %16s %s", e->comm, e->pid_tgid >> 32,
 		       e->duration_ns / (env.ms ? 1e6 : 1e3), retval,
 		       env.functions[e->id]);
 
@@ -444,7 +444,7 @@ int main(int argc, char *argv[])
 		       env.duration_ns / (env.ms ? 1e6 : 1e3), env.ms ? "ms" : "us");
 		if (env.time || env.timestamp)
 			printf("%-10s ", "TIME");
-		printf("%-16s %-10s %10s %16s %s", "COMM", "PID",
+		printf("%-16s %-7s %10s %16s %s", "COMM", "PID",
 		       env.ms ? "LAT(ms)" : "LAT(us)", "RETVAL", "FUNC");
 		if (env.need_grab_args)
 			printf(" ARGS");

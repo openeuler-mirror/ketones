@@ -143,9 +143,9 @@ static void print_map(struct bpf_map *map)
 		cpu = next_key.cpu;
 		pid = next_key.pid;
 		tid = next_key.tid;
-		printf("%-8u ", pid);
+		printf("%-7u ", pid);
 		if (env.per_thread) {
-			printf("%-8u ", tid);
+			printf("%-7u ", tid);
 		}
 		printf("%-16s %-4u %12llu %12llu %6.2f%%\n",
 		       info.comm, cpu, info.ref, info.miss,
@@ -241,9 +241,9 @@ int main(int argc, char *argv[])
 
 	sleep(env.duration);
 
-	printf("%-8s ", "PID");
+	printf("%-7s ", "PID");
 	if (env.per_thread)
-		printf("%-8s ", "TID");
+		printf("%-7s ", "TID");
 	printf("%-16s %-4s %12s %12s %7s\n",
 	       "NAME", "CPU", "PEFERENCE", "MISS", "HIT%");
 	print_map(obj->maps.infos);

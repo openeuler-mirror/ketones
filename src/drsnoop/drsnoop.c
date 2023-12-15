@@ -100,7 +100,7 @@ void handle_event(void *ctx, int cpu, void *data, __u32 data_sz)
 
 	strftime_now(ts, sizeof(ts), "%H:%M:%S");
 
-	printf("%-8s %-16s %-6d %9.3f %7lld", ts, e->task, e->pid,
+	printf("%-8s %-16s %-7d %9.3f %7lld", ts, e->task, e->pid,
 	       e->delta_ns / 1000000.0, e->nr_reclaimed);
 	if (argument->extended)
 		printf(" %9llu", e->nr_free_pages * pagesize / 1024);
@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	printf("%-8s %-16s %-6s %9s %7s", "TIME", "COMM", "PID", "DELTA(ms)", "RECLAIM");
+	printf("%-8s %-16s %-7s %9s %7s", "TIME", "COMM", "PID", "DELTA(ms)", "RECLAIM");
 	if (argument.extended)
 		printf(" %9s", "FREEPAGES");
 	printf("\n");

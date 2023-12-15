@@ -109,8 +109,7 @@ static void sig_handler(int sig)
 static void print_event_header(void)
 {
 	printf("%-8s %-7s %-2s %-20s > %-20s %s (%s)\n", "TIME", "PID", "IP",
-						  "SADDR:SPORT",  "DADDR:DPORT",
-						  "STATE", "FLAGS");
+	       "SADDR:SPORT",  "DADDR:DPORT", "STATE", "FLAGS");
 }
 
 static void flags2str(__u8 flags, char *data)

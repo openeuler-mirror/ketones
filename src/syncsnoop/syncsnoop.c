@@ -56,7 +56,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	char ts[16];
 
 	strftime_now(ts, sizeof(ts), "%H:%M:%S ");
-	printf("%s %-6d %-16s %s\n", ts, e->pid, e->comm, e->funcname);
+	printf("%-9s %-7d %-16s %s\n", ts, e->pid, e->comm, e->funcname);
 
 	return 0;
 }
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
 	}
 
 	printf("Tracing sync syscalls... Hit Ctrl-C to end.\n");
-	printf("%-9s %-6s %-16s %s\n", "TIME", "PID", "COMM", "EVENT");
+	printf("%-9s %-7s %-16s %s\n", "TIME", "PID", "COMM", "EVENT");
 
 	while (!exiting) {
 		err = bpf_buffer__poll(buf, POLL_TIMEOUT_MS);

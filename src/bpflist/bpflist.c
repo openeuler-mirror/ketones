@@ -129,7 +129,7 @@ static void find_bpf_fds(const char *pid)
 	}
 
 	for (int i = 0; i < counts_size; i++)
-		printf("%-6s %-16s %-8s %-4d\n", pid, comm_for_pid(pid),
+		printf("%-7s %-16s %-8s %-4d\n", pid, comm_for_pid(pid),
 		       counts[i].bpf_name, counts[i].count);
 
 	closedir(dir);
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	printf("%-6s %-16s %-8s %s\n", "PID", "COMM", "TYPE", "COUNT");
+	printf("%-7s %-16s %-8s %s\n", "PID", "COMM", "TYPE", "COUNT");
 	while ((entry = readdir(dir)) != NULL) {
 		if (regexec(&regex, entry->d_name, 0, NULL, 0) == 0)
 			find_bpf_fds(entry->d_name);

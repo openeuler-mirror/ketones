@@ -203,7 +203,7 @@ static int print_stat(struct tcptop_bpf *obj)
 		rows++;
 	}
 
-	printf("%-6s %-12s %-21s %-21s %6s %6s", "PID", "COMM", "LADDR", "RADDR",
+	printf("%-7s %-12s %-21s %-21s %6s %6s", "PID", "COMM", "LADDR", "RADDR",
 	       "RX_KB", "TX_KB\n");
 
 	qsort(infos, rows, sizeof(struct info_t), sort_column);
@@ -219,7 +219,7 @@ static int print_stat(struct tcptop_bpf *obj)
 			/* Width to fit IPv6 plus port. */
 			column_width = 51;
 			if (!ipv6_header_printed) {
-				printf("\n%-6s %-12s %-51s %-51s %6s %6s",
+				printf("\n%-7s %-12s %-51s %-51s %6s %6s",
 				       "PID", "COMM", "LADDR6", "RADDR6",
 				       "RX_KB", "TX_KB\n");
 				ipv6_header_printed = true;
@@ -243,7 +243,7 @@ static int print_stat(struct tcptop_bpf *obj)
 		snprintf(saddr_port, size, "%s:%d", saddr, key->lport);
 		snprintf(daddr_port, size, "%s:%d", daddr, key->dport);
 
-		printf("%-6d %-12.12s %-*s %-*s %6ld %6ld\n",
+		printf("%-7d %-12.12s %-*s %-*s %6ld %6ld\n",
 		       key->pid, key->name, column_width, saddr_port,
 		       column_width, daddr_port,
 		       value->received / 1024, value->sent / 1024);

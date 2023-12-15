@@ -696,7 +696,7 @@ static void trace_handler(void *ctx, int cpu, void *data, __u32 data_sz)
 		       data_sz, sizeof(trace) - MAX_TRACE_BUF);
 		return;
 	}
-	printf("%16lld %4d %8u %s(\n", trace->time, trace->cpu, trace->pid,
+	printf("%16lld %4d %7u %s(\n", trace->time, trace->cpu, trace->pid,
 	       trace->func.name);
 
 	for (i = 0, shown = 0; i < trace->nr_traces; i++) {
@@ -877,7 +877,7 @@ static int cmd_trace(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	printf("%16s %4s %8s %s\n", "TIME", "CPU", "PID", "FUNCTION/ARGS");
+	printf("%16s %4s %7s %s\n", "TIME", "CPU", "PID", "FUNCTION/ARGS");
 
 	if (signal(SIGINT, sig_handler) == SIG_ERR) {
 		warning("Can't set signal handler: %s\n", strerror(errno));

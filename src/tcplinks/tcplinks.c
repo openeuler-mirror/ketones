@@ -279,9 +279,9 @@ static void print_header(int size)
 
 	color = env.sort_by == PID ? COLOR_PAIR(2) : COLOR_PAIR(1);
 	attron(color | A_BOLD);
-	mvprintw(0, 0, " %-10s ", "PID");
+	mvprintw(0, 0, "%7s ", "PID");
 	attroff(color);
-	start_cols += 12;
+	start_cols += 8;
 
 	color = COLOR_PAIR(1);
 	attron(color);
@@ -379,7 +379,7 @@ ignore_refresh_data:
 			attron(COLOR_PAIR(3) | A_BOLD);
 		if (windows.focus == i)
 			attron(COLOR_PAIR(2));
-		mvprintw(i + 1, 0, " %-10d %*s %*s %12.2f %12.2f %s",
+		mvprintw(i + 1, 0, "%7d %*s %*s %12.2f %12.2f %s",
 				link->pid, size, saddr_port, size, daddr_port,
 				(double)(link->sent - link->prev_sent) / 1024,
 				(double)(link->received - link->prev_received) / 1024,
