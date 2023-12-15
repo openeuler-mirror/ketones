@@ -7,7 +7,7 @@
 #ifndef __FILEGONE_H
 #define __FILEGONE_H
 
-#define DNAME_INLINE_LEN	32
+#define DNAME_INLINE_LEN	128
 #define TASK_COMM_LEN		16
 
 struct event {
