@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
-#ifndef __VFSSTAT_H
-#define __VFSSTAT_H
+#ifndef __DCSTAT_H
+#define __DCSTAT_H
 
 enum stat_types {
 	S_REFS = 0,
