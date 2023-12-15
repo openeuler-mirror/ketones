@@ -38,6 +38,14 @@
 		(void) (&__min1 == &__min2);		\
 		__min1 > __min2 ? __min2 : __min1; })
 
+#define folded_printf(folded, format, ...)	\
+({						\
+	if (!folded)				\
+		printf("    ");			\
+	printf(format, ##__VA_ARGS__);		\
+	printf("%s", folded ? ";" : "\n");	\
+})
+
 #define __maybe_unused __attribute__((unused))
 
 static inline bool bpf_is_root()

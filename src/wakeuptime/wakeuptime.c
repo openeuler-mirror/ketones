@@ -8,6 +8,7 @@ struct env {
 	pid_t pid;
 	bool user_threads_only;
 	bool verbose;
+	bool folded;
 	int stack_storage_size;
 	int perf_max_stack_depth;
 	__u64 min_block_time;
@@ -27,11 +28,12 @@ const char *argp_program_bug_address = "Jackie Liu <liuyun01@kylinos.cn>";
 const char argp_program_doc[] =
 "Summarize sleep to wakeup time by waker kernel stack.\n"
 "\n"
-"USAGE: wakeuptime [-h] [-p PID | -u] [-v] [-m MIN-BLOCK-TIME] "
+"USAGE: wakeuptime [-h] [-p PID | -u] [-v] [-f] [-m MIN-BLOCK-TIME] "
 "[-M MAX-BLOCK-TIME] ]--perf-max-stack-depth] [--stack-storage-size] [duration]\n"
 "EXAMPLES:\n"
 "       wakeuptime              # trace blocked time with waker stacks\n"
 "       wakeuptime 5            # trace for 5 seconds only\n"
+"       wakeuptime -f 5         # 5 seconds, and output in folded format\n"
 "       wakeuptime -u           # don't include kernel threads (user only)\n"
 "       wakeuptime -p 185       # trace for PID 185 only\n";
 
@@ -41,6 +43,7 @@ const char argp_program_doc[] =
 static const struct argp_option opts[] = {
 	{ "pid", 'p', "PID", 0, "Trace this PID only" },
 	{ "verbose", 'v', NULL, 0, "Show raw address" },
+	{ "folded", 'f', NULL, 0, "output folded format" },
 	{ "user-threads-only", 'u', NULL, 0, "User threads only (no kernel threads)" },
 	{ "perf-max-stack-depth", OPT_PERF_MAX_STACK_DEPTH, "PERF_MAX_STACK_DEPTH",
 		0, "The limit for both kernel and user stack traces (default 127)" },
@@ -64,6 +67,9 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 		break;
 	case 'v':
 		env.verbose = true;
+		break;
+	case 'f':
+		env.folded = true;
 		break;
 	case 'u':
 		env.user_threads_only = true;
@@ -159,24 +165,40 @@ static void print_map(struct ksyms *ksyms, struct wakeuptime_bpf *bpf_obj)
 			return;
 		}
 
-		printf("\n	%-16s %s\n", "target:", next_key.target);
+		if (!env.folded)
+			printf("\n    %-16s %s\n", "target:", next_key.target);
+		else
+			printf("%s;", next_key.target);
+
 		lookup_key = next_key;
 
 		err = bpf_map_lookup_elem(stack_traces_fd, &next_key.wake_stack_id, ip);
 		if (err < 0)
-			warning("missed kernel stack: %d\n", err);
+			folded_printf(env.folded, "[Missed Kernel Stack]");
 
 		for (int i = 0; i < env.perf_max_stack_depth && ip[i]; i++) {
 			const struct ksym *ksym = ksyms__map_addr(ksyms, ip[i]);
 
-			printf("	%-16lx %s\n", ip[i], ksym ? ksym->name : "Unknown");
+			if (!env.folded)
+				printf("    %-16lx %s\n", ip[i], ksym ? ksym->name : "Unknown");
+			else
+				printf("%s;", ksym ? ksym->name : "Unknown");
 		}
-		printf("	%-16s %s\n", "waker:", next_key.waker);
 
 		/* To convert val in microseconds */
 		val /= 1000;
-		printf("	%lld\n", val);
+
+		if (!env.folded) {
+			printf("    %-16s %s\n", "waker:", next_key.waker);
+			printf("        %lld\n", val);
+		} else {
+			printf("%s", next_key.waker);
+			printf(" %lld\n", val);
+		}
 	}
+
+	if (!env.folded)
+		printf("Detaching...\n");
 
 	free(ip);
 }
@@ -257,7 +279,13 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	printf("Tracing blocked time (us) by kernel stack\n");
+	if (!env.folded) {
+		printf("Tracing blocked time (us) by kernel stack");
+		if (env.duration < 99999999)
+			printf(" for %d secs\n", env.duration);
+		else
+			printf("... Hit Ctrl-C to end.\n");
+	}
 	sleep(env.duration);
 	print_map(ksyms, bpf_obj);
 

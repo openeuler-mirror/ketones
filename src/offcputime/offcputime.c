@@ -188,14 +188,6 @@ static int libbpf_print_fn(enum libbpf_print_level level, const char *format,
 static void sig_handler(int sig)
 {}
 
-#define folded_printf(format, ...)		\
-({						\
-	if (!env.folded)			\
-		printf("    ");			\
-	printf(format, ##__VA_ARGS__);		\
-	printf("%s", env.folded ? ";" : "\n");  \
-})
-
 static void print_map(struct ksyms *ksyms, struct syms_cache *syms_cache,
 		      struct offcputime_bpf *bpf_obj)
 {
@@ -209,6 +201,9 @@ static void print_map(struct ksyms *ksyms, struct syms_cache *syms_cache,
 		warning("Failed to alloc ip\n");
 		return;
 	}
+
+	if (env.folded)
+		env.verbose = false;
 
 	ifd = bpf_map__fd(bpf_obj->maps.info);
 	sfd = bpf_map__fd(bpf_obj->maps.stackmap);
@@ -228,16 +223,14 @@ static void print_map(struct ksyms *ksyms, struct syms_cache *syms_cache,
 		if (val.delta == 0)
 			continue;
 
-		if (env.folded) {
-			env.verbose = false;
+		if (env.folded)
 			printf("%s;", val.comm);
-		}
 
 		if (next_key.kernel_stack_id == -EFAULT)
 			goto print_ustack;
 
 		if (bpf_map_lookup_elem(sfd, &next_key.kernel_stack_id, ip) != 0) {
-			folded_printf("[Missed Kernel Stack]");
+			folded_printf(env.folded, "[Missed Kernel Stack]");
 			goto print_ustack;
 		}
 
@@ -245,7 +238,7 @@ static void print_map(struct ksyms *ksyms, struct syms_cache *syms_cache,
 			const struct ksym *ksym = ksyms__map_addr(ksyms, ip[i]);
 
 			if (!env.verbose) {
-				folded_printf("%s", ksym ? ksym->name : "Unknown");
+				folded_printf(env.folded, "%s", ksym ? ksym->name : "Unknown");
 			} else {
 				if (ksym)
 					printf("    #%-2d 0x%lx %s+0x%lx\n", idx, ip[i], ksym->name, ip[i] - ksym->addr);
@@ -260,7 +253,7 @@ print_ustack:
 			goto skip_ustack;
 
 		if (bpf_map_lookup_elem(sfd, &next_key.user_stack_id, ip) != 0) {
-			folded_printf("[Missing User Stack]");
+			folded_printf(env.folded, "[Missing User Stack]");
 			goto skip_ustack;
 		}
 
@@ -280,10 +273,7 @@ print_ustack:
 
 			if (!env.verbose) {
 				sym = syms__map_addr(syms, ip[i]);
-				if (sym)
-					folded_printf("%s", sym->name);
-				else
-					folded_printf("[unknown]");
+				folded_printf(env.folded, "%s", sym ? sym->name : "[unknown]");
 			} else {
 				char *dso_name;
 				unsigned long dso_offset;
