@@ -83,7 +83,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	if (env.print_ppid)
 		printf("%-7d ", e->ppid);
 
-	printf("%-7d %-16s %4d %6s %s", e->pid, e->comm, e->ret,
+	printf("%-7d %-16s %10.10s %6s %s", e->pid, e->comm, strerrno(e->ret),
 	       e->action == 'D' ? "DELETE" : "RENAME", e->fname);
 	if (e->action == 'R')
 		printf(" > %s", e->fname2);
@@ -117,7 +117,7 @@ static int print_event(struct filegone_bpf *obj, struct bpf_buffer *buf)
 	if (env.print_ppid)
 		printf("%-7s ", "PPID");
 
-	printf("%-7s %-16s %4s %s\n", "PID", "COMM", "RET", "FILES");
+	printf("%-7s %-16s %10s %s\n", "PID", "COMM", "RET", "FILES");
 
 	while (!exiting) {
 		err = bpf_buffer__poll(buf, POLL_TIMEOUT_MS);
