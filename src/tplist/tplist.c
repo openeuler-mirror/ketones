@@ -147,18 +147,13 @@ static void print_tracepoints()
 	closedir(dir);
 }
 
-struct usdt_array usdt_notes = {};
-
 static void print_usdt_simple(struct usdt_array *usdt_notes, char *binary_path)
 {
 	size_t i;
 
-	for (i = 0; i < usdt_notes->nr; i++) {
-		struct usdt_note *note;
-
-		note = (struct usdt_note *)(&usdt_notes->notes)[i];
-		printf("b'%s b'%s b'%s\n", binary_path, note->provider, note->name);
-	}
+	for (i = 0; i < usdt_notes->nr; i++)
+		printf("b'%s' b'%s':b'%s'\n", binary_path, usdt_notes->notes[i].provider,
+			usdt_notes->notes[i].name);
 }
 
 static void print_usdt_details(struct usdt_array *usdt_notes)
@@ -167,28 +162,29 @@ static void print_usdt_details(struct usdt_array *usdt_notes)
 
 	printf("%-15s  %-40s  %-18s  %-18s  %-18s  %s\n", "PROVIDER", "NAME", "LOC_ADDR",
 		"BASE_ADDR", "SEMA_ADDR", "ARGS");
-	for (i = 0; i < usdt_notes->nr; i++) {
-		struct usdt_note *note;
-
-		note = (struct usdt_note *)(&usdt_notes->notes)[i];
-		printf("%-15s  %-40s  0x%016lx  0x%016lx  0x%016lx  %s\n", note->provider, note->name,
-			note->loc_addr, note->base_addr, note->sema_addr, note->args);
-	}
+	for (i = 0; i < usdt_notes->nr; i++)
+		printf("%-15s  %-40s  0x%016lx  0x%016lx  0x%016lx  %s\n", usdt_notes->notes[i].provider,
+			usdt_notes->notes[i].name, usdt_notes->notes[i].loc_addr,
+			usdt_notes->notes[i].base_addr, usdt_notes->notes[i].sema_addr,
+			usdt_notes->notes[i].args);
 }
 
 static void print_usdt()
 {
 	char binary_path[PATH_MAX];
+	struct usdt_array *usdt_notes = NULL;
 
 	resolve_binary_path(env.lib, env.pid, binary_path, sizeof(binary_path));
-	probe_usdt_notes(binary_path, &usdt_notes);
+	usdt_notes = probe_usdt_notes(binary_path);
+	if (!usdt_notes)
+		return;
 
 	if (env.verbose)
-		print_usdt_details(&usdt_notes);
+		print_usdt_details(usdt_notes);
 	else
-		print_usdt_simple(&usdt_notes, binary_path);
+		print_usdt_simple(usdt_notes, binary_path);
 
-	free_usdt_notes(&usdt_notes);
+	free_usdt_notes(usdt_notes);
 }
 
 int main(int argc, char *argv[])

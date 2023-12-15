@@ -928,20 +928,15 @@ static int allocate_spec_id(struct usdt_manager *man, struct hashmap *specs_hash
 
 void free_usdt_notes(struct usdt_array *usdt_notes)
 {
-	size_t i;
-
-	for (i = 0; i < usdt_notes->nr; i++) {
-		struct usdt_note *note;
-		note = (struct usdt_note *)(&usdt_notes->notes)[i];
-		if (!note)
-			free(note);
-	}
+	free(usdt_notes->notes);
+	free(usdt_notes);
 }
 
-void probe_usdt_notes(const char *path, struct usdt_array *usdt_notes)
+struct usdt_array* probe_usdt_notes(const char *path)
 {
 	int fd, err;
 	size_t off, name_off, desc_off;
+	struct usdt_array *usdt_notes = NULL;
 	Elf *elf = NULL;
 	Elf_Scn *notes_scn, *base_scn;
 	GElf_Shdr base_shdr, notes_shdr;
@@ -953,15 +948,14 @@ void probe_usdt_notes(const char *path, struct usdt_array *usdt_notes)
 	if (fd < 0) {
 		err = -errno;
 		pr_warn("usdt: failed to open ELF binary '%s': %d\n", path, err);
-		return;
+		return NULL;
 	}
 
 	if (elf_version(EV_CURRENT) == EV_NONE)
-		return;
+		goto err_out;
 
 	elf = elf_begin(fd, ELF_C_READ, 0);
 	if (!elf) {
-		err = -EBADF;
 		pr_warn("usdt: failed to parse ELF binary '%s': %s\n", path, elf_errmsg(-1));
 		goto err_out;
 	}
@@ -973,35 +967,46 @@ void probe_usdt_notes(const char *path, struct usdt_array *usdt_notes)
 	err = find_elf_sec_by_name(elf, USDT_NOTE_SEC, &notes_shdr, &notes_scn);
 	if (err) {
 		pr_warn("usdt: no USDT notes section (%s) found in '%s'\n", USDT_NOTE_SEC, path);
-		return;
+		goto err_out;
 	}
 
 	if (notes_shdr.sh_type != SHT_NOTE || !gelf_getehdr(elf, &ehdr)) {
 		pr_warn("usdt: invalid USDT notes section (%s) in '%s'\n", USDT_NOTE_SEC, path);
-		return;
+		goto err_out;
 	}
+
+	usdt_notes = calloc(1, sizeof(*usdt_notes));
+	if(!usdt_notes)
+		goto err_out;
 
 	find_elf_sec_by_name(elf, USDT_BASE_SEC, &base_shdr, &base_scn);
 
 	data = elf_getdata(notes_scn, 0);
 	off = 0;
 	while ((off = gelf_getnote(data, off, &nhdr, &name_off, &desc_off)) > 0) {
-		struct usdt_note note;
-
-		err = parse_usdt_note(elf, path, &nhdr, data->d_buf, name_off, desc_off, &note);
+		err = libbpf_ensure_mem((void **)&usdt_notes->notes, &usdt_notes->capacity,
+					sizeof(*usdt_notes->notes), usdt_notes->nr + 1);
 		if (err)
-			goto err_out;
+			goto free_notes;
 
-		(&usdt_notes->notes)[usdt_notes->nr] = malloc(sizeof(note));
-		memcpy((&usdt_notes->notes)[usdt_notes->nr], &note, sizeof(note));
+		err = parse_usdt_note(elf, path, &nhdr, data->d_buf, name_off, desc_off,
+				      &usdt_notes->notes[usdt_notes->nr++]);
+		if (err)
+			goto free_notes;
 
-		usdt_notes->nr++;
 	}
 
+	elf_end(elf);
+	close(fd);
+	return usdt_notes;
+
+free_notes:
+	free_usdt_notes(usdt_notes);
 err_out:
         if (elf)
 		elf_end(elf);
 	close(fd);
+	return NULL;
 }
 
 struct bpf_link *usdt_manager_attach_usdt(struct usdt_manager *man, const struct bpf_program *prog,
