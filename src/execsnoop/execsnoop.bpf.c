@@ -43,7 +43,7 @@ static __always_inline int syscall_enter_execve(const char *filename,
 	pid_t pid, tgid;
 	struct event *event;
 	struct task_struct *task;
-	unsigned int ret;
+	int ret;
 	const char *argp;
 
 	if (filter_memcg && !bpf_current_task_under_cgroup(&cgroup_map, 0))
@@ -69,6 +69,8 @@ static __always_inline int syscall_enter_execve(const char *filename,
 
 	/* record filename */
 	ret = bpf_probe_read_user_str(event->args, ARGSIZE, filename);
+	if (ret < 0)
+		return 0;
 	if (ret <= ARGSIZE) {
 		event->args_size += ret;
 	} else {
@@ -80,8 +82,8 @@ static __always_inline int syscall_enter_execve(const char *filename,
 
 	#pragma unroll
 	for (int i = 1; i < TOTAL_MAX_ARGS && i < max_args; i++) {
-		bpf_core_read_user(&argp, sizeof(argp), &argv[i]);
-		if (!argp)
+		ret = bpf_core_read_user(&argp, sizeof(argp), &argv[i]);
+		if (ret < 0)
 			return 0;
 
 		if (event->args_size > LAST_ARG)
@@ -89,8 +91,7 @@ static __always_inline int syscall_enter_execve(const char *filename,
 
 		ret = bpf_probe_read_user_str(&event->args[event->args_size],
 					      ARGSIZE, argp);
-
-		if (ret > ARGSIZE)
+		if (ret < 0)
 			return 0;
 
 		event->args_size += ret;
@@ -98,8 +99,8 @@ static __always_inline int syscall_enter_execve(const char *filename,
 	}
 
 	/* try to read one more argument to check if there is one */
-	bpf_probe_read_user_str(&argp, sizeof(argp), &argv[max_args]);
-	if (!argp)
+	ret = bpf_probe_read_user_str(&argp, sizeof(argp), &argv[max_args]);
+	if (ret < 0)
 		return 0;
 
 	/* pointer to max_args+1 isn't null, asume we have more arguments */
