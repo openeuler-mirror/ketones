@@ -6,6 +6,7 @@
 #endif
 
 #include <argp.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -69,6 +70,19 @@ static inline int get_pid_max(void)
 		pid_max = -1;
 	fclose(f);
 	return pid_max;
+}
+
+static inline const char *get_uid_name(pid_t uid)
+{
+	struct passwd *passwd;
+
+	passwd = getpwuid(uid);
+	if (!passwd) {
+		warning("getpwuid() failed: %s\n", strerror(errno));
+		return NULL;
+	}
+
+	return passwd->pw_name;
 }
 
 static inline double time_since_start(void)

@@ -8,7 +8,6 @@
 
 #include <libgen.h>
 #include <fcntl.h>
-#include <pwd.h>
 
 #ifdef USE_BLAZESYM
 #include "blazesym.h"
@@ -304,13 +303,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	}
 
 	if (env.print_uid) {
-		struct passwd *passwd;
-		passwd = getpwuid(e->uid);
-		if (!passwd) {
-			warning("getpwuid() failed: %s\n", strerror(errno));
-			return -1;
-		}
-		printf("%-7s ", passwd->pw_name);
+		printf("%-7s ", get_uid_name(e->uid));
 		sps_cnt += 8;
 	}
 

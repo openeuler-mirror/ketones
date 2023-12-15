@@ -7,7 +7,6 @@
 #include "compat.h"
 #include "map_helpers.h"
 #include <arpa/inet.h>
-#include <pwd.h>
 
 static volatile sig_atomic_t exiting;
 
@@ -244,15 +243,8 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	if (env.print_timestamp)
 		printf("%-9.3f ", time_since_start());
 
-	if (env.print_uid) {
-		struct passwd *passwd;
-		passwd = getpwuid(event->uid);
-		if (!passwd) {
-			warning("getpwuid() failed: %s\n", strerror(errno));
-			return -1;
-		}
-		printf("%-7s ", passwd->pw_name);
-	}
+	if (env.print_uid)
+		printf("%-7s ", get_uid_name(event->uid));
 
 	printf("%-7d %-16.16s %-2d %-25s %-25s",
 	       event->pid, event->task,

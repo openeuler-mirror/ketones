@@ -3,7 +3,6 @@
 #include "setuids.h"
 #include "setuids.skel.h"
 #include "compat.h"
-#include <pwd.h>
 
 static volatile sig_atomic_t exiting;
 
@@ -58,7 +57,6 @@ static void sig_handler(int sig)
 static int handle_event(void *ctx, void *data, size_t data_sz)
 {
 	const struct event *e = data;
-	struct passwd *passwd;
 
 	if (env.timestamp) {
 		char ts[16];
@@ -67,13 +65,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		printf("%-8s ", ts);
 	}
 
-	passwd = getpwuid(e->uid);
-	if (!passwd) {
-		warning("getpwuid() failed: %s\n", strerror(errno));
-		return -1;
-	}
-
-	printf("%-7d %-16s %-7s ", e->pid, e->comm, passwd->pw_name);
+	printf("%-7d %-16s %-7s ", e->pid, e->comm, get_uid_name(e->uid));
 
 	switch (e->type) {
 	case SU_UID:
