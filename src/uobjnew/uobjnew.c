@@ -24,6 +24,7 @@ static struct env {
 	enum lang language;
 	time_t interval;
 } env = {
+	.pid = -1,
 	.interval = 99999999,
 };
 
@@ -37,21 +38,21 @@ const char *argp_program_bug_address = "chenyuan <chenyuan@kylinos.cn>";
 const char argp_program_doc[] =
 "Summarize object allocations in high-level languages.\n"
 "\n"
-"USAGE: uobjnew [-h] [-l {c,java,ruby,tcl}] [-C TOP_COUNT] [-S TOP_SIZE] [-v] [-p pid] [interval]\n"
+"USAGE: uobjnew [-h] [-l {c,java,ruby,tcl}] [-C TOP_COUNT] [-S TOP_SIZE] [-v] pid [interval]\n"
 "\n"
 "EXAMPLES:\n"
-"   ./uobjnew -l java -p 145         # summarize Java allocations in process 145\n"
-"   ./uobjnew -l c -p 2020 1         # grab malloc() sizes and print every second\n"
-"   ./uobjnew -l ruby -p 6712 -C 10  # top 10 Ruby types by number of allocations\n"
-"   ./uobjnew -l ruby -p 6712 -S 10  # top 10 Ruby types by total size\n";
+"   ./uobjnew -l java 145         # summarize Java allocations in process 145\n"
+"   ./uobjnew -l c 2020 1         # grab malloc() sizes and print every second\n"
+"   ./uobjnew -l ruby 6712 -C 10  # top 10 Ruby types by number of allocations\n"
+"   ./uobjnew -l ruby 6712 -S 10  # top 10 Ruby types by total size\n";
 
 static const struct argp_option opts[] = {
 	{ "language", 'l', "LANG", 0, "language to trace" },
-	{ "pid", 'p', "PID", 0, "process id to attach to" },
 	{ "interval", 0, "NUM", 0, "print every specified number of seconds" },
 	{ "top-count", 'C', "NUM", 0, "number of most frequently allocated types to print" },
 	{ "top-size", 'S', "NUM", 0, "number of largest types by allocated bytes to print" },
 	{ "verbose", 'v', NULL, 0, "verbose mode: print the BPF program (for debugging purposes)" },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show this full help" },
 	{}
 };
 
@@ -102,32 +103,30 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 	case 'v':
 		env.verbose = true;
 		break;
-	case 'p':
-		if (arg)
-			env.pid = argp_parse_pid(key, arg, state);
-		break;
 	case 'C':
-		if (arg)
-			env.top_count = argp_parse_long(key, arg, state);
+		env.top_count = argp_parse_long(key, arg, state);
 		break;
 	case 'S':
-		if (arg)
-			env.top_size = argp_parse_long(key, arg, state);
+		env.top_size = argp_parse_long(key, arg, state);
 		break;
 	case 'l':
-		if (!arg) {
-			warning("Arg is NULL\n");
-			argp_usage(state);
-		}
 		env.language = lang_id(arg);
 		if (env.language == LANG_NONE)
 			return ARGP_ERR_UNKNOWN;
 		break;
 	case ARGP_KEY_ARG:
 		if (state->arg_num == 0) {
+			env.pid = argp_parse_pid(key, arg, state);
+		} else if (state->arg_num == 1) {
 			env.interval = argp_parse_long(key, arg, state);
 		} else {
 			warning("Unrecognized positional argument: %s\n", arg);
+			argp_usage(state);
+		}
+		break;
+	case ARGP_KEY_END:
+		if (env.pid == -1) {
+			warning("uobjnew: error: the following arguments are required: pid\n");
 			argp_usage(state);
 		}
 		break;
@@ -151,30 +150,7 @@ static void sig_handler(int sig)
 	exiting = 1;
 }
 
-static void alloc_entries_print(struct alloc_entry *entries, enum lang language, int print_rows)
-{
-	unsigned int i = 0;
-
-	printf("\n%-30s %8s %12s\n", "NAME/TYPE", "# ALLOCS", "# BYTES");
-	for (; i < print_rows; i++) {
-		switch (language) {
-		case LANG_C:
-		case LANG_JAVA:
-			printf("block size %-19lld %8lld %12lld\n", entries[i].key.key.size,
-				entries[i].val.num_allocs, entries[i].val.total_size);
-			break;
-		case LANG_RUBY:
-		case LANG_TLC:
-			printf("%-30s %8lld %12lld\n", entries[i].key.key.name,
-				entries[i].val.num_allocs, entries[i].val.total_size);
-			break;
-		default:
-			break;
-		}
-	}
-}
-
-int compare_entry(const void *a, const void *b)
+static int compare_entry(const void *a, const void *b)
 {
 	struct alloc_entry *v1 = (struct alloc_entry *)a;
 	struct alloc_entry *v2 = (struct alloc_entry *)b;
@@ -202,14 +178,14 @@ static int clear_data(int map_fd)
 	return 0;
 }
 
-static int alloc_entries_sort_print(struct uobjnew_bpf *obj, enum lang language)
+static int alloc_entries_print(struct uobjnew_bpf *obj, enum lang language)
 {
 	struct key_t key = {};
 	struct val_t val = {};
 	struct key_t *lookup_key = NULL;
-	struct alloc_entry arr[MAX_EVENTS_ENTRY] = {};
+	struct alloc_entry entries[MAX_EVENTS_ENTRY] = {};
 	int fd = bpf_map__fd(obj->maps.uobjnew_events_entry);
-	int err, print_rows, rows = 0;
+	int err, rows = 0;
 
 	while (!bpf_map_get_next_key(fd, lookup_key, &key)) {
 		err = bpf_map_lookup_elem(fd, &key, &val);
@@ -217,8 +193,8 @@ static int alloc_entries_sort_print(struct uobjnew_bpf *obj, enum lang language)
 			warning("lookup_elem from uobjnew map err: %s\n", strerror(err));
 			return err;
 		}
-		arr[rows].key = key;
-		arr[rows++].val = val;
+		entries[rows].key = key;
+		entries[rows++].val = val;
 		lookup_key = &key;
 	}
 
@@ -226,19 +202,30 @@ static int alloc_entries_sort_print(struct uobjnew_bpf *obj, enum lang language)
 	if (err)
 		return err;
 
+	qsort(entries, rows, sizeof(struct alloc_entry), compare_entry);
+
 	if (env.top_count)
-		print_rows = min((int)env.top_count, (int)rows);
+		rows = min((int)env.top_count, (int)rows);
 	else if (env.top_size)
-		print_rows = min((int)env.top_size, (int)rows);
-	else {
-		print_rows = rows;
-		goto entries_print;
+		rows = min((int)env.top_size, (int)rows);
+
+	printf("\n%-30s %8s %12s\n", "NAME/TYPE", "# ALLOCS", "# BYTES");
+	for (int i = 0; i < rows; i++) {
+		switch (language) {
+		case LANG_C:
+		case LANG_JAVA:
+			printf("block size %-19lld %8lld %12lld\n", entries[i].key.key.size,
+				entries[i].val.num_allocs, entries[i].val.total_size);
+			break;
+		case LANG_RUBY:
+		case LANG_TLC:
+			printf("%-30s %8lld %12lld\n", entries[i].key.key.name,
+				entries[i].val.num_allocs, entries[i].val.total_size);
+			break;
+		default:
+			break;
+		}
 	}
-
-	qsort(arr, rows, sizeof(struct alloc_entry), compare_entry);
-
-entries_print:
-	alloc_entries_print(arr, language, print_rows);
 
 	return err;
 }
@@ -417,7 +404,7 @@ int main(int argc, char *argv[])
 
 	while (!exiting) {
 		sleep(env.interval);
-		err = alloc_entries_sort_print(obj, env.language);
+		err = alloc_entries_print(obj, env.language);
 		if (err)
 			break;
 	}

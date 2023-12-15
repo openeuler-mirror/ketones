@@ -7,7 +7,6 @@
 #include <bpf/bpf_core_read.h>
 #include "uobjnew.h"
 #include "maps.bpf.h"
-#include "compat.bpf.h"
 
 #define min(x, y) ((x) < (y) ? (x) : (y))
 
