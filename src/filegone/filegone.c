@@ -77,13 +77,13 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		char ts[32];
 
 		strftime_now(ts, sizeof(ts), "[%m/%d/%y %H:%M:%S]");
-		printf("%-20s ", ts);
+		printf("%-19s ", ts);
 	}
 
 	if (env.print_ppid)
 		printf("%-7d ", e->ppid);
 
-	printf("%-7d %-16s %6s %s", e->pid, e->comm,
+	printf("%-7d %-16s %4d %6s %s", e->pid, e->comm, e->ret,
 	       e->action == 'D' ? "DELETE" : "RENAME", e->fname);
 	if (e->action == 'R')
 		printf(" > %s", e->fname2);
@@ -113,11 +113,11 @@ static int print_event(struct filegone_bpf *obj, struct bpf_buffer *buf)
 	}
 
 	if (env.timestamp)
-		printf("%-20s ", "TIMESTAMP");
+		printf("%-19s ", "TIMESTAMP");
 	if (env.print_ppid)
 		printf("%-7s ", "PPID");
 
-	printf("%-7s %-16s %s\n", "PID", "COMM", "FILES");
+	printf("%-7s %-16s %4s %s\n", "PID", "COMM", "RET", "FILES");
 
 	while (!exiting) {
 		err = bpf_buffer__poll(buf, POLL_TIMEOUT_MS);
@@ -172,18 +172,30 @@ int main(int argc, char *argv[])
 
 	obj->rodata->target_pid = env.pid;
 
-	if (!tracepoint_exists("syscalls", "sys_enter_unlink"))
+	if (!tracepoint_exists("syscalls", "sys_enter_unlink")) {
 		bpf_program__set_autoload(obj->progs.tracepoint_enter_unlink, false);
-	if (!tracepoint_exists("syscalls", "sys_enter_unlinkat"))
+		bpf_program__set_autoload(obj->progs.tracepoint_exit_unlink, false);
+	}
+	if (!tracepoint_exists("syscalls", "sys_enter_unlinkat")) {
 		bpf_program__set_autoload(obj->progs.tracepoint_enter_unlinkat, false);
-	if (!tracepoint_exists("syscalls", "sys_enter_rename"))
+		bpf_program__set_autoload(obj->progs.tracepoint_exit_unlinkat, false);
+	}
+	if (!tracepoint_exists("syscalls", "sys_enter_rename")) {
 		bpf_program__set_autoload(obj->progs.tracepoint_enter_rename, false);
-	if (!tracepoint_exists("syscalls", "sys_enter_renameat"))
+		bpf_program__set_autoload(obj->progs.tracepoint_exit_rename, false);
+	}
+	if (!tracepoint_exists("syscalls", "sys_enter_renameat")) {
 		bpf_program__set_autoload(obj->progs.tracepoint_enter_renameat, false);
-	if (!tracepoint_exists("syscalls", "sys_enter_renameat2"))
+		bpf_program__set_autoload(obj->progs.tracepoint_exit_renameat, false);
+	}
+	if (!tracepoint_exists("syscalls", "sys_enter_renameat2")) {
 		bpf_program__set_autoload(obj->progs.tracepoint_enter_renameat2, false);
-	if (!tracepoint_exists("syscalls", "sys_enter_rmdir"))
+		bpf_program__set_autoload(obj->progs.tracepoint_exit_renameat2, false);
+	}
+	if (!tracepoint_exists("syscalls", "sys_enter_rmdir")) {
 		bpf_program__set_autoload(obj->progs.tracepoint_enter_rmdir, false);
+		bpf_program__set_autoload(obj->progs.tracepoint_exit_rmdir, false);
+	}
 
 	err = filegone_bpf__load(obj);
 	if (err) {
