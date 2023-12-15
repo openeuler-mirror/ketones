@@ -8,7 +8,9 @@ static struct env {
 	pid_t pid;
 	pid_t tid;
 	bool user_threads_only;
+	bool user_stacks_only;
 	bool kernel_threads_only;
+	bool kernel_stacks_only;
 	int stack_storage_size;
 	int perf_max_stack_depth;
 	__u64 min_block_time;
@@ -43,7 +45,9 @@ const char argp_program_doc[] =
 "    offcputime -p 185      # only trace threads for PID 185\n"
 "    offcputime -t 188      # only trace thread 188\n"
 "    offcputime -u          # only trace user threads (no kernel)\n"
-"    offcputime -k          # only trace kernel threads (no user)\n";
+"    offcputime -k          # only trace kernel threads (no user)\n"
+"    offcputime -U          # only show user space stacks (no kernel)\n"
+"    offcputime -K          # only show kernel space stacks (no user)\n";
 
 #define OPT_PERF_MAX_STACK_DEPTH	1 /* --perf-max-stack-depth */
 #define OPT_STACK_STORAGE_SIZE		2 /* --stack-storage-size */
@@ -54,8 +58,12 @@ static const struct argp_option opts[] = {
 	{ "tid", 't', "TID", 0, "Trace this TID only" },
 	{ "user-threads-only", 'u', NULL, 0,
 	  "User threads only (no kernel threads)" },
+	{ "user-stacks-only", 'U', NULL, 0,
+	  "show stacks from user space only (no kernel space stacks)" },
 	{ "kernel-threads-only", 'k', NULL, 0,
 	  "Kernel threads only (no user threads)" },
+	{ "kernel-stacks-only", 'K', NULL, 0,
+	  "show stacks from kernel space only (no user space stacks)" },
 	{ "perf-max-stack-depth", OPT_PERF_MAX_STACK_DEPTH,
 	  "PERF-MAX-STACK-DEPTH", 0, "the limit for both kernel and user stack traces (default 127)" },
 	{ "stack-storage-size", OPT_STACK_STORAGE_SIZE, "STACK-STORAGE-SIZE", 0,
@@ -96,8 +104,14 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 	case 'u':
 		env.user_threads_only = true;
 		break;
+	case 'U':
+		env.user_stacks_only = true;
+		break;
 	case 'k':
 		env.kernel_threads_only = true;
+		break;
+	case 'K':
+		env.kernel_stacks_only = true;
 		break;
 	case OPT_PERF_MAX_STACK_DEPTH:
 		errno = 0;
@@ -200,6 +214,9 @@ static void print_map(struct ksyms *ksyms, struct syms_cache *syms_cache,
 		if (val.delta == 0)
 			continue;
 
+		if (next_key.kernel_stack_id == -EFAULT)
+			goto print_ustack;
+
 		if (bpf_map_lookup_elem(sfd, &next_key.kernel_stack_id, ip) != 0) {
 			warning("    [Missed Kernel Stack]\n");
 			goto print_ustack;
@@ -220,11 +237,11 @@ static void print_map(struct ksyms *ksyms, struct syms_cache *syms_cache,
 		}
 
 print_ustack:
-		if (next_key.user_stack_id == -1)
+		if (next_key.user_stack_id == -1 || next_key.user_stack_id == -EFAULT)
 			goto skip_ustack;
 
 		if (bpf_map_lookup_elem(sfd, &next_key.user_stack_id, ip) != 0) {
-			warning("     [Missing User Stack]\n");
+			warning("     [Missing User Stack] %d\n", next_key.user_stack_id);
 			goto skip_ustack;
 		}
 
@@ -271,6 +288,15 @@ cleanup:
 	free(ip);
 }
 
+static const char *stack_context(void)
+{
+	if (env.user_stacks_only)
+		return "user";
+	if (env.kernel_stacks_only)
+		return "kernel";
+	return "user + kernel";
+}
+
 int main(int argc, char *argv[])
 {
 	static const struct argp argp = {
@@ -296,6 +322,11 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	if (env.user_stacks_only && env.kernel_stacks_only) {
+		warning("user_stacks_only and kernel_stacks_only cann't be used together.\n");
+		return 1;
+	}
+
 	if (env.min_block_time >= env.max_block_time) {
 		warning("min_block_time should be smaller than max_block_time.\n");
 		return 1;
@@ -313,7 +344,9 @@ int main(int argc, char *argv[])
 	bpf_obj->rodata->target_tgid = env.pid;
 	bpf_obj->rodata->target_pid = env.tid;
 	bpf_obj->rodata->user_threads_only = env.user_threads_only;
+	bpf_obj->rodata->user_stacks_only = env.user_stacks_only;
 	bpf_obj->rodata->kernel_threads_only = env.kernel_threads_only;
+	bpf_obj->rodata->kernel_stacks_only = env.kernel_stacks_only;
 	bpf_obj->rodata->state = env.state;
 	bpf_obj->rodata->min_block_ns = env.min_block_time;
 	bpf_obj->rodata->max_block_ns = env.max_block_time;
@@ -321,11 +354,6 @@ int main(int argc, char *argv[])
 	bpf_map__set_value_size(bpf_obj->maps.stackmap,
 				env.perf_max_stack_depth * sizeof(unsigned long));
 	bpf_map__set_max_entries(bpf_obj->maps.stackmap, env.stack_storage_size);
-
-	if (probe_tp_btf("sched_switch"))
-		bpf_program__set_autoload(bpf_obj->progs.sched_switch_raw, false);
-	else
-		bpf_program__set_autoload(bpf_obj->progs.sched_switch_btf, false);
 
 	err = offcputime_bpf__load(bpf_obj);
 	if (err) {
@@ -351,7 +379,26 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
+	if (ksyms__get_symbol(ksyms, "finish_task_switch"))
+		bpf_obj->links.oncpu = bpf_program__attach_kprobe(bpf_obj->progs.oncpu,
+								  false,
+								  "finish_task_switch");
+	else if (ksyms__get_symbol(ksyms, "finish_task_switch.isra.0"))
+		bpf_obj->links.oncpu = bpf_program__attach_kprobe(bpf_obj->progs.oncpu,
+								  false,
+								  "finish_task_switch.isra.0");
+	if (!bpf_obj->links.oncpu) {
+		warning("Failed to load attach finish_task_switch\n");
+		goto cleanup;
+	}
+
 	signal(SIGINT, sig_handler);
+
+	printf("Tracing off-CPU time (us) of all threads by %s stack", stack_context());
+	if (env.duration < 99999999)
+		printf(" for %d secs\n", env.duration);
+	else
+		printf("... Hit Ctrl-C to end.\n");
 
 	/*
 	 * We'll get sleep interrupted when someone presses Ctrl-C (which will

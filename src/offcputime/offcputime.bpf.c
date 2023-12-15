@@ -11,6 +11,8 @@
 
 const volatile bool kernel_threads_only = false;
 const volatile bool user_threads_only = false;
+const volatile bool user_stacks_only = false;
+const volatile bool kernel_stacks_only = false;
 const volatile __u64 max_block_ns = -1;
 const volatile __u64 min_block_ns = -1;
 const volatile pid_t target_tgid = -1;
@@ -56,13 +58,14 @@ static bool allow_record(struct task_struct *task)
 	return true;
 }
 
-static __always_inline int probe_sched_switch(void *ctx, bool preempt, struct task_struct *prev,
-					      struct task_struct *next)
+SEC("kprobe")
+int oncpu(struct pt_regs *ctx)
 {
 	struct internal_key *i_keyp, i_key;
 	offcpu_val_t *valp, val;
 	s64 delta;
 	u32 pid;
+	struct task_struct *prev = (void *)PT_REGS_PARM1(ctx);
 
 	if (allow_record(prev)) {
 		pid = BPF_CORE_READ(prev, pid);
@@ -74,19 +77,22 @@ static __always_inline int probe_sched_switch(void *ctx, bool preempt, struct ta
 		i_key.key.tgid = BPF_CORE_READ(prev, tgid);
 		i_key.start_ts = bpf_ktime_get_ns();
 
-		if (BPF_CORE_READ(prev, flags) & PF_KTHREAD)
-			i_key.key.user_stack_id = -1;
+		if (!kernel_stacks_only)
+			i_key.key.user_stack_id = bpf_get_stackid(ctx, &stackmap, BPF_F_USER_STACK);
 		else
-			i_key.key.user_stack_id =
-				bpf_get_stackid(ctx, &stackmap, BPF_F_USER_STACK);
-		i_key.key.kernel_stack_id = bpf_get_stackid(ctx, &stackmap, 0);
+			i_key.key.user_stack_id = -1;
+		if (!user_stacks_only)
+			i_key.key.kernel_stack_id = bpf_get_stackid(ctx, &stackmap, 0);
+		else
+			i_key.key.kernel_stack_id = -1;
+
 		bpf_map_update_elem(&start, &pid, &i_key, BPF_ANY);
 		BPF_CORE_READ_STR_INTO(&val.comm, prev, comm);
 		val.delta = 0;
 		bpf_map_update_elem(&info, &i_key.key, &val, BPF_NOEXIST);
 	}
 
-	pid = BPF_CORE_READ(next, pid);
+	pid = bpf_get_current_pid_tgid();
 	i_keyp = bpf_map_lookup_elem(&start, &pid);
 	if (!i_keyp)
 		return 0;
@@ -106,20 +112,6 @@ cleanup:
 	bpf_map_delete_elem(&start, &pid);
 
 	return 0;
-}
-
-SEC("tp_btf/sched_switch")
-int BPF_PROG(sched_switch_btf, bool preempt, struct task_struct *prev,
-	     struct task_struct *next)
-{
-	return probe_sched_switch(ctx, preempt, prev, next);
-}
-
-SEC("raw_tp/sched_switch")
-int BPF_PROG(sched_switch_raw, bool preempt, struct task_struct *prev,
-	     struct task_struct *next)
-{
-	return probe_sched_switch(ctx, preempt, prev, next);
 }
 
 char LICENSE[] SEC("license") = "GPL";
