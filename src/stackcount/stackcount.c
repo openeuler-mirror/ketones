@@ -29,6 +29,7 @@ enum TRACE_TYPE {
 
 static struct env {
 	bool verbose;
+	bool folded;
 	int interval;
 	int interations;
 	int duration;
@@ -60,7 +61,7 @@ const char argp_program_doc[] =
 "stackcount    Count events and their stack traces.\n"
 "\n"
 "USAGE: stackcount.py [-h] [-p PID] [-c CPU] [-i INTERVAL] [-D DURATION] [-T]\n"
-"                     [-s] [-P] [-K] [-U] [-v]\n"
+"                     [-s] [-P] [-K] [-U] [-v] [-f]\n"
 "\n"
 "Example:\n"
 "    stackcount submit_bio         # count kernel stack traces for submit_bio\n"
@@ -82,6 +83,7 @@ const char argp_program_doc[] =
 
 static struct argp_option opts[] = {
 	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
+	{ "folded", 'f', NULL, 0, "output folded format" },
 	{ "interval", 'i', "INTERVAL", 0, "Output interval, in seconds" },
 	{ "pid", 'p', "PID", 0, "Trace process PID only" },
 	{ "cpu", 'c', "CPU", 0, "Trace this CPU only" },
@@ -106,6 +108,9 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 	switch (key) {
 	case 'v':
 		env.verbose = true;
+		break;
+	case 'f':
+		env.folded = true;
 		break;
 	case 'h':
 		argp_state_help(state, stderr, ARGP_HELP_STD_HELP);
@@ -246,17 +251,16 @@ static void print_stack_counts(struct stackcount_bpf *obj, const struct value *v
 	if (bpf_map_lookup_elem(bpf_map__fd(obj->maps.stacks),
 				&key.kernel_stack_id, ip))
 		goto print_ustack;
+
+	if (env.folded)
+		env.offset = false;
+
 	for (int i = 0; i < env.perf_max_stack_depth && ip[i]; i++) {
 		const struct ksym *ksym = ksyms__map_addr(ksyms, ip[i]);
-		char buf[1024];
-
-		if (ksym) {
-			if (env.offset)
-				sprintf(buf, "%s+0x%lx", ksym->name, ip[i] - ksym->addr);
-			else
-				sprintf(buf, "%s", ksym->name);
-		}
-		printf("  b'%s'\n", ksym ? buf : "Unknown");
+		if (ksyms && env.offset)
+			printf("    %s+0x%lx\n", ksym->name, ip[i] - ksym->addr);
+		else
+			folded_printf(env.folded, "%s", ksyms ? ksym->name : "Unknown");
 	}
 
 print_ustack:
@@ -264,7 +268,7 @@ print_ustack:
 	    key.pid == 0xffffffff)
 		goto skip_ustack;
 
-	if (env.delimiter && env.need_kernel_stack)
+	if (env.delimiter && env.need_kernel_stack && !env.folded)
 		printf("    --\n");
 
 	if (bpf_map_lookup_elem(bpf_map__fd(obj->maps.stacks),
@@ -278,26 +282,24 @@ print_ustack:
 
 	for (int i = 0; i < env.perf_max_stack_depth && ip[i]; i++) {
 		const struct sym *sym = syms__map_addr(syms, ip[i]);
-		char buf[1024];
-
-		if (sym) {
-			if (env.offset)
-				sprintf(buf, "%s+0x%lx",
-					demangling_cplusplus_function(sym->name),
-					sym->offset);
-			else
-				sprintf(buf, "%s",
-					demangling_cplusplus_function(sym->name));
-		}
-		printf("  b'%s'\n", sym ? buf : "Unknown");
+		if (sym && env.offset)
+			printf("    %s+0x%lx\n",
+				demangling_cplusplus_function(sym->name),
+				sym->offset);
+		else
+			folded_printf(env.folded, "%s",
+				sym ? demangling_cplusplus_function(sym->name) : "Unknown");
 	}
 
 skip_ustack:
-	if (key.pid != 0xffffffff && !env.pid)
-		printf("    b'%s' [%d] - CPU#%d\n", key.name, key.pid,
+	if (key.pid != 0xffffffff && !env.pid && !env.folded)
+		printf("    %s [%d] - CPU#%d\n", key.name, key.pid,
 		       value->val.cpu);
 
-	printf("    %lld\n\n", value->val.count);
+	if (!env.folded)
+		printf("      %lld\n\n", value->val.count);
+	else
+		printf(" %lld\n", value->val.count);
 	free(ip);
 }
 
@@ -535,7 +537,8 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	printf("Tracing %d functions... Ctrl-C to end.\n", cnt);
+	if (!env.folded)
+		printf("Tracing %d functions... Ctrl-C to end.\n", cnt);
 	for (int i = 0; i < env.interations && !exiting; i++) {
 		sleep(env.interval);
 
@@ -549,7 +552,8 @@ int main(int argc, char *argv[])
 
 		print_maps(obj);
 	}
-	printf("Detaching...\n");
+	if (!env.folded)
+		printf("Detaching...\n");
 
 cleanup:
 	stackcount_bpf__destroy(obj);

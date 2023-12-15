@@ -15,6 +15,7 @@ static struct env {
 	pid_t pid;
 	pid_t tid;
 	bool verbose;
+	bool folded;
 	bool user_threads_only;
 	bool kernel_threads_only;
 	int stack_storage_size;
@@ -37,7 +38,7 @@ const char *argp_program_bug_address = "Wolfgang Huang <huangjinhui@kylinos.cn>"
 const char argp_program_doc[] =
 "Profile CPU usage by sampling stack traces at a timed interval\n"
 "\n"
-"USAGE: profile [--help] [-p PID | -L TID] [-U | -K] [-F FREQUENCY ]\n"
+"USAGE: profile [--help] [-p PID | -L TID] [-U | -K] [-f] [-F FREQUENCY ]\n"
 "		[--stack-storage-size STACK_STORAGE_SIZE]\n"
 "		[--perf-max-stack-depth PREF_MAX_STACK_DEPTH]\n"
 "		[-C CPU] [duration]\n\n"
@@ -45,6 +46,7 @@ const char argp_program_doc[] =
 "	profile			# profile stack traces at 49 Hertz until Ctrl-C\n"
 "	profile -F 99		# profile stack traces at 99 Hertz\n"
 "	profile 5		# profile at 49 Hertz for 5 seconds only\n"
+"	profile -f 5		# 5 seconds, and output in folded format\n"
 "	profile -p 185		# only profile process with PID 185\n"
 "	profile -L 185		# only profile thread with TID 185\n"
 "	profile -U		# only show user space stacks (no kernel)\n"
@@ -61,6 +63,7 @@ static const struct argp_option opts[] = {
 	{ "kernel-threads-only", 'K', NULL, 0,
 	  "Kernel threads only (no user threads)" },
 	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
+	{ "folded", 'f', NULL, 0, "output folded format" },
 	{ "frequency", 'F', "FREQUENCY", 0, "sample frequency Hertz(default 49)" },
 	{ "cpu", 'C', "CPU", 0, "cpu number to run profile(default -1)" },
 	{ "perf-max-stack-depth", OPT_PERF_MAX_STACK_DEPTH,
@@ -81,6 +84,9 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 		break;
 	case 'v':
 		env.verbose = true;
+		break;
+	case 'f':
+		env.folded = true;
 		break;
 	case 'p':
 		env.pid = argp_parse_pid(key, arg, state);
@@ -180,6 +186,9 @@ static void print_map(struct ksyms *ksyms, struct syms_cache *syms_cache,
 		return;
 	}
 
+	if (env.folded)
+		env.verbose = false;
+
 	cfd = bpf_map__fd(bpf_obj->maps.count);
 	sfd = bpf_map__fd(bpf_obj->maps.stackmap);
 
@@ -195,8 +204,11 @@ static void print_map(struct ksyms *ksyms, struct syms_cache *syms_cache,
 			goto cleanup;
 		}
 
+		if (env.folded)
+			printf("%s;", next_key.comm);
+
 		if (bpf_map_lookup_elem(sfd, &next_key.kernel_stack_id, ip) != 0) {
-			warning("    [Missed Kernel Stack]\n");
+			folded_printf(env.folded, "[Missed Kernel Stack]");
 			goto print_ustack;
 		}
 
@@ -204,7 +216,7 @@ static void print_map(struct ksyms *ksyms, struct syms_cache *syms_cache,
 			const struct ksym *ksym = ksyms__map_addr(ksyms, ip[i]);
 
 			if (!env.verbose) {
-				printf("    %s%s\n", "b'", ksym ? ksym->name : "Unknown");
+				folded_printf(env.folded, "%s", ksym ? ksym->name : "Unknown");
 			} else {
 				if (ksym)
 					printf("    #%-2d 0x%lx %s+0x%lx\n", idx, ip[i], ksym->name, ip[i] - ksym->addr);
@@ -241,10 +253,7 @@ print_ustack:
 
 			if (!env.verbose) {
 				sym = syms__map_addr(syms, ip[i]);
-				if (sym)
-					printf("    %s\n", sym->name);
-				else
-					printf("    [unknown]\n");
+				folded_printf(env.folded, "%s", sym ? sym->name : "[unknown]");
 			} else {
 				char *dso_name;
 				unsigned long dso_offset;
@@ -264,8 +273,12 @@ clean_ustack:
 		/* delete for userstack map entry */
 		bpf_map_delete_elem(sfd, &next_key.user_stack_id);
 skip_ustack:
-		printf("    %-16s %s (%d)\n", "-", next_key.comm, next_key.pid);
-		printf("        %lld\n\n", val);
+		if (!env.folded) {
+			printf("    %-16s %s (%d)\n", "-", next_key.comm, next_key.pid);
+			printf("        %lld\n\n", val);
+		} else {
+			printf(" %lld\n", val);
+		}
 
 		/* delete profile_key entry */
 		bpf_map_delete_elem(cfd, &next_key);
