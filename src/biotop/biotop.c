@@ -1,5 +1,12 @@
 // SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
-
+/*
+ * biotop Trace block I/O by process.
+ * Copyright (c) 2022 Francis Laniel <flaniel@linux.microsoft.com>
+ *
+ * Based on biotop(8) from BCC by Brendan Gregg.
+ * 03-Mar-2022   Francis Laniel   Created this.
+ * 23-Nov-2023   Pcheng Cui       Add PID filter support.
+ */
 #include "commons.h"
 #include "biotop.h"
 #include "biotop.skel.h"
@@ -67,6 +74,7 @@ static struct env {
 	int	sort_by;
 	int	interval;
 	int	count;
+	pid_t	target_pid;
 	bool	verbose;
 } env = {
 	.clear_screen	= true,
@@ -74,7 +82,6 @@ static struct env {
 	.sort_by	= ALL,
 	.interval	= 1,
 	.count		= 99999999,
-	.verbose	= false,
 };
 
 const char *argp_program_version = "biotop 0.1";
@@ -82,16 +89,18 @@ const char *argp_program_bug_address = "Jackie Liu <liuyun01@kylinos.cn>";
 const char argp_program_doc[] =
 "Trace file reads/writes by process.\n"
 "\n"
-"USAGE: biotop [-h] [interval] [count]\n"
+"USAGE: biotop [-h] [interval] [count] [-p PID]\n"
 "\n"
 "EXAMPLES:\n"
 "    biotop            # file I/O top, refresh every 1s\n"
-"    biotop 5 10       # 5s summaries, 10 times\n";
+"    biotop 5 10       # 5s summaries, 10 times\n"
+"    biotop -p 181     # only trace PID 128\n";
 
 static const struct argp_option opts[] = {
 	{ "noclear", 'c', NULL, 0, "Don't clear the screen" },
 	{ "sort", 's', "SORT", 0, "Sort columns, default all [all, io, bytes, time]" },
 	{ "rows", 'r', "ROWS", 0, "Maximum rows to print, default 20" },
+	{ "pid", 'p', "PID", 0, "Process ID to trace" },
 	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
 	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
 	{}
@@ -128,6 +137,9 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 		}
 		if (env.output_rows > OUTPUT_ROWS_LIMIT)
 			env.output_rows = OUTPUT_ROWS_LIMIT;
+		break;
+	case 'p':
+		env.target_pid = argp_parse_pid(key, arg, state);
 		break;
 	case 'v':
 		env.verbose = true;
@@ -402,6 +414,8 @@ int main(int argc, char *argv[])
 		warning("Failed to open BPF object\n");
 		return 1;
 	}
+
+	obj->rodata->target_pid = env.target_pid;
 
 	parse_disk_stat();
 
