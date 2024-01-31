@@ -340,27 +340,35 @@ static void print_headers()
 
 static void handle_event(void *ctx, int cpu, void *data, __u32 data_sz)
 {
-	const struct event *e = data;
+	struct event e;
 	char ts[32];
 
+	if (data_sz < sizeof(e)) {
+		warning("Packet too small\n");
+		return;
+	}
+
+	/* Copy data as alignment in the perf buffer isn't guaranteed. */
+	memcpy(&e, data, sizeof(e));
+
 	if (csv) {
-		printf("%lld,%s,%d,%c,", e->end_ns, e->task, e->pid, file_op[e->op]);
-		if (e->size == LLONG_MAX)
+		printf("%lld,%s,%d,%c,", e.end_ns, e.task, e.pid, file_op[e.op]);
+		if (e.size == LLONG_MAX)
 			printf("LL_MAX,");
 		else
-			printf("%zd,", e->size);
-		printf("%lld,%lld,%s\n", e->offset, e->delta_us, e->file);
+			printf("%zd,", e.size);
+		printf("%lld,%lld,%s\n", e.offset, e.delta_us, e.file);
 		return;
 	}
 
 	strftime_now(ts, sizeof(ts), "%H:%M:%S");
 
-	printf("%-8s %-16s %-7d %c ", ts, e->task, e->pid, file_op[e->op]);
-	if (e->size == LLONG_MAX)
+	printf("%-8s %-16s %-7d %c ", ts, e.task, e.pid, file_op[e.op]);
+	if (e.size == LLONG_MAX)
 		printf("%-10s ", "LL_MAX");
 	else
-		printf("%-10zd ", e->size);
-	printf("%-8lld %7.2f %s\n", e->offset / 1024, (double)e->delta_us / 1000, e->file);
+		printf("%-10zd ", e.size);
+	printf("%-8lld %7.2f %s\n", e.offset / 1024, (double)e.delta_us / 1000, e.file);
 }
 
 static void handle_lost_events(void *ctx, int cpu, __u64 lost_cnt)
