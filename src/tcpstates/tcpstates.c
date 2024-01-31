@@ -116,8 +116,16 @@ static void sig_handler(int sig)
 
 static int handle_event(void *ctx, void *data, size_t data_sz)
 {
-	const struct event *e = data;
+	struct event e;
 	char saddr[39], daddr[39];
+
+	if (data_sz < sizeof(e)) {
+		warning("Packet too small\n");
+		return 0;
+	}
+
+	/* Copy data as alignment in the perf buffer isn't guaranteed. */
+	memcpy(&e, data, sizeof(e));
 
 	if (env.emit_timestamp) {
 		char ts[32];
@@ -126,21 +134,21 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		printf("%8s ", ts);
 	}
 
-	inet_ntop(e->family, &e->saddr, saddr, sizeof(saddr));
-	inet_ntop(e->family, &e->daddr, daddr, sizeof(daddr));
+	inet_ntop(e.family, &e.saddr, saddr, sizeof(saddr));
+	inet_ntop(e.family, &e.daddr, daddr, sizeof(daddr));
 
 	if (env.wide_output) {
-		int family = e->family == AF_INET ? 4 : 6;
+		int family = e.family == AF_INET ? 4 : 6;
 
 		printf("%-16llx %-7d %-16s %-2d %-39s %5d %-39s %-5d %-11s -> %-11s %.3f\n",
-		       e->skaddr, e->pid, e->task, family, saddr, e->sport, daddr, e->dport,
-		       tcp_states[e->oldstate], tcp_states[e->newstate],
-		       (double)e->delta_us / 1000);
+		       e.skaddr, e.pid, e.task, family, saddr, e.sport, daddr, e.dport,
+		       tcp_states[e.oldstate], tcp_states[e.newstate],
+		       (double)e.delta_us / 1000);
 	} else {
 		printf("%-16llx %-7d %-10.10s %-15s %-5d %-15s %-5d %-11s -> %-11s %.3f\n",
-		       e->skaddr, e->pid, e->task, saddr, e->sport, daddr, e->dport,
-		       tcp_states[e->oldstate], tcp_states[e->newstate],
-		       (double)e->delta_us / 1000);
+		       e.skaddr, e.pid, e.task, saddr, e.sport, daddr, e.dport,
+		       tcp_states[e.oldstate], tcp_states[e.newstate],
+		       (double)e.delta_us / 1000);
 	}
 
 	return 0;
