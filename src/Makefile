@@ -82,6 +82,7 @@ APPS += inject
 APPS += javagc
 APPS += klockstat
 APPS += ksnoop
+APPS += kvmexit
 APPS += llcstat
 APPS += loads
 APPS += mdflush
