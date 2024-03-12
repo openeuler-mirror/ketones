@@ -80,6 +80,44 @@ static void sig_handler(int sig)
 	exiting = 1;
 }
 
+static char *find_readline_function_name(const char *bash_path)
+{
+	bool found = false;
+	int fd = -1;
+	Elf *elf = NULL;
+	Elf_Scn *scn = NULL;
+	GElf_Shdr shdr;
+
+	elf = open_elf(bash_path, &fd);
+	while ((scn = elf_nextscn(elf, scn)) != NULL && !found) {
+		gelf_getshdr(scn, &shdr);
+		if (shdr.sh_type == SHT_SYMTAB || shdr.sh_type == SHT_DYNSYM) {
+			Elf_Data *data = elf_getdata(scn, NULL);
+
+			if (data != NULL) {
+				GElf_Sym *symtab = (GElf_Sym *) data->d_buf;
+				int sym_count = shdr.sh_size / shdr.sh_entsize;
+
+				for (int i = 0; i < sym_count; ++i) {
+					if (strcmp("readline_internal_teardown",
+						   elf_strptr(elf,
+							      shdr.sh_link,
+							      symtab[i].st_name)) == 0) {
+						found = true;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	close_elf(elf,fd);
+	if (found)
+		return "readline_internal_teardown";
+	else
+		return "readline";
+}
+
 int main(int argc, char *argv[])
 {
 	LIBBPF_OPTS(bpf_object_open_opts, open_opts);
@@ -107,7 +145,7 @@ int main(int argc, char *argv[])
 	} else {
 		const char *bash_path = "/bin/bash";
 
-		if (get_elf_func_offset(bash_path, "readline") >= 0)
+		if (get_elf_func_offset(bash_path, find_readline_function_name(bash_path)) >= 0)
 			readline_so_path = strdup(bash_path);
 		else {
 			readline_so_path = find_library_so(bash_path, "/libreadline.so");
@@ -138,7 +176,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	func_off = get_elf_func_offset(readline_so_path, "readline");
+	func_off = get_elf_func_offset(readline_so_path, find_readline_function_name(readline_so_path));
 	if (func_off < 0) {
 		warning("Count not find readline in %s\n", readline_so_path);
 		goto cleanup;
