@@ -13,6 +13,7 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
+#include <regex.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -10999,6 +11000,7 @@ struct kprobe_multi_resolve {
 	unsigned long *addrs;
 	size_t cap;
 	size_t cnt;
+	bool use_regex;
 };
 
 struct avail_kallsyms_data {
@@ -11039,12 +11041,25 @@ static int libbpf_available_kallsyms_parse(struct kprobe_multi_resolve *res)
 	int err = 0, ret, i;
 	char **syms = NULL;
 	size_t cap = 0, cnt = 0;
+	regex_t regex;
 
 	f = fopen(available_functions_file, "re");
 	if (!f) {
 		err = -errno;
 		pr_warn("failed to open %s: %d\n", available_functions_file, err);
 		return err;
+	}
+
+	if (res->use_regex) {
+		ret = regcomp(&regex, res->pattern, REG_EXTENDED | REG_NOSUB);
+		if (ret) {
+			char errbuf[128];
+
+			regerror(ret, &regex, errbuf, sizeof(errbuf));
+			pr_warn("Failed to compile regex: %s\n", errbuf);
+			fclose(f);
+			return -EINVAL;
+		}
 	}
 
 	while (true) {
@@ -11060,8 +11075,13 @@ static int libbpf_available_kallsyms_parse(struct kprobe_multi_resolve *res)
 			goto cleanup;
 		}
 
-		if (!glob_match(sym_name, res->pattern))
-			continue;
+		if (res->use_regex) {
+			if (regexec(&regex, sym_name, 0, NULL, 0) != 0)
+				continue;
+		} else {
+			if (!glob_match(sym_name, res->pattern))
+				continue;
+		}
 
 		err = libbpf_ensure_mem((void **)&syms, &cap, sizeof(*syms), cnt + 1);
 		if (err)
@@ -11094,6 +11114,8 @@ static int libbpf_available_kallsyms_parse(struct kprobe_multi_resolve *res)
 		err = -ENOENT;
 
 cleanup:
+	if (res->use_regex)
+		regfree(&regex);
 	for (i = 0; i < cnt; i++)
 		free((char *)syms[i]);
 	free(syms);
@@ -11114,12 +11136,25 @@ static int libbpf_available_kprobes_parse(struct kprobe_multi_resolve *res)
 	FILE *f;
 	int ret, err = 0;
 	unsigned long long sym_addr;
+	regex_t regex;
 
 	f = fopen(available_path, "re");
 	if (!f) {
 		err = -errno;
 		pr_warn("failed to open %s: %d\n", available_path, err);
 		return err;
+	}
+
+	if (res->use_regex) {
+		ret = regcomp(&regex, res->pattern, REG_EXTENDED | REG_NOSUB);
+		if (ret) {
+			char errbuf[128];
+
+			regerror(ret, &regex, errbuf, sizeof(errbuf));
+			pr_warn("Failed to compile regex: %s\n", errbuf);
+			fclose(f);
+			return -EINVAL;
+		}
 	}
 
 	while (true) {
@@ -11134,8 +11169,13 @@ static int libbpf_available_kprobes_parse(struct kprobe_multi_resolve *res)
 			goto cleanup;
 		}
 
-		if (!glob_match(sym_name, res->pattern))
-			continue;
+		if (res->use_regex) {
+			if (regexec(&regex, sym_name, 0, NULL, 0) != 0)
+				continue;
+		} else {
+			if (!glob_match(sym_name, res->pattern))
+				continue;
+		}
 
 		err = libbpf_ensure_mem((void **)&res->addrs, &res->cap,
 					sizeof(*res->addrs), res->cnt + 1);
@@ -11149,6 +11189,8 @@ static int libbpf_available_kprobes_parse(struct kprobe_multi_resolve *res)
 		err = -ENOENT;
 
 cleanup:
+	if (res->use_regex)
+		regfree(&regex);
 	fclose(f);
 	return err;
 }
@@ -11189,6 +11231,8 @@ bpf_program__attach_kprobe_multi_opts(const struct bpf_program *prog,
 		return libbpf_err_ptr(-EINVAL);
 
 	if (pattern) {
+		res.use_regex = OPTS_GET(opts, use_regex, false);
+
 		if (has_available_filter_functions_addrs())
 			err = libbpf_available_kprobes_parse(&res);
 		else

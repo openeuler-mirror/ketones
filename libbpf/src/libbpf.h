@@ -537,6 +537,8 @@ struct bpf_kprobe_multi_opts {
 	const __u64 *cookies;
 	/* number of elements in syms/addrs/cookies arrays */
 	size_t cnt;
+	/* use regular expression */
+	bool use_regex;
 	/* create return kprobes */
 	bool retprobe;
 	size_t :0;
@@ -719,6 +721,27 @@ struct bpf_usdt_opts {
 	size_t :0;
 };
 #define bpf_usdt_opts__last_field usdt_cookie
+
+struct usdt_note {
+	const char *provider;
+	const char *name;
+	/* USDT args specification string, e.g.:
+	 * "-4@%esi -4@-24(%rbp) -4@%ecx 2@%ax 8@%rdx"
+	 */
+	const char *args;
+	long loc_addr;
+	long base_addr;
+	long sema_addr;
+};
+
+struct usdt_array{
+	size_t nr;
+	size_t capacity;
+	struct usdt_note *notes;
+};
+
+void free_usdt_notes(struct usdt_array *usdt_notes);
+struct usdt_array* probe_usdt_notes(const char *path);
 
 /**
  * @brief **bpf_program__attach_usdt()** is just like
