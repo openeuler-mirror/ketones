@@ -113,7 +113,7 @@ const char *argp_program_bug_address = "Jackie Liu <liuyun01@kylinos.cn>";
 const char argp_program_doc[] =
 "Trace outstanding memory allocations\n"
 "\n"
-"USAGE: memleak [-h] [-c COMMAND] [-p PID] [-t] [-n] [-a] [-o AGE_MS] [-C] [-F] [-s SAMPLE_RATE] [-T TOP_STACKS] [-z MIN_SIZE] [-Z MAX_SIZE] [-O OBJECT] [-P] [INTERVAL] [INTERVALS]\n"
+"USAGE: memleak [-h] [-c COMMAND] [-p PID] [-t] [-n] [-a] [-v] [-o AGE_MS] [-C] [-F] [-s SAMPLE_RATE] [-T TOP_STACKS] [-z MIN_SIZE] [-Z MAX_SIZE] [-O OBJECT] [-P] [INTERVAL] [INTERVALS]\n"
 "\n"
 "EXAMPLES:\n"
 "./memleak -p $(pidof allocs)\n"
@@ -157,6 +157,7 @@ static const struct argp_option opts[] = {
 	  0, "The limit for both kernel and user stack traces (default 127)" },
 	{ "stack-map-max-entries", OPT_STACK_MAP_MAX_ENTRIES, "STACK_MAP_MAX_ENTRIES",
 	  0, "The number of unique stack traces that can be stored and displayed (default 10240)" },
+	{ "verbose", 'v', NULL, 0, "verbose debug output" },
 	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show this full help" },
 	{}
 };
