@@ -24,37 +24,37 @@ static __always_inline int handle_enter_sync(void *ctx, const char *funcname)
 }
 
 SEC("tracepoint/syscalls/sys_enter_sync")
-int tracepoint_sys_enter_sync(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_sys_enter_sync(struct syscall_trace_enter *ctx)
 {
 	return handle_enter_sync(ctx, "tracepoint:syscalls:sys_enter_sync");
 }
 
 SEC("tracepoint/syscalls/sys_enter_syncfs")
-int tracepoint_sys_enter_syncfs(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_sys_enter_syncfs(struct syscall_trace_enter *ctx)
 {
 	return handle_enter_sync(ctx, "tracepoint:syscalls:sys_enter_syncfs");
 }
 
 SEC("tracepoint/syscalls/sys_enter_fsync")
-int tracepoint_sys_enter_fsync(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_sys_enter_fsync(struct syscall_trace_enter *ctx)
 {
 	return handle_enter_sync(ctx, "tracepoint:syscalls:sys_enter_fsync");
 }
 
 SEC("tracepoint/syscalls/sys_enter_fdatasync")
-int tracepoint_sys_enter_fdatasync(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_sys_enter_fdatasync(struct syscall_trace_enter *ctx)
 {
 	return handle_enter_sync(ctx, "tracepoint:syscalls:sys_enter_fdatasync");
 }
 
 SEC("tracepoint/syscalls/sys_enter_sync_file_range")
-int tracepoint_sys_enter_sync_file_range(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_sys_enter_sync_file_range(struct syscall_trace_enter *ctx)
 {
 	return handle_enter_sync(ctx, "tracepoint:syscalls:sys_enter_sync_file_range");
 }
 
 SEC("tracepoint/syscalls/sys_enter_msync")
-int tracepoint_sys_enter_msync(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_sys_enter_msync(struct syscall_trace_enter *ctx)
 {
 	return handle_enter_sync(ctx, "tracepoint:syscalls:sys_enter_msync");
 }

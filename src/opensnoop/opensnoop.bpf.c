@@ -57,7 +57,7 @@ int record_args(const char *fname, int flags, umode_t modes)
 	return 0;
 }
 
-static __always_inline int trace_exit(struct trace_event_raw_sys_exit *ctx)
+static __always_inline int trace_exit(struct syscall_trace_exit *ctx)
 {
 	struct event *eventp;
 	struct args_t *argsp;
@@ -97,27 +97,27 @@ static __always_inline int trace_exit(struct trace_event_raw_sys_exit *ctx)
 }
 
 SEC("tracepoint/syscalls/sys_enter_open")
-int tracepoint__syscalls__sys_enter_open(struct trace_event_raw_sys_enter *ctx)
+int tracepoint__syscalls__sys_enter_open(struct syscall_trace_enter *ctx)
 {
 	return record_args((const char *)ctx->args[0], (int)ctx->args[1],
 			   (umode_t)ctx->args[2]);
 }
 
 SEC("tracepoint/syscalls/sys_enter_openat")
-int tracepoint__syscalls__sys_enter_openat(struct trace_event_raw_sys_enter *ctx)
+int tracepoint__syscalls__sys_enter_openat(struct syscall_trace_enter *ctx)
 {
 	return record_args((const char *)ctx->args[1], (int)ctx->args[2],
 			   (umode_t)ctx->args[3]);
 }
 
 SEC("tracepoint/syscalls/sys_exit_open")
-int tracepoint__syscalls__sys_exit_open(struct trace_event_raw_sys_exit *ctx)
+int tracepoint__syscalls__sys_exit_open(struct syscall_trace_exit *ctx)
 {
 	return trace_exit(ctx);
 }
 
 SEC("tracepoint/syscalls/sys_exit_openat")
-int tracepoint__syscalls__sys_exit_openat(struct trace_event_raw_sys_exit *ctx)
+int tracepoint__syscalls__sys_exit_openat(struct syscall_trace_exit *ctx)
 {
 	return trace_exit(ctx);
 }

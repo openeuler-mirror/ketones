@@ -141,7 +141,7 @@ static __always_inline int syscall_exit_execve(void *ctx, int ret)
 }
 
 SEC("tracepoint/syscalls/sys_enter_execve")
-int tracepoint_syscall_enter_execve(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_syscall_enter_execve(struct syscall_trace_enter *ctx)
 {
 	const char *filename = (const char *)(ctx->args[0]);
 	const char *const *argv = (const char **)(ctx->args[1]);
@@ -151,7 +151,7 @@ int tracepoint_syscall_enter_execve(struct trace_event_raw_sys_enter *ctx)
 }
 
 SEC("tracepoint/syscalls/sys_enter_execveat")
-int tracepoint_syscall_enter_execveat(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_syscall_enter_execveat(struct syscall_trace_enter *ctx)
 {
 	const char *filename = (const char *)(ctx->args[1]);
 	const char *const *argv = (const char **)(ctx->args[2]);
@@ -161,13 +161,13 @@ int tracepoint_syscall_enter_execveat(struct trace_event_raw_sys_enter *ctx)
 }
 
 SEC("tracepoint/syscalls/sys_exit_execve")
-int tracepoint_syscall_exit_execve(struct trace_event_raw_sys_exit *ctx)
+int tracepoint_syscall_exit_execve(struct syscall_trace_exit *ctx)
 {
 	return syscall_exit_execve(ctx, ctx->ret);
 }
 
 SEC("tracepoint/syscalls/sys_exit_execveat")
-int tracepoint_syscall_exit_execveat(struct trace_event_raw_sys_exit *ctx)
+int tracepoint_syscall_exit_execveat(struct syscall_trace_exit *ctx)
 {
 	return syscall_exit_execve(ctx, ctx->ret);
 }

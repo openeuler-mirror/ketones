@@ -36,7 +36,7 @@ struct {
 } birth_setreuid SEC(".maps");
 
 static __always_inline int
-handle_syscall_enter_uid_fsuid(struct trace_event_raw_sys_enter *ctx)
+handle_syscall_enter_uid_fsuid(struct syscall_trace_enter *ctx)
 {
 	pid_t tid = bpf_get_current_pid_tgid();
 	struct data1_t data = {};
@@ -50,19 +50,19 @@ handle_syscall_enter_uid_fsuid(struct trace_event_raw_sys_enter *ctx)
 }
 
 SEC("tracepoint/syscalls/sys_enter_setuid")
-int tracepoint_syscall_enter_setuid(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_syscall_enter_setuid(struct syscall_trace_enter *ctx)
 {
 	return handle_syscall_enter_uid_fsuid(ctx);
 }
 
 SEC("tracepoint/syscalls/sys_enter_setfsuid")
-int tracepoint_syscall_enter_setfsuid(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_syscall_enter_setfsuid(struct syscall_trace_enter *ctx)
 {
 	return handle_syscall_enter_uid_fsuid(ctx);
 }
 
 SEC("tracepoint/syscalls/sys_enter_setresuid")
-int tracepoint_syscall_enter_setresuid(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_syscall_enter_setresuid(struct syscall_trace_enter *ctx)
 {
 	struct data2_t data = {};
 	pid_t tid = bpf_get_current_pid_tgid();
@@ -77,7 +77,7 @@ int tracepoint_syscall_enter_setresuid(struct trace_event_raw_sys_enter *ctx)
 }
 
 static __always_inline int
-handle_syscall_exit_uid_fsuid(struct trace_event_raw_sys_exit *ctx,
+handle_syscall_exit_uid_fsuid(struct syscall_trace_exit *ctx,
 			      enum UID_TYPE type)
 {
 	struct event *eventp;
@@ -105,19 +105,19 @@ handle_syscall_exit_uid_fsuid(struct trace_event_raw_sys_exit *ctx,
 }
 
 SEC("tracepoint/syscalls/sys_exit_setuid")
-int tracepoint_syscall_exit_setuid(struct trace_event_raw_sys_exit *ctx)
+int tracepoint_syscall_exit_setuid(struct syscall_trace_exit *ctx)
 {
 	return handle_syscall_exit_uid_fsuid(ctx, SU_UID);
 }
 
 SEC("tracepoint/syscalls/sys_exit_setfsuid")
-int tracepoint_syscall_exit_setfsuid(struct trace_event_raw_sys_exit *ctx)
+int tracepoint_syscall_exit_setfsuid(struct syscall_trace_exit *ctx)
 {
 	return handle_syscall_exit_uid_fsuid(ctx, SU_FSUID);
 }
 
 SEC("tracepoint/syscalls/sys_exit_setreuid")
-int tracepoint_syscall_exit_setreuid(struct trace_event_raw_sys_exit *ctx)
+int tracepoint_syscall_exit_setreuid(struct syscall_trace_exit *ctx)
 {
 	struct event *eventp;
 	__u64 pid_tgid = bpf_get_current_pid_tgid();
