@@ -275,8 +275,8 @@ print_ustack:
 				sym = syms__map_addr(syms, ip[i]);
 				folded_printf(env.folded, "%s", sym ? sym->name : "[unknown]");
 			} else {
-				char *dso_name;
-				unsigned long dso_offset;
+				char *dso_name = NULL;
+				unsigned long dso_offset = 0;
 
 				sym = syms__map_addr_dso(syms, ip[i], &dso_name, &dso_offset);
 				printf("    #%-2d 0x%016lx", idx++, ip[i]);
