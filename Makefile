@@ -4,7 +4,8 @@ SPECFILE=$(TOP)/$(NAME).spec
 VERSION=$(shell awk '/Version:/ { print $$2 }' $(SPECFILE))
 VERSION_MAJOR=$(shell echo $(VERSION) | cut -d. -f1)
 VERSION_MINOR=$(shell echo $(VERSION) | cut -d. -f2)
-TAG = $(NAME)-$(VERSION)
+RELEASE=$(shell awk '/Release:/ { print $$2 }' $(SPECFILE) | awk '{gsub(/%{.*}/, ""); print}')
+TAG = $(NAME)-$(VERSION)-$(RELEASE)
 RPMBUILD=$(shell `which rpmbuild >&/dev/null` && echo "rpmbuild" || echo "rpm")
 
 prefix=/usr
