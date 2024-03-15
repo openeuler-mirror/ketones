@@ -1,6 +1,6 @@
 Name: ketones
 Version: 1.0
-Release: 2%{?dist}
+Release: 3%{?dist}
 Summary: The key eBPF tool for a new environment
 License: GPLv3 License
 URL: https://gitee.com/openkylin/ketones.git
@@ -32,6 +32,40 @@ export LDFLAGS=
 %license LICENSE
 
 %changelog
+* Fri Mar 15 2024 Youling Tang <tangyouling@kylinos.cn> - 1.0-3
+- Add adaptive readahead support
+- Add wqlat support
+- libbpf-tools: fix syscall tracepoints
+- Fix bashreadline
+- libbpf-tools/offcputime, futexctn: Fix incorrect DSO information in stacktrace
+- libbpf-tools/memleak: Add verbose option
+- libbpf: Some advanced features customized for ketones
+- Update libbpf to 1.4.0
+- Add netqtop support
+- Add kvmexit support
+- Add dddos support
+- cpuunclaimed: Add cpuunclaimed support
+- libbpf-tools/ksnoop: perf buffer fix unnecessary junk bits output
+- libbpf-tools: Fix bindsnoop for kernel v6.6+
+- libbpf-tools: Fix trace_helper symbol search bug
+- libbpf-tools/biotop: Add PID filter support
+- libbpf-tools: Fix misaligned pointer accesses in drsnoop
+- libbpf-tools: Fix misaligned pointer accesses in tcptracer
+- libbpf-tools: Fix misaligned pointer accesses in tcpstates
+- libbpf-tools: Fix misaligned pointer accesses in filegone
+- libbpf-tools: Fix misaligned pointer accesses in tcplife
+- libbpf-tools: Fix misaligned pointer accesses in tcpconnect
+- libbpf-tools: Fix misaligned pointer accesses in statsnoop
+- libbpf-tools: Fix misaligned pointer accesses in runqslower
+- libbpf-tools: Fix misaligned pointer accesses in opensnoop
+- libbpf-tools: Fix misaligned pointer accesses in gethostlatency
+- libbpf-tools: Fix misaligned pointer accesses in fsslower
+- libbpf-tools: Fix misaligned pointer accesses in filelife
+- libbpf-tools: Fix misaligned pointer accesses in biosnoop
+- Add futexctn support
+- libbpf-tools/memleak: correct key size of memptrs
+- Sync ketones.spec to v1.0-2
+
 * Fri Jan 19 2024 Youling Tang <tangyouling@kylinos.cn> - 1.0-2
 - softirqs: Fix the naming error
 - Revert "ksnoop: use bpf_get_func_ip() where helper is available"
