@@ -34,8 +34,8 @@ toolset, allowing for smooth migration and utilization without any disruptions.
 **Cross-Platform Support**: Our software runs on any operating system, providing
 you with a wide range of usage options.
 
-**Multi-Architecture Support**: Our software supports the ARM64, X86, and
-Loongarch architectures, catering to different hardware platforms.
+**Multi-Architecture Support**: Our software supports the ARM64, X86, Loongarch
+and RISC-V architectures, catering to different hardware platforms.
 
 ### Installation and Integration
 
