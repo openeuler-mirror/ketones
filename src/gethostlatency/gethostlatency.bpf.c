@@ -60,13 +60,13 @@ static int probe_return(struct pt_regs *ctx)
 	return 0;
 }
 
-SEC("kprobe/handle_entry_gethost")
+SEC("uprobe")
 int BPF_KPROBE(handle_entry_gethost)
 {
 	return probe_entry(ctx);
 }
 
-SEC("kretprobe/handle_return_gethost")
+SEC("uretprobe")
 int BPF_KRETPROBE(handle_return_gethost)
 {
 	return probe_return(ctx);
