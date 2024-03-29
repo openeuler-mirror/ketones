@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	obj->rodata->filter_memcg = env.cg;
+	obj->rodata->filter_cg = env.cg;
 	obj->rodata->target_pid = env.target_pid;
 	obj->rodata->ignore_errors = env.ignore_errors;
 	obj->rodata->filter_by_port = env.target_ports != NULL;
