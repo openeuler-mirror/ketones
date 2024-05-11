@@ -37,6 +37,7 @@ static struct env {
 	bool kernel_trace;
 	bool verbose;
 	char command[32];
+	char symbols_prefix[16];
 } env = {
 	.interval = 5,
 	.nr_intervals = -1,
@@ -66,8 +67,10 @@ struct allocation {
 
 #define __ATTACH_UPROBE(skel, sym_name, prog_name, is_retprobe)	\
 	do {\
+		char sym[32];					\
+		sprintf(sym, "%s%s", env.symbols_prefix, #sym_name);	\
 		LIBBPF_OPTS(bpf_uprobe_opts, uprobe_opts,	\
-				.func_name = #sym_name,		\
+				.func_name = sym,		\
 				.retprobe = is_retprobe);	\
 		skel->links.prog_name = bpf_program__attach_uprobe_opts( \
 				skel->progs.prog_name,	\
@@ -134,6 +137,7 @@ const char argp_program_doc[] =
 "        allocations that are at least one minute (60 seconds) old\n"
 "./memleak -s 5\n"
 "        Trace roughly every 5th allocation, to reduce overhead\n"
+"./memleak -p $(pidof allocs) -S je_\n"
 "";
 
 #define OPT_PERF_MAX_STACK_DEPTH	1	/* --perf-max-stack-depth */
@@ -153,6 +157,7 @@ static const struct argp_option opts[] = {
 	{ "max-size", 'Z', "MAX_SIZE", 0, "capture only allocations smaller than this size" },
 	{ "obj", 'O', "OBJECT", 0, "attach to allocator functions in the specified object" },
 	{ "percpu", 'P', NULL, 0, "trace percpu allocations" },
+	{ "symbols-prefix", 'S', "SYMBOL_PREFIX:", 0, "memory allocator symbols prefix" },
 	{ "perf-max-stack-depth", OPT_PERF_MAX_STACK_DEPTH, "PERF_MAX_STACK_DEPTH",
 	  0, "The limit for both kernel and user stack traces (default 127)" },
 	{ "stack-map-max-entries", OPT_STACK_MAP_MAX_ENTRIES, "STACK_MAP_MAX_ENTRIES",
@@ -194,6 +199,9 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 		break;
 	case 's':
 		env.sample_rate = argp_parse_long(key, arg, state);
+		break;
+	case 'S':
+		strncpy(env.symbols_prefix, arg, sizeof(env.symbols_prefix) - 1);
 		break;
 	case 'T':
 		env.top_stacks = argp_parse_long(key, arg, state);
@@ -708,8 +716,14 @@ int attach_uprobes(struct memleak_bpf *skel)
 	ATTACH_UPROBE_CHECKED(skel, realloc, realloc_enter);
 	ATTACH_URETPROBE_CHECKED(skel, realloc, realloc_exit);
 
-	ATTACH_UPROBE_CHECKED(skel, mmap, mmap_enter);
-	ATTACH_URETPROBE_CHECKED(skel, mmap, mmap_exit);
+	/* third party allocator like jemallloc not support mmap, so remove the check. */
+	if (strlen(env.symbols_prefix)) {
+		ATTACH_UPROBE(skel, mmap, mmap_enter);
+		ATTACH_URETPROBE(skel, mmap, mmap_exit);
+	} else {
+		ATTACH_UPROBE_CHECKED(skel, mmap, mmap_enter);
+		ATTACH_URETPROBE_CHECKED(skel, mmap, mmap_exit);
+	}
 
 	ATTACH_UPROBE_CHECKED(skel, posix_memalign, posix_memalign_enter);
 	ATTACH_URETPROBE_CHECKED(skel, posix_memalign, posix_memalign_exit);
@@ -718,7 +732,12 @@ int attach_uprobes(struct memleak_bpf *skel)
 	ATTACH_URETPROBE_CHECKED(skel, memalign, memalign_exit);
 
 	ATTACH_UPROBE_CHECKED(skel, free, free_enter);
-	ATTACH_UPROBE_CHECKED(skel, munmap, munmap_enter);
+
+	if (strlen(env.symbols_prefix)) {
+		ATTACH_UPROBE(skel, munmap, munmap_enter);
+	} else {
+		ATTACH_UPROBE_CHECKED(skel, munmap, munmap_enter);
+	}
 
 	// the following probes are intentinally allowed to fail attachment
 
