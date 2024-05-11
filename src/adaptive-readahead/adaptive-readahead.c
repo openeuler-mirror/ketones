@@ -21,9 +21,9 @@ const char argp_program_doc[] =
 "USAGE: adaptive-readahead [-d disk]\n";
 
 static const struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "disk", 'd', "DISK", 0, "Specified disk" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "disk", 'd', "DISK", 0, "Specified disk", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help", 0 },
 	{}
 };
 

@@ -41,16 +41,16 @@ const char argp_program_doc[] =
 "    tcppkglat -r          # filter for remote port\n";
 
 static const struct argp_option opts[] = {
-	{ "pid", 'p', "PID", 0, "Process ID to trace" },
-	{ "tid", 't', "TID", 0, "Thread ID to trace" },
-	{ "timestamp", 'T', NULL, 0, "Include timestamp on output" },
-	{ "lport", 'l', "LPORT", 0, "Filter for local port" },
-	{ "rport", 'r', "RPORT", 0, "Filter for remote port" },
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "print-addr-width", 'W', "ADDR-WIDTH", 0, "Specify print width of tcp address (default 15)" },
-	{ "ipv4", '4', NULL, 0, "Trace IPv4 skb only" },
-	{ "ipv6", '6', NULL, 0, "Trace IPv6 skb only" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
+	{ "pid", 'p', "PID", 0, "Process ID to trace", 0 },
+	{ "tid", 't', "TID", 0, "Thread ID to trace", 0 },
+	{ "timestamp", 'T', NULL, 0, "Include timestamp on output", 0 },
+	{ "lport", 'l', "LPORT", 0, "Filter for local port", 0 },
+	{ "rport", 'r', "RPORT", 0, "Filter for remote port", 0 },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "print-addr-width", 'W', "ADDR-WIDTH", 0, "Specify print width of tcp address (default 15)", 0 },
+	{ "ipv4", '4', NULL, 0, "Trace IPv4 skb only", 0 },
+	{ "ipv6", '6', NULL, 0, "Trace IPv6 skb only", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help", 0 },
 	{}
 };
 

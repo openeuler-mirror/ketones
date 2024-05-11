@@ -20,10 +20,10 @@ const char argp_program_doc[] =
 "USAGE: reset-trace [-Fhqv]\n";
 
 static const struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "print details while working" },
-	{ "force", 'F', NULL, 0, "reset all tracing files" },
-	{ "quiet", 'q', NULL, 0, "no output" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
+	{ "verbose", 'v', NULL, 0, "print details while working", 0 },
+	{ "force", 'F', NULL, 0, "reset all tracing files", 0 },
+	{ "quiet", 'q', NULL, 0, "no output", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help", 0 },
 	{}
 };
 

@@ -32,13 +32,13 @@ const char argp_program_doc[] =
 "./sofdsnoop -n main   # only print process names containing \"main\"";
 
 static const struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "timestamp", 'T', NULL, 0, "include timestamp on output" },
-	{ "pid", 'p', "PID", 0, "trace this PID only" },
-	{ "tid", 't', "TID", 0, "trace this TID only" },
-	{ "name", 'n', "NAME", 0, "only print process names containing this name"},
-	{ "duration", 'd', "DURATION", 0, "total duration of trace in seconds"},
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show this help" },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "timestamp", 'T', NULL, 0, "include timestamp on output", 0 },
+	{ "pid", 'p', "PID", 0, "trace this PID only", 0 },
+	{ "tid", 't', "TID", 0, "trace this TID only", 0 },
+	{ "name", 'n', "NAME", 0, "only print process names containing this name", 0 },
+	{ "duration", 'd', "DURATION", 0, "total duration of trace in seconds", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show this help", 0 },
 	{}
 };
 

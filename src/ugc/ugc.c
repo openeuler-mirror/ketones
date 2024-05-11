@@ -40,12 +40,12 @@ const char argp_program_doc[] =
 "    ./ugc -M 10 -l node 185  # trace only Node GCs longer than 10ms\n";
 
 const struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "language", 'l', "LANGUAGE", 0, "language to trace [node,python,ruby]" },
-	{ "milliseconds", 'm', NULL, 0, "report times in milliseconds (default is microseconds)" },
-	{ "minimum", 'M', "MIN-MS", 0, "display only GCs longer than this many milliseconds" },
-	{ "filter", 'F', "FILTER", 0, "display only GCs whose description contains this text" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "show the help" },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "language", 'l', "LANGUAGE", 0, "language to trace [node,python,ruby]", 0 },
+	{ "milliseconds", 'm', NULL, 0, "report times in milliseconds (default is microseconds)", 0 },
+	{ "minimum", 'M', "MIN-MS", 0, "display only GCs longer than this many milliseconds", 0 },
+	{ "filter", 'F', "FILTER", 0, "display only GCs whose description contains this text", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "show the help", 0 },
 	{}
 };
 

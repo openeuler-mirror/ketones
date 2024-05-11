@@ -47,12 +47,12 @@ const char argp_program_doc[] =
 "   ./uobjnew -l ruby 6712 -S 10  # top 10 Ruby types by total size\n";
 
 static const struct argp_option opts[] = {
-	{ "language", 'l', "LANG", 0, "language to trace" },
-	{ "interval", 0, "NUM", 0, "print every specified number of seconds" },
-	{ "top-count", 'C', "NUM", 0, "number of most frequently allocated types to print" },
-	{ "top-size", 'S', "NUM", 0, "number of largest types by allocated bytes to print" },
-	{ "verbose", 'v', NULL, 0, "verbose mode: print the BPF program (for debugging purposes)" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show this full help" },
+	{ "language", 'l', "LANG", 0, "language to trace", 0 },
+	{ "interval", 0, "NUM", 0, "print every specified number of seconds", 0 },
+	{ "top-count", 'C', "NUM", 0, "number of most frequently allocated types to print", 0 },
+	{ "top-size", 'S', "NUM", 0, "number of largest types by allocated bytes to print", 0 },
+	{ "verbose", 'v', NULL, 0, "verbose mode: print the BPF program (for debugging purposes)", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show this full help", 0 },
 	{}
 };
 

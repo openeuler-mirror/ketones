@@ -29,9 +29,9 @@ const char argp_program_doc[] =
 "javagc 185 -t 100  # trace PID 185 java gc time beyond 100us\n";
 
 static const struct argp_option opts[] = {
-	{ "time", 't', "TIME", 0, "Java gc time" },
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
+	{ "time", 't', "TIME", 0, "Java gc time", 0 },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help", 0 },
 	{}
 };
 

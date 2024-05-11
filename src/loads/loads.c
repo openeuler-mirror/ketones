@@ -33,11 +33,11 @@ const char argp_program_doc[] =
 "    loads -t 5            # print load average 5 times\n";
 
 static const struct argp_option opts[] = {
-	{ "interval", 'i', "INTERVAL", 0, "Output interval, in seconds (Default 1)" },
-	{ "times", 't', "TIMES", 0, "The number of outputs" },
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "timestamp", 'T', NULL, 0, "Include timestamp on output" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "SHow the full help" },
+	{ "interval", 'i', "INTERVAL", 0, "Output interval, in seconds (Default 1)", 0 },
+	{ "times", 't', "TIMES", 0, "The number of outputs", 0 },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "timestamp", 'T', NULL, 0, "Include timestamp on output", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "SHow the full help", 0 },
 	{}
 };
 

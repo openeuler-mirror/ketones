@@ -43,11 +43,11 @@ const char argp_program_doc[] =
 "dbslower mysql -x $(which mysqld)  # trace MySQL queries with uprobes\n";
 
 static const struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "verbose mode: print the BPF program (for debugging purposes)" },
-	{ "db", 1, "DB", 0, "the database engine to use" },
-	{ "pid", 'p', "PID", 0, "the pid(s) to trace" },
-	{ "exe", 'x', "EXE", 0, "path to binary" },
-	{ "threshold", 'm', "NUM", 0, "trace queries slower than this threshold (ms)" },
+	{ "verbose", 'v', NULL, 0, "verbose mode: print the BPF program (for debugging purposes)", 0 },
+	{ "db", 1, "DB", 0, "the database engine to use", 0 },
+	{ "pid", 'p', "PID", 0, "the pid(s) to trace", 0 },
+	{ "exe", 'x', "EXE", 0, "path to binary", 0 },
+	{ "threshold", 'm', "NUM", 0, "trace queries slower than this threshold (ms)", 0 },
 	{}
 };
 

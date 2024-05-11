@@ -39,11 +39,11 @@ const char argp_program_doc[] =
 "            [-t]\n";
 
 static const struct argp_option opts[] = {
-	{ "version", 'v', NULL, 0, "Verbose debug output" },
-	{ "name", 'n', "DEVNAME", 0, "Trace DEVNAME only" },
-	{ "interval", 'i', "INTERVAL", 0, "Output interval, in seconds" },
-	{ "throughput", 't', NULL, 0, "Show throughput" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show this help" },
+	{ "version", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "name", 'n', "DEVNAME", 0, "Trace DEVNAME only", 0 },
+	{ "interval", 'i', "INTERVAL", 0, "Output interval, in seconds", 0 },
+	{ "throughput", 't', NULL, 0, "Show throughput", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show this help", 0 },
 	{},
 };
 

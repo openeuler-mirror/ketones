@@ -28,12 +28,12 @@ const char argp_program_doc[] =
 "USAGE: llcstat [--help] [-c SAMPLE_PERIOD] [duration]\n";
 
 static const struct argp_option opts[] = {
-	{ "sample_period", 'c', "SAMPLE_PERIOD", 0, "Sample one in this many "
-	  "number of cache reference / miss events" },
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
+	{ "sample_period", 'c', "SAMPLE_PERIOD", 0,
+	  "Sample one in this many number of cache reference / miss events", 0 },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
 	{ "tid", 't', NULL, 0,
-	  "Summarize cacge references and misses by PID/TTID" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
+	  "Summarize cacge references and misses by PID/TTID", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help", 0 },
 	{},
 };
 

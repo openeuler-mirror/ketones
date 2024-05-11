@@ -55,11 +55,11 @@ const char argp_program_doc[] =
 
 static const struct argp_option opts[] = {
 	{ "csv", 'j', NULL, 0,
-	  "print sameple summaries (verbose) as comma-separated values" },
+	  "print sameple summaries (verbose) as comma-separated values", 0 },
 	{ "fullcsv", 'J', NULL, 0,
-	  "print sample summaries with extra fields: CPU sample offsets" },
-	{ "timestamp", 'T', NULL, 0, "include timestamp on output" },
-	{ "help", 'h', NULL, OPTION_HIDDEN, "show this help message and exit" },
+	  "print sample summaries with extra fields: CPU sample offsets", 0 },
+	{ "timestamp", 'T', NULL, 0, "include timestamp on output", 0 },
+	{ "help", 'h', NULL, OPTION_HIDDEN, "show this help message and exit", 0 },
 	{},
 };
 

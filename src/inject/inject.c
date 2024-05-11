@@ -54,11 +54,11 @@ const char argp_program_doc[] =
 "inject kmalloc -v -P 0.01 'SyS_mount()'             # Fails calls to syscall mount with 1% probability\n";
 
 static const struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "verbose mode: print the BPF program (for debugging purposes)" },
-	{ "spec", 1, "SPEC", 0, "specify call chain" },
-	{ "probability", 'P', "NUM", 0, "probability that this call chain will fail" },
-	{ "count", 'c', "NUM", 0, "Number of fails before bypassing the override" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show this help" },
+	{ "verbose", 'v', NULL, 0, "verbose mode: print the BPF program (for debugging purposes)", 0 },
+	{ "spec", 1, "SPEC", 0, "specify call chain", 0 },
+	{ "probability", 'P', "NUM", 0, "probability that this call chain will fail", 0 },
+	{ "count", 'c', "NUM", 0, "Number of fails before bypassing the override", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show this help", 0 },
 	{}
 };
 

@@ -30,13 +30,13 @@ const char argp_program_doc[] =
 ;
 
 static const struct argp_option opts[] = {
-	{ "time", 'T', NULL, 0, "include time column on output (HH:MM:SS)" },
-	{ "timestamp", 't', NULL, 0, "include timestamp on output" },
-	{ "pid", 'p', "PID", 0, "trace this PID only" },
-	{ "port", 'P', "PORTS", 0, "comma-separated list of local ports to trace" },
-	{ "ipv4", '4', NULL, 0, "trace IPv4 family only" },
-	{ "ipv6", '6', NULL, 0, "trace IPv6 family only" },
-	{ "help", 'h', NULL, OPTION_HIDDEN, "Show this help message and exit" },
+	{ "time", 'T', NULL, 0, "include time column on output (HH:MM:SS)", 0 },
+	{ "timestamp", 't', NULL, 0, "include timestamp on output", 0 },
+	{ "pid", 'p', "PID", 0, "trace this PID only", 0 },
+	{ "port", 'P', "PORTS", 0, "comma-separated list of local ports to trace", 0 },
+	{ "ipv4", '4', NULL, 0, "trace IPv4 family only", 0 },
+	{ "ipv6", '6', NULL, 0, "trace IPv6 family only", 0 },
+	{ "help", 'h', NULL, OPTION_HIDDEN, "Show this help message and exit", 0 },
 	{}
 };
 

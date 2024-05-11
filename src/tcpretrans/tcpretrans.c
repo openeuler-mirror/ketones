@@ -51,11 +51,11 @@ const char *tcp_type[] = {
 };
 
 static const struct argp_option opts[] = {
-	{ "lossprobe", 'l', NULL, 0, "include tail loss probe attempts" },
-	{ "count", 'c', NULL, 0, "count occurred retransmits per flow" },
-	{ "ipv4", '4', NULL, 0, "trace IPv4 family only" },
-	{ "ipv6", '6', NULL, 0, "trace IPv6 family only" },
-	{ "help", 'h', NULL, 0, "Show this help message and exit" },
+	{ "lossprobe", 'l', NULL, 0, "include tail loss probe attempts", 0 },
+	{ "count", 'c', NULL, 0, "count occurred retransmits per flow", 0 },
+	{ "ipv4", '4', NULL, 0, "trace IPv4 family only", 0 },
+	{ "ipv6", '6', NULL, 0, "trace IPv6 family only", 0 },
+	{ "help", 'h', NULL, 0, "Show this help message and exit", 0 },
 	{}
 };
 

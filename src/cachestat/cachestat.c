@@ -25,9 +25,9 @@ const char argp_program_doc[] =
 "    cachestat 1 10     # print 1 second summaries, 10 times\n";
 
 static const struct argp_option opts[] = {
-	{ "timestamp", 'T', NULL, 0, "Include timestamp" },
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
+	{ "timestamp", 'T', NULL, 0, "Include timestamp", 0 },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help", 0 },
 	{}
 };
 
