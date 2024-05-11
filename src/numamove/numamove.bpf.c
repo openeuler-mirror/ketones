@@ -28,7 +28,7 @@ struct {
 	__type(value, u64);
 } num_map SEC(".maps");
 
-static int __migrate_misplaced_page(void)
+static int __migrate_misplaced(void)
 {
 	pid_t pid = (pid_t)bpf_get_current_pid_tgid();
 	u64 ts = bpf_ktime_get_ns();
@@ -40,18 +40,30 @@ static int __migrate_misplaced_page(void)
 SEC("fentry/migrate_misplaced_page")
 int BPF_PROG(fentry_migrate_misplaced_page)
 {
-	return __migrate_misplaced_page();
+	return __migrate_misplaced();
+}
+
+SEC("fentry/migrate_misplaced_folio")
+int BPF_PROG(fentry_migrate_misplaced_folio)
+{
+	return __migrate_misplaced();
 }
 
 SEC("kprobe/migrate_misplaced_page")
 int BPF_KPROBE(kprobe_migrate_misplaced_page)
 {
-	return __migrate_misplaced_page();
+	return __migrate_misplaced();
+}
+
+SEC("kprobe/migrate_misplaced_filio")
+int BPF_KPROBE(kprobe_migrate_misplaced_folio)
+{
+	return __migrate_misplaced();
 }
 
 static u64 zero;
 
-static int __migrate_misplaced_page_exit(void)
+static int __migrate_misplaced_exit(void)
 {
 	pid_t pid = (pid_t)bpf_get_current_pid_tgid();
 	s64 delta;
@@ -87,15 +99,27 @@ cleanup:
 }
 
 SEC("fexit/migrate_misplaced_page")
-int BPF_PROG(fexit_migrate_misplaced_page)
+int BPF_PROG(fexit_migrate_misplaced_page_exit)
 {
-	return __migrate_misplaced_page_exit();
+	return __migrate_misplaced_exit();
+}
+
+SEC("fexit/migrate_misplaced_folio")
+int BPF_PROG(fexit_migrate_misplaced_folio_exit)
+{
+	return __migrate_misplaced_exit();
 }
 
 SEC("kretprobe/migrate_misplaced_page")
-int BPF_KRETPROBE(kretprobe_migrate_misplaced_page)
+int BPF_KRETPROBE(kretprobe_migrate_misplaced_page_exit)
 {
-	return __migrate_misplaced_page_exit();
+	return __migrate_misplaced_exit();
+}
+
+SEC("kretprobe/migrate_misplaced_folio")
+int BPF_KRETPROBE(kretprobe_migrate_misplaced_folio_exit)
+{
+	return __migrate_misplaced_exit();
 }
 
 char LICENSE[] SEC("license") = "GPL";
