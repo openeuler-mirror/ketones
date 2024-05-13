@@ -255,15 +255,14 @@ print_ustack:
 				sym = syms__map_addr(syms, ip[i]);
 				folded_printf(env.folded, "%s", sym ? sym->name : "[unknown]");
 			} else {
-				char *dso_name;
-				unsigned long dso_offset;
+				struct sym_info sinfo;
 
-				sym = syms__map_addr_dso(syms, ip[i], &dso_name, &dso_offset);
 				printf("    #%-2d 0x%016lx", idx++, ip[i]);
-				if (sym) {
-					printf(" %s+0x%lx", sym->name, sym->offset);
-					if (dso_name)
-						printf(" (%s+0x%lx)", dso_name, dso_offset);
+				err = syms__map_addr_dso(syms, ip[i], &sinfo);
+				if (err == 0) {
+					printf(" %s+0x%lx", sinfo.sym_name, sinfo.sym_offset);
+					if (sinfo.dso_name)
+						printf(" (%s+0x%lx)", sinfo.dso_name, sinfo.dso_offset);
 				}
 				printf("\n");
 			}

@@ -617,17 +617,17 @@ print_ustack:
 	}
 
 	for (int i = 0; i < env.perf_max_stack_depth && ip[i]; i++) {
-		char *dso_name;
-		unsigned long dso_offset;
-		const struct sym *sym = syms__map_addr_dso(syms, ip[i], &dso_name, &dso_offset);
+		struct sym_info sinfo;
+		int err;
 
-		if (!sym) {
+		err = syms__map_addr_dso(syms, ip[i], &sinfo);
+		if (err != 0) {
 			printf("    b'Unknown'\n");
 		} else {
-			printf("    b'%s+0x%lx'", demangling_cplusplus_function(sym->name),
-					sym->offset);
-			if (dso_name)
-				printf(" (%s+0x%lx)", dso_name, dso_offset);
+			printf("    b'%s+0x%lx'", demangling_cplusplus_function(sinfo.sym_name),
+					sinfo.sym_offset);
+			if (sinfo.dso_name)
+				printf(" (%s+0x%lx)", sinfo.dso_name, sinfo.dso_offset);
 			printf("\n");
 		}
 
