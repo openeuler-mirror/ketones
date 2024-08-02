@@ -74,6 +74,7 @@ APPS += filesnoop
 APPS += fsdist
 APPS += fsslower
 APPS += funccount
+APPS += funcinterval
 APPS += funclatency
 APPS += funcslower
 APPS += gethostlatency
