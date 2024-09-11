@@ -25,7 +25,7 @@ static struct hist zero;
 
 static __always_inline bool comm_allowed(const char *comm)
 {
-	for (int i = 0; target_comm[i] != '\0' && i < TASK_COMM_LEN; i++) {
+	for (int i = 0; i < TASK_COMM_LEN && target_comm[i] != '\0'; i++) {
 		if (comm[i] != target_comm[i])
 			return false;
 	}
