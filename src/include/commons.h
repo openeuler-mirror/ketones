@@ -72,6 +72,19 @@ static inline int get_pid_max(void)
 	return pid_max;
 }
 
+static inline int get_pid_maxlen(void)
+{
+	int pid_max_fd, pid_maxlen;
+	char buf[256];
+
+	pid_max_fd = open("/proc/sys/kernel/pid_max", O_RDONLY);
+	pid_maxlen = read(pid_max_fd, buf, sizeof(buf)) - 1;
+
+	close(pid_max_fd);
+
+	return max(6, pid_maxlen);
+}
+
 static inline const char *get_uid_name(pid_t uid)
 {
 	struct passwd *passwd;

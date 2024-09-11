@@ -43,7 +43,7 @@ static struct env {
 const char *argp_program_version = "tcptop 0.1";
 const char *argp_program_bug_address = "Jackie Liu <liuyun01@kylinos.cn>";
 const char argp_program_doc[] =
-"Trace sending and received operation over IP.\n"
+"Summarize the top active TCP sessions - like top, but for TCP\n"
 "\n"
 "USAGE: tcptop [-h] [-p PID] [interval] [count]\n"
 "\n"
@@ -177,6 +177,7 @@ static int print_stat(struct tcptop_bpf *obj)
 	static struct info_t infos[OUTPUT_ROWS_LIMIT];
 	int fd = bpf_map__fd(obj->maps.ip_map);
 	bool ipv6_header_printed = false;
+	int pid_maxlen = get_pid_maxlen();
 	int rows = 0;
 	int err = 0;
 
@@ -184,7 +185,7 @@ static int print_stat(struct tcptop_bpf *obj)
 		FILE *f = fopen("/proc/loadavg", "r");
 
 		if (f) {
-			char ts[16], buf[256];
+			char ts[16] = {}, buf[256] = {};
 
 			strftime_now(ts, sizeof(ts), "%H:%M:%S");
 			if (fread(buf, 1, sizeof(buf), f))
@@ -203,8 +204,8 @@ static int print_stat(struct tcptop_bpf *obj)
 		rows++;
 	}
 
-	printf("%-7s %-12s %-21s %-21s %6s %6s", "PID", "COMM", "LADDR", "RADDR",
-	       "RX_KB", "TX_KB\n");
+	printf("%-*s %-12s %-21s %-21s %6s %6s\n", pid_maxlen, "PID", "COMM",
+	       "LADDR", "RADDR", "RX_KB", "TX_KB");
 
 	qsort(infos, rows, sizeof(struct info_t), sort_column);
 	rows = MIN(rows, env.output_rows);
@@ -219,9 +220,9 @@ static int print_stat(struct tcptop_bpf *obj)
 			/* Width to fit IPv6 plus port. */
 			column_width = 51;
 			if (!ipv6_header_printed) {
-				printf("\n%-7s %-12s %-51s %-51s %6s %6s",
-				       "PID", "COMM", "LADDR6", "RADDR6",
-				       "RX_KB", "TX_KB\n");
+				printf("\n%-*s %-12s %-51s %-51s %6s %6s\n",
+				       pid_maxlen, "PID", "COMM", "LADDR6",
+				       "RADDR6", "RX_KB", "TX_KB");
 				ipv6_header_printed = true;
 			}
 		}
@@ -243,7 +244,7 @@ static int print_stat(struct tcptop_bpf *obj)
 		snprintf(saddr_port, size, "%s:%d", saddr, key->lport);
 		snprintf(daddr_port, size, "%s:%d", daddr, key->dport);
 
-		printf("%-7d %-12.12s %-*s %-*s %6ld %6ld\n",
+		printf("%-*d %-12.12s %-*s %-*s %6ld %6ld\n", pid_maxlen,
 		       key->pid, key->name, column_width, saddr_port,
 		       column_width, daddr_port,
 		       value->received / 1024, value->sent / 1024);
