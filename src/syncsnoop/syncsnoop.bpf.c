@@ -6,7 +6,7 @@
 #include "syncsnoop.h"
 #include "compat.bpf.h"
 
-static __always_inline int handle_enter_sync(void *ctx, const char *funcname)
+static __always_inline int handle_enter_sync(void *ctx, int sys)
 {
 	struct event *event;
 
@@ -15,8 +15,9 @@ static __always_inline int handle_enter_sync(void *ctx, const char *funcname)
 		return 0;
 
 	event->pid = bpf_get_current_pid_tgid() >> 32;
+	event->ts_us = bpf_ktime_get_ns() / 1000;
+	event->sys = sys;
 	bpf_get_current_comm(&event->comm, sizeof(event->comm));
-	bpf_core_read_str(&event->funcname, sizeof(event->funcname), funcname);
 
 	submit_buf(ctx, event, sizeof(*event));
 
@@ -26,37 +27,37 @@ static __always_inline int handle_enter_sync(void *ctx, const char *funcname)
 SEC("tracepoint/syscalls/sys_enter_sync")
 int tracepoint_sys_enter_sync(struct syscall_trace_enter *ctx)
 {
-	return handle_enter_sync(ctx, "tracepoint:syscalls:sys_enter_sync");
+	return handle_enter_sync(ctx, SYS_SYNC);
 }
 
 SEC("tracepoint/syscalls/sys_enter_syncfs")
 int tracepoint_sys_enter_syncfs(struct syscall_trace_enter *ctx)
 {
-	return handle_enter_sync(ctx, "tracepoint:syscalls:sys_enter_syncfs");
+	return handle_enter_sync(ctx, SYS_SYNCFS);
 }
 
 SEC("tracepoint/syscalls/sys_enter_fsync")
 int tracepoint_sys_enter_fsync(struct syscall_trace_enter *ctx)
 {
-	return handle_enter_sync(ctx, "tracepoint:syscalls:sys_enter_fsync");
+	return handle_enter_sync(ctx, SYS_FSYNC);
 }
 
 SEC("tracepoint/syscalls/sys_enter_fdatasync")
 int tracepoint_sys_enter_fdatasync(struct syscall_trace_enter *ctx)
 {
-	return handle_enter_sync(ctx, "tracepoint:syscalls:sys_enter_fdatasync");
+	return handle_enter_sync(ctx, SYS_FDATASYNC);
 }
 
 SEC("tracepoint/syscalls/sys_enter_sync_file_range")
 int tracepoint_sys_enter_sync_file_range(struct syscall_trace_enter *ctx)
 {
-	return handle_enter_sync(ctx, "tracepoint:syscalls:sys_enter_sync_file_range");
+	return handle_enter_sync(ctx, SYS_SYNC_FILE_RANGE);
 }
 
 SEC("tracepoint/syscalls/sys_enter_msync")
 int tracepoint_sys_enter_msync(struct syscall_trace_enter *ctx)
 {
-	return handle_enter_sync(ctx, "tracepoint:syscalls:sys_enter_msync");
+	return handle_enter_sync(ctx, SYS_MSYNC);
 }
 
 char LICENSE[] SEC("license") = "GPL";

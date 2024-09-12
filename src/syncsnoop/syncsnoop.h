@@ -3,12 +3,23 @@
 #define __SYNCSNOOP_H
 
 #define TASK_COMM_LEN		16
-#define MAX_FUNC_NAME_LEN	256
+
+enum sync_syscalls {
+	SYS_T_MIN,
+	SYS_SYNC,
+	SYS_FSYNC,
+	SYS_FDATASYNC,
+	SYS_MSYNC,
+	SYS_SYNC_FILE_RANGE,
+	SYS_SYNCFS,
+	SYS_T_MAX,
+};
 
 struct event {
 	pid_t pid;
+	__u64 ts_us;
 	char comm[TASK_COMM_LEN];
-	char funcname[MAX_FUNC_NAME_LEN];
+	int sys;
 };
 
 #endif
