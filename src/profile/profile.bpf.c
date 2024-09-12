@@ -17,8 +17,8 @@
 
 const volatile bool kernel_threads_only = false;
 const volatile bool user_threads_only = false;
-const volatile pid_t target_tgid = -1;
-const volatile pid_t target_pid = -1;
+const volatile bool filter_by_pid = false;
+const volatile bool filter_by_tid = false;
 
 struct {
 	__uint(type, BPF_MAP_TYPE_STACK_TRACE);
@@ -32,14 +32,31 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 } count SEC(".maps");
 
+struct {
+	__uint(type, BPF_MAP_TYPE_HASH);
+	__uint(max_entries, MAX_PID_NR);
+	__type(key, u32);
+	__type(value, u8);
+} pids SEC(".maps");
+
+struct {
+	__uint(type, BPF_MAP_TYPE_HASH);
+	__uint(max_entries, MAX_TID_NR);
+	__type(key, u32);
+	__type(value, u8);
+} tids SEC(".maps");
+
 static bool allow_record(struct task_struct *task)
 {
+	u32 pid = BPF_CORE_READ(task, tgid);
+	u32 tid = BPF_CORE_READ(task, pid);
+
 	/* idle thread just ignore */
-	if (BPF_CORE_READ(task, pid) == 0)
+	if (tid == 0)
 		return false;
-	if (target_tgid != -1 && target_tgid != BPF_CORE_READ(task, tgid))
+	if (filter_by_pid && !bpf_map_lookup_elem(&pids, &pid))
 		return false;
-	if (target_pid != -1 && target_pid != BPF_CORE_READ(task, pid))
+	if (filter_by_tid && !bpf_map_lookup_elem(&tids, &tid))
 		return false;
 	if (user_threads_only && BPF_CORE_READ(task, flags) & PF_KTHREAD)
 		return false;
