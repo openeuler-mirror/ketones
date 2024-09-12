@@ -352,7 +352,7 @@ static pid_t fork_sync_exec(const char *command, int fd)
 
 static void (*print_stack_frames_func)();
 
-#if USE_BLAZESYM
+#ifdef USE_BLAZESYM
 static blazesym *symbolizer;
 static blazesym_sym_src_cfg src_cfg;
 
