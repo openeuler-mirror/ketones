@@ -179,10 +179,15 @@ static void print_map(struct ksyms *ksyms, struct wakeuptime_bpf *bpf_obj)
 		for (int i = 0; i < env.perf_max_stack_depth && ip[i]; i++) {
 			const struct ksym *ksym = ksyms__map_addr(ksyms, ip[i]);
 
-			if (!env.folded)
-				printf("    %-16lx %s\n", ip[i], ksym ? ksym->name : "Unknown");
-			else
+			if (!env.folded) {
+				if (ksym)
+					printf("    %-16lx %s+0x%lx\n", ip[i], ksym->name, ip[i] - ksym->addr);
+				else
+					printf("    %-16lx Unknown\n", ip[i]);
+
+			} else {
 				printf("%s;", ksym ? ksym->name : "Unknown");
+			}
 		}
 
 		/* To convert val in microseconds */
