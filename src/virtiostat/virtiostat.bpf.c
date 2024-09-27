@@ -7,10 +7,10 @@
 #include <bpf/bpf_tracing.h>
 #include "virtiostat.h"
 
-const volatile char filter_devname[CMPMAX];
-const volatile bool is_filter_devname = false;
-const volatile char filter_driver[CMPMAX];
-const volatile bool is_filter_driver = false;
+const char filter_devname[MAX_NAME_LEN] = {};
+const char filter_driver[MAX_NAME_LEN] = {};
+const bool is_filter_devname = false;
+const bool is_filter_driver = false;
 
 struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
@@ -38,22 +38,6 @@ static inline bool sg_is_chain(struct scatterlist *sg)
 static inline bool sg_is_last(struct scatterlist *sg)
 {
 	return __sg_flags(sg) & SG_END;
-}
-
-static int local_strcmp(const volatile char *cs, const char *ct)
-{
-	int len = 0;
-	unsigned char c1, c2;
-
-	while (len++ < CMPMAX) {
-		c1 = *cs++;
-		c2 = *ct++;
-		if (c1 != c2)
-			return c1 < c2 ? -1 : 1;
-		if (!c1)
-			break;
-	}
-	return 0;
 }
 
 static struct scatterlist *__sg_next(struct scatterlist *sgp)
@@ -119,20 +103,20 @@ static int record(struct virtqueue *vq, struct scatterlist **sgs,
 	virtio_stat_t *vs;
 	u64 key = (u64)vq;
 	u64 in_bw = 0;
-	char devname[16];
-	char driver[16];
+	char devname[MAX_NAME_LEN];
+	char driver[MAX_NAME_LEN];
 
 	if (is_filter_devname) {
 		bpf_probe_read_kernel_str(devname, sizeof(devname),
 					  BPF_CORE_READ(vq, vdev, dev.kobj.name));
-		if (local_strcmp(filter_devname, devname))
+		if (bpf_strncmp(devname, MAX_NAME_LEN, filter_devname))
 			return 0;
 	}
 
 	if (is_filter_driver) {
 		bpf_probe_read_kernel_str(driver, sizeof(driver),
 					  BPF_CORE_READ(vq, vdev, dev.driver, name));
-		if (local_strcmp(filter_driver, driver))
+		if (bpf_strncmp(driver, MAX_NAME_LEN, filter_driver))
 			return 0;
 	}
 

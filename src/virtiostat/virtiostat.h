@@ -8,8 +8,7 @@
 #define VIRTIO_MAX_SGS		6
 /* typically virtio blk has max SEG of 128 */
 #define SG_MAX			128
-/* local strcmp function, max length 16 to protect instruction loops */
-#define CMPMAX			16
+#define MAX_NAME_LEN		16
 #define SG_CHAIN		0x01UL
 #define SG_END			0x02UL
 #define SG_PAGE_LINK_MASK	(SG_CHAIN | SG_END)
