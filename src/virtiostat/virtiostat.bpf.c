@@ -9,8 +9,8 @@
 
 const char filter_devname[MAX_NAME_LEN] = {};
 const char filter_driver[MAX_NAME_LEN] = {};
-const bool is_filter_devname = false;
-const bool is_filter_driver = false;
+const volatile bool is_filter_devname = false;
+const volatile bool is_filter_driver = false;
 
 struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
