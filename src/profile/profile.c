@@ -54,8 +54,8 @@ const char argp_program_doc[] =
 #define OPT_STACK_STORAGE_SIZE		2 /* --stack-storage-size */
 
 static const struct argp_option opts[] = {
-	{ "pid", 'p', "PID", 0, "Trace this PID only", 0 },
-	{ "tid", 'L', "TID", 0, "Trace this TID only", 0 },
+	{ "pid", 'p', "PID", 0, "Profile processes with one or more comma-separated PIDs only", 0 },
+	{ "tid", 'L', "TID", 0, "Profile threads with one or more comma-separated TIDs only", 0 },
 	{ "user-threads-only", 'U', NULL, 0,
 	  "User threads only (no kernel threads)", 0 },
 	{ "kernel-threads-only", 'K', NULL, 0,
