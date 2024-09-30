@@ -24,7 +24,7 @@ struct {
 
 struct hist hist = {};
 
-SEC("fentry/do_page_cache_ra")
+SEC("fentry")
 int BPF_PROG(do_page_cache_ra)
 {
 	u32 pid = bpf_get_current_pid_tgid();
@@ -34,7 +34,7 @@ int BPF_PROG(do_page_cache_ra)
 	return 0;
 }
 
-SEC("kprobe/do_page_cache_ra")
+SEC("kprobe")
 int BPF_KPROBE(do_page_cache_ra_kprobe)
 {
 	u32 pid = bpf_get_current_pid_tgid();
@@ -60,13 +60,13 @@ static __always_inline int alloc_page_ret(void *key)
 	return 0;
 }
 
-SEC("fexit/__page_cache_alloc")
+SEC("fexit")
 int BPF_PROG(page_cache_alloc_ret, gfp_t gfp, struct page *page)
 {
 	return alloc_page_ret(page);
 }
 
-SEC("kretprobe/__page_cache_alloc")
+SEC("kretprobe")
 int BPF_KRETPROBE(page_cache_alloc_kretprobe, struct page *page)
 {
 	return alloc_page_ret(page);
@@ -81,6 +81,19 @@ int BPF_PROG(filemap_alloc_folio_ret, gfp_t gfp, unsigned int order,
 
 SEC("kretprobe/filemap_alloc_folio")
 int BPF_KRETPROBE(filemap_alloc_folio_kretprobe, struct folio *folio)
+{
+	return alloc_page_ret(folio);
+}
+
+SEC("fexit/filemap_alloc_folio_noprof")
+int BPF_PROG(filemap_alloc_folio_noprof_ret, gfp_t gfp, unsigned int order,
+	     struct folio *folio)
+{
+	return alloc_page_ret(folio);
+}
+
+SEC("kretprobe/filemap_alloc_folio_noprof")
+int BPF_KRETPROBE(filemap_alloc_folio_noprof_kretprobe, struct folio *folio)
 {
 	return alloc_page_ret(folio);
 }
