@@ -6,6 +6,7 @@
 #include <bpf/bpf_core_read.h>
 #include <bpf/bpf_tracing.h>
 #include "virtiostat.h"
+#include "core_fixes.bpf.h"
 
 const char filter_devname[MAX_NAME_LEN] = {};
 const char filter_driver[MAX_NAME_LEN] = {};
@@ -109,14 +110,14 @@ static int record(struct virtqueue *vq, struct scatterlist **sgs,
 	if (is_filter_devname) {
 		bpf_probe_read_kernel_str(devname, sizeof(devname),
 					  BPF_CORE_READ(vq, vdev, dev.kobj.name));
-		if (bpf_strncmp(devname, MAX_NAME_LEN, filter_devname))
+		if (compat_bpf_strncmp(devname, MAX_NAME_LEN, filter_devname))
 			return 0;
 	}
 
 	if (is_filter_driver) {
 		bpf_probe_read_kernel_str(driver, sizeof(driver),
 					  BPF_CORE_READ(vq, vdev, dev.driver, name));
-		if (bpf_strncmp(driver, MAX_NAME_LEN, filter_driver))
+		if (compat_bpf_strncmp(driver, MAX_NAME_LEN, filter_driver))
 			return 0;
 	}
 
