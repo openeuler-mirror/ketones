@@ -43,6 +43,8 @@ and RISC-V architectures, catering to different hardware platforms.
 
 ```bash
 # apt install llvm-dev clang make gcc libcap-dev binutils-dev libnuma-dev
+or
+# yum install clang make gcc llvm elfutils-libelf-devel numactl-devel ncurses-devel
 ```
 
 ***Make***
