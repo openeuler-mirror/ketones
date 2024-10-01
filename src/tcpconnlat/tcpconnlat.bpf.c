@@ -118,12 +118,6 @@ int BPF_KPROBE(tcp_v4_destroy_sock, struct sock *sk)
 	return cleanup_sock(sk);
 }
 
-SEC("kprobe/tcp_v6_destroy_sock")
-int BPF_KPROBE(tcp_v6_destroy_sock, struct sock *sk)
-{
-	return cleanup_sock(sk);
-}
-
 SEC("fentry/tcp_v4_connect")
 int BPF_PROG(fentry_tcp_v4_connect, struct sock *sk)
 {
@@ -144,12 +138,6 @@ int BPF_PROG(fentry_tcp_rcv_state_process, struct sock *sk)
 
 SEC("fentry/tcp_v4_destroy_sock")
 int BPF_PROG(fentry_tcp_v4_destroy_sock, struct sock *sk)
-{
-	return cleanup_sock(sk);
-}
-
-SEC("fentry/tcp_v6_destroy_sock")
-int BPF_PROG(fentry_tcp_v6_destroy_sock, struct sock *sk)
 {
 	return cleanup_sock(sk);
 }
