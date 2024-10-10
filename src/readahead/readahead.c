@@ -109,9 +109,6 @@ static void disable_fentry(struct readahead_bpf *obj)
 
 static bool try_fentry(struct readahead_bpf *obj)
 {
-	/* Disable all progs */
-	disable_fentry(obj);
-
 	/*
 	 * starting from v5.10-rc1, __do_page_cache_readahead has renamed to
 	 * do_page_cache_ra, so we specify the function dynamically.
@@ -138,7 +135,6 @@ static bool try_fentry(struct readahead_bpf *obj)
 	else
 		goto out_shutdown_fentry;
 
-	disable_kprobes(obj);
 	return true;
 
 out_shutdown_fentry:
@@ -148,8 +144,6 @@ out_shutdown_fentry:
 
 static int set_autoload_kprobes(struct readahead_bpf *obj)
 {
-	disable_kprobes(obj);
-
 	if (kprobe_exists("folio_mark_accessed"))
 		bpf_program__set_autoload(obj->progs.folio_mark_accessed_kprobe, true);
 	else if (kprobe_exists("mark_page_accessed"))
