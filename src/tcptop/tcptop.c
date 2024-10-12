@@ -2,7 +2,6 @@
 #include "commons.h"
 #include "tcptop.h"
 #include "tcptop.skel.h"
-#include "trace_helpers.h"
 
 #include <arpa/inet.h>
 #include <sys/param.h>
@@ -272,7 +271,7 @@ int main(int argc, char *argv[])
 		.parser = parse_arg,
 		.doc = argp_program_doc,
 	};
-	struct tcptop_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	int cgfd = -1;
 	int err;
 	int family = -1;
@@ -291,7 +290,7 @@ int main(int argc, char *argv[])
 	if (env.ipv6_only)
 		family = AF_INET6;
 
-	obj = tcptop_bpf__open();
+	obj = SKEL_OPEN();
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -301,7 +300,7 @@ int main(int argc, char *argv[])
 	obj->rodata->target_family = family;
 	obj->rodata->filter_cg = env.cgroup_filtering;
 
-	err = tcptop_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
@@ -323,7 +322,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	err = tcptop_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs: %d\n", err);
 		goto cleanup;
@@ -355,7 +354,7 @@ int main(int argc, char *argv[])
 cleanup:
 	if (env.cgroup_filtering && cgfd != -1)
 		close(cgfd);
-	tcptop_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 
 	return err != 0;
 }

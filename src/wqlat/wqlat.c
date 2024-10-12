@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
 		.options = opts,
 		.doc = argp_program_doc,
 	};
-	struct wqlat_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	int err;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = wqlat_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		goto cleanup;
@@ -206,13 +206,13 @@ int main(int argc, char *argv[])
 		memcpy(obj->bss->workqueue_name, env.wq_name, WQ_NAME_LEN);
 	}
 
-	err = wqlat_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
 	}
 
-	err = wqlat_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF object: %d\n", err);
 		goto cleanup;
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
 	err = print_maps(obj);
 
 cleanup:
-	wqlat_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 
 	return err != 0;

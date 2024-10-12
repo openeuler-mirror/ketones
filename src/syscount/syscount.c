@@ -3,7 +3,6 @@
 #include "syscount.h"
 #include "syscount.skel.h"
 #include "btf_helpers.h"
-#include "trace_helpers.h"
 #include "errno_helpers.h"
 #include "syscall_helpers.h"
 
@@ -352,7 +351,7 @@ int main(int argc, char *argv[])
 		.doc = argp_program_doc,
 	};
 	struct data_ext_t vals[MAX_ENTRIES];
-	struct syscount_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	int seconds = 0;
 	__u32 count;
 	int err;
@@ -380,7 +379,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	obj = syscount_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		err = 1;
@@ -400,7 +399,7 @@ int main(int argc, char *argv[])
 	if (env.cg)
 		obj->rodata->filter_cg = env.cg;
 
-	err = syscount_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %s\n", strerror(-err));
 		goto cleanup_obj;
@@ -467,7 +466,7 @@ int main(int argc, char *argv[])
 	}
 
 cleanup_obj:
-	syscount_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 free_names:
 	free_syscall_names();
 	cleanup_core_btf(&open_opts);

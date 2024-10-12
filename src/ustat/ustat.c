@@ -572,7 +572,7 @@ static int run_loop(struct ustat_bpf *obj)
 			return 1;
 	}
 
-	err = ustat_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF tracepoints programs\n");
 		return 1;
@@ -593,7 +593,7 @@ static int run_loop(struct ustat_bpf *obj)
 
 	print_data(targets, pid_cnt);
 
-	ustat_bpf__detach(obj);
+	SKEL_DETACH(obj);
 
 	return 0;
 }
@@ -606,7 +606,7 @@ int main(int argc, char *argv[])
 		.parser = parse_arg,
 		.doc = argp_program_doc,
 	};
-	struct ustat_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	int err;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
@@ -627,13 +627,13 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	obj = ustat_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		goto cleanup;
 	}
 
-	err = ustat_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object\n");
 		goto cleanup;
@@ -655,7 +655,7 @@ int main(int argc, char *argv[])
 	printf("Detaching...\n");
 
 cleanup:
-	ustat_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 
 	return err != 0;

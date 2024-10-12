@@ -304,7 +304,7 @@ int main(int argc, char *argv[])
 		.doc = argp_program_doc,
 	};
 
-	struct capable_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	struct perf_buffer *pb = NULL;
 	int err;
 	int cgfd = -1;
@@ -340,7 +340,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = capable_bpf__open();
+	obj = SKEL_OPEN();
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -356,7 +356,7 @@ int main(int argc, char *argv[])
 				argument.perf_max_stack_depth * sizeof(unsigned long));
 	bpf_map__set_max_entries(obj->maps.stackmap, argument.stack_storage_size);
 
-	err = capable_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
@@ -410,7 +410,7 @@ int main(int argc, char *argv[])
 	ctx.ifd = ifd;
 	ctx.sfd = sfd;
 
-	err = capable_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF program: %d\n", err);
 		goto cleanup;
@@ -451,7 +451,7 @@ int main(int argc, char *argv[])
 
 cleanup:
 	perf_buffer__free(pb);
-	capable_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	syms_cache__free(syms_cache);
 	ksyms__free(ksyms);
 	if (cgfd > 0)

@@ -320,7 +320,7 @@ int main(int argc, char *argv[])
 
 	struct syms_cache *syms_cache = NULL;
 	struct ksyms *ksyms = NULL;
-	struct offcputime_bpf *bpf_obj;
+	DEFINE_SKEL_OBJECT(bpf_obj);
 	int err;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
@@ -347,7 +347,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	bpf_obj = offcputime_bpf__open();
+	bpf_obj = SKEL_OPEN();
 	if (!bpf_obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -368,7 +368,7 @@ int main(int argc, char *argv[])
 				env.perf_max_stack_depth * sizeof(unsigned long));
 	bpf_map__set_max_entries(bpf_obj->maps.stackmap, env.stack_storage_size);
 
-	err = offcputime_bpf__load(bpf_obj);
+	err = SKEL_LOAD(bpf_obj);
 	if (err) {
 		warning("Failed to load BPF object\n");
 		return 1;
@@ -386,7 +386,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	err = offcputime_bpf__attach(bpf_obj);
+	err = SKEL_ATTACH(bpf_obj);
 	if (err) {
 		warning("Failed to attach BPF program\n");
 		goto cleanup;
@@ -424,7 +424,7 @@ int main(int argc, char *argv[])
 	print_map(ksyms, syms_cache, bpf_obj);
 
 cleanup:
-	offcputime_bpf__destroy(bpf_obj);
+	SKEL_DESTROY(bpf_obj);
 	syms_cache__free(syms_cache);
 	ksyms__free(ksyms);
 

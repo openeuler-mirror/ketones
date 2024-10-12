@@ -2,7 +2,6 @@
 #include "commons.h"
 #include "bindsnoop.h"
 #include "bindsnoop.skel.h"
-#include "trace_helpers.h"
 #include "btf_helpers.h"
 
 #include <sys/socket.h>
@@ -167,7 +166,7 @@ int main(int argc, char *argv[])
 		.doc = argp_program_doc,
 	};
 	struct perf_buffer *pb = NULL;
-	struct bindsnoop_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	int err;
 	int cgfd = -1;
 
@@ -183,7 +182,7 @@ int main(int argc, char *argv[])
 	err = ensure_core_btf(&open_opts);
 	if (err) {
 		warning("Failed to fetch necessary BTF for CO-RE: %s\n", strerror(-err));
-		return 1;
+		return err;
 	}
 
 	obj = bindsnoop_bpf__open_opts(&open_opts);
@@ -197,7 +196,7 @@ int main(int argc, char *argv[])
 	obj->rodata->ignore_errors = env.ignore_errors;
 	obj->rodata->filter_by_port = env.target_ports != NULL;
 
-	err = bindsnoop_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
@@ -232,7 +231,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	err = bindsnoop_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs: %d\n", err);
 		goto cleanup;
@@ -270,7 +269,7 @@ int main(int argc, char *argv[])
 
 cleanup:
 	perf_buffer__free(pb);
-	bindsnoop_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 	if (cgfd > 0)
 		close(cgfd);

@@ -3,7 +3,6 @@
 #include "funclatency.h"
 #include "funclatency.skel.h"
 #include "trace_helpers.h"
-#include "map_helpers.h"
 #include "btf_helpers.h"
 #include "uprobe_helpers.h"
 
@@ -296,8 +295,8 @@ int main(int argc, char *argv[])
 		.args_doc = args_doc,
 		.doc = argp_program_doc,
 	};
-	struct funclatency_bpf *obj;
-	int err, cgfd;
+	DEFINE_SKEL_OBJECT(obj);
+	int err, cgfd = -1;
 	bool used_fentry = false;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, &env);
@@ -319,7 +318,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	obj = funclatency_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to load BPF object\n");
 		return 1;
@@ -331,10 +330,10 @@ int main(int argc, char *argv[])
 
 	used_fentry = try_fentry(obj);
 
-	err = funclatency_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object\n");
-		return 1;
+		goto cleanup;
 	}
 
 	/* update cgroup path to map */
@@ -367,7 +366,7 @@ int main(int argc, char *argv[])
 			goto cleanup;
 	}
 
-	err = funclatency_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs: %s\n", strerror(-err));
 		goto cleanup;
@@ -394,7 +393,7 @@ int main(int argc, char *argv[])
 	printf("Exiting trace of %s\n", env.funcname);
 
 cleanup:
-	funclatency_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 	if (cgfd > 0)
 		close(cgfd);

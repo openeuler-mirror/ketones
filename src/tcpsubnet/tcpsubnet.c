@@ -7,7 +7,6 @@
 #include "commons.h"
 #include "tcpsubnet.h"
 #include "tcpsubnet.skel.h"
-#include "compat.h"
 #include <arpa/inet.h>
 
 #define INET_ADDRMASKSTRLEN     INET_ADDRSTRLEN + 3
@@ -105,7 +104,6 @@ static int bytes_format(int bytes, char *flag)
 		bytes = (bytes * 8) / 1024 / 1024;
 		break;
 	case 'B':
-		bytes = bytes;
 		break;
 	case 'K':
 		bytes = bytes / 1024;
@@ -206,7 +204,7 @@ int main(int argc, char *argv[])
 		.parser = parse_arg,
 		.doc = argp_program_doc,
 	};
-	struct tcpsubnet_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	int subnet_len = 0;
 	int err;
 
@@ -219,7 +217,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = tcpsubnet_bpf__open();
+	obj = SKEL_OPEN();
 	if (!obj) {
 		warning("Failed to open BPF objects\n");
 		return 1;
@@ -234,13 +232,13 @@ int main(int argc, char *argv[])
 		obj->rodata->subnets[i] = subnets[i];
 	obj->rodata->subnet_len = subnet_len;
 
-	err = tcpsubnet_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("failed to load BPF object: %d\n", err);
 		goto cleanup;
 	}
 
-	err = tcpsubnet_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs: %s\n", strerror(-err));
 		goto cleanup;
@@ -257,7 +255,7 @@ int main(int argc, char *argv[])
 	print_count(bpf_map__fd(obj->maps.ipv4_send_bytes));
 
 cleanup:
-	tcpsubnet_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 
 	return err != 0;
 }

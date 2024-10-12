@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 		.parser = parse_arg,
 		.doc = argp_program_doc,
 	};
-	struct dddos_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	struct bpf_buffer *buffer = NULL;
 	int err;
 
@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = dddos_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		err = 1;
@@ -126,13 +126,13 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	err = dddos_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
 	}
 
-	err = dddos_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF object: %d\n", err);
 		goto cleanup;
@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
 
 cleanup:
 	bpf_buffer__free(buffer);
-	dddos_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 
 	return err != 0;

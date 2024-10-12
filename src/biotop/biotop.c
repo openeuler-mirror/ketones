@@ -396,7 +396,7 @@ int main(int argc, char *argv[])
 		.parser = parse_arg,
 		.doc = argp_program_doc,
 	};
-	struct biotop_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	struct ksyms *ksyms;
 	int err;
 
@@ -409,7 +409,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = biotop_bpf__open();
+	obj = SKEL_OPEN();
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -433,13 +433,13 @@ int main(int argc, char *argv[])
 		blk_account_io_set_autoload(obj, ksyms);
 	}
 
-	err = biotop_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
 	}
 
-	err = biotop_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs: %d\n", err);
 		goto cleanup;
@@ -471,7 +471,7 @@ int main(int argc, char *argv[])
 cleanup:
 	ksyms__free(ksyms);
 	free_vector(disks);
-	biotop_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 
 	return err != 0;
 }

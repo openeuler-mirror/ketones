@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
 		.doc = argp_program_doc,
 	};
 	char binary_path[BINARY_PATH_SIZE] = {};
-	struct javagc_bpf *obj = NULL;
+	DEFINE_SKEL_OBJECT(obj);
 	int err;
 	struct bpf_buffer *buf = NULL;
 
@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = javagc_bpf__open();
+	obj = SKEL_OPEN();
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	err = javagc_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load and verify BPF object\n");
 		goto cleanup;
@@ -251,7 +251,7 @@ int main(int argc, char *argv[])
 
 cleanup:
 	bpf_buffer__free(buf);
-	javagc_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 
 	return err != 0;
 }

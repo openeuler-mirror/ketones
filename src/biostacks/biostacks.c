@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
 	};
 
 	struct ksyms *ksyms = NULL;
-	struct biostacks_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	int err;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = biostacks_bpf__open();
+	obj = SKEL_OPEN();
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -230,13 +230,13 @@ int main(int argc, char *argv[])
 	if (!ksyms__get_symbol(ksyms, "blk_account_io_merge_bio"))
 		bpf_program__set_autoload(obj->progs.blk_account_io_merge_bio, false);
 
-	err = biostacks_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
 	}
 
-	err = biostacks_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs: %d\n", err);
 		goto cleanup;
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
 	print_map(ksyms, partitions, bpf_map__fd(obj->maps.hists));
 
 cleanup:
-	biostacks_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	ksyms__free(ksyms);
 	partitions__free(partitions);
 

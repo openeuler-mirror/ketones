@@ -396,7 +396,7 @@ int main(int argc, char *argv[])
 		.doc = argp_program_doc,
 	};
 	struct perf_buffer *pb = NULL;
-	struct fsslower_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	__u64 time_end = 0;
 	int err;
 	bool support_fentry;
@@ -421,7 +421,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	obj = fsslower_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -447,7 +447,7 @@ int main(int argc, char *argv[])
 		disable_fentry(obj);
 	}
 
-	err = fsslower_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
@@ -457,7 +457,7 @@ int main(int argc, char *argv[])
 	 * if fentry is supported, let libbpf do auto load
 	 * otherwise, we attach to kprobes manually
 	 */
-	err = support_fentry ? fsslower_bpf__attach(obj) : attach_kprobes(obj);
+	err = support_fentry ? SKEL_ATTACH(obj) : attach_kprobes(obj);
 	if (err) {
 		warning("Failed to attach BPF program: %d\n", err);
 		goto cleanup;
@@ -499,7 +499,7 @@ int main(int argc, char *argv[])
 
 cleanup:
 	perf_buffer__free(pb);
-	fsslower_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 
 	return err != 0;

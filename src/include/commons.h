@@ -49,6 +49,18 @@
 
 #define __maybe_unused __attribute__((unused))
 
+/* For simple skel wrapper */
+#define ___concat(a, b)			a ## b
+#define ___apply(fn, n)			___concat(fn, n)
+#define SKEL_OPEN()			___apply(SKEL_NAME, __open)()
+#define SKEL_OPEN_AND_LOAD()		___apply(SKEL_NAME, __open_and_load)()
+#define SKEL_OPEN_OPTS(opts_ptr)	___apply(SKEL_NAME, __open_opts)(opts_ptr)
+#define SKEL_LOAD(skel)			___apply(SKEL_NAME, __load)(skel)
+#define SKEL_ATTACH(skel)		___apply(SKEL_NAME, __attach)(skel)
+#define SKEL_DETACH(skel)		___apply(SKEL_NAME, __detach)(skel)
+#define SKEL_DESTROY(skel)		___apply(SKEL_NAME, __destroy)(skel)
+#define DEFINE_SKEL_OBJECT(name)	struct SKEL_NAME *name = NULL
+
 static inline bool bpf_is_root()
 {
 	if (getuid()) {

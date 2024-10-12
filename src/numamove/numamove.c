@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 		.doc = argp_program_doc,
 	};
 
-	struct numamove_bpf *bpf_obj;
+	DEFINE_SKEL_OBJECT(bpf_obj);
 	int err;
 	bool has_bss;
 	bool use_folio, use_fentry;
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	bpf_obj = numamove_bpf__open();
+	bpf_obj = SKEL_OPEN();
 	if (!bpf_obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 	bpf_program__set_autoload(bpf_obj->progs.kretprobe_migrate_misplaced_page_exit,
 				  !use_fentry && !use_folio);
 
-	err = numamove_bpf__load(bpf_obj);
+	err = SKEL_LOAD(bpf_obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
 	if (!has_bss)
 		warning("Memory-mapping BPF maps is supported starting from Linux 5.7, please upgrade.\n\n");
 
-	err = numamove_bpf__attach(bpf_obj);
+	err = SKEL_ATTACH(bpf_obj);
 	if (err) {
 		warning("Failed to attach BPF programs: %d\n", err);
 		goto cleanup;
@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
-	numamove_bpf__destroy(bpf_obj);
+	SKEL_DESTROY(bpf_obj);
 
 	return err != 0;
 }

@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 		.doc = argp_program_doc,
 	};
 
-	struct softirqs_bpf *bpf_obj;
+	DEFINE_SKEL_OBJECT(bpf_obj);
 	char ts[32];
 	int err;
 
@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	bpf_obj = softirqs_bpf__open();
+	bpf_obj = SKEL_OPEN();
 	if (!bpf_obj) {
 		warning("failed to open BPF object\n");
 		return 1;
@@ -220,7 +220,7 @@ int main(int argc, char *argv[])
 	bpf_obj->rodata->target_dist = env.distributed;
 	bpf_obj->rodata->target_ns = env.nanoseconds;
 
-	err = softirqs_bpf__load(bpf_obj);
+	err = SKEL_LOAD(bpf_obj);
 	if (err) {
 		warning("failed to load BPF objects: %d\n", err);
 		goto cleanup;
@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	err = softirqs_bpf__attach(bpf_obj);
+	err = SKEL_ATTACH(bpf_obj);
 	if (err) {
 		warning("failed to attach BPF programs\n");
 		goto cleanup;
@@ -262,7 +262,7 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
-	softirqs_bpf__destroy(bpf_obj);
+	SKEL_DESTROY(bpf_obj);
 
 	return err != 0;
 }

@@ -3,7 +3,6 @@
 #include "gethostlatency.h"
 #include "gethostlatency.skel.h"
 #include "btf_helpers.h"
-#include "trace_helpers.h"
 #include "uprobe_helpers.h"
 
 static volatile sig_atomic_t exiting;
@@ -224,6 +223,8 @@ int main(int argc, char *argv[])
 		.options = opts,
 		.doc = argp_program_doc,
 	};
+	DEFINE_SKEL_OBJECT(obj);
+	struct perf_buffer *pb = NULL;
 
 	int err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
 	if (err)
@@ -240,7 +241,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	struct gethostlatency_bpf *obj = gethostlatency_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -248,7 +249,7 @@ int main(int argc, char *argv[])
 
 	obj->rodata->target_pid = env.pid;
 
-	err = gethostlatency_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
@@ -260,9 +261,9 @@ int main(int argc, char *argv[])
 	if (err)
 		goto cleanup;
 
-	struct perf_buffer *pb = perf_buffer__new(bpf_map__fd(obj->maps.events),
-						  PERF_BUFFER_PAGES, handle_event,
-						  handle_lost_events, NULL, NULL);
+	pb = perf_buffer__new(bpf_map__fd(obj->maps.events),
+					  PERF_BUFFER_PAGES, handle_event,
+					  handle_lost_events, NULL, NULL);
 	if (!pb) {
 		err = -errno;
 		warning("Failed to open perf buffer: %d\n", err);
@@ -292,7 +293,7 @@ cleanup:
 	perf_buffer__free(pb);
 	for (int i = 0; i < 6; i++)
 		bpf_link__destroy(links[i]);
-	gethostlatency_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 
 	return err != 0;

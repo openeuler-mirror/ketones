@@ -3,7 +3,6 @@
 #include "bashreadline.h"
 #include "bashreadline.skel.h"
 #include "btf_helpers.h"
-#include "trace_helpers.h"
 #include "uprobe_helpers.h"
 
 static volatile sig_atomic_t exiting;
@@ -127,7 +126,7 @@ int main(int argc, char *argv[])
 		.doc = argp_program_doc,
 	};
 
-	struct bashreadline_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	struct perf_buffer *pb = NULL;
 	char *readline_so_path;
 	off_t func_off;
@@ -161,16 +160,16 @@ int main(int argc, char *argv[])
 	err = ensure_core_btf(&open_opts);
 	if (err) {
 		warning("Failed to fetch necessary BTF for CO-RE: %s\n", strerror(-err));
-		goto cleanup;
+		return err;
 	}
 
-	obj = bashreadline_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		goto cleanup;
 	}
 
-	err = bashreadline_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object\n");
 		goto cleanup;
@@ -218,7 +217,7 @@ cleanup:
 	if (readline_so_path)
 		free(readline_so_path);
 	perf_buffer__free(pb);
-	bashreadline_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 
 	return err != 0;

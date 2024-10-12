@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
 		.parser = parse_arg,
 		.doc = argp_program_doc,
 	};
-	struct futexctn_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	struct tm *tm;
 	char ts[32];
 	time_t t;
@@ -308,13 +308,13 @@ int main(int argc, char *argv[])
 				env.perf_max_stack_depth * sizeof(unsigned long));
 	bpf_map__set_max_entries(obj->maps.stackmap, env.stack_storage_size);
 
-	err = futexctn_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF programs\n");
 		goto cleanup;
 	}
 
-	err = futexctn_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs\n");
 		goto cleanup;
@@ -353,7 +353,7 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
-	futexctn_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 #ifdef USE_BLAZESYM
 	blazesym_free(symbolizer);
 #else

@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
 		.doc = argp_program_doc,
 		.args_doc = args_doc
 	};
-	struct dbstat_bpf *skel;
+	DEFINE_SKEL_OBJECT(skel);
 	int err;
 	char pid_str[1024];
 	int i, len = 0;
@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	skel = dbstat_bpf__open();
+	skel = SKEL_OPEN();
 	if (!skel) {
 		warning("Failed to open BPF objects\n");
 		goto cleanup;
@@ -252,7 +252,7 @@ int main(int argc, char *argv[])
 	skel->rodata->microseconds = env.microseconds;
 	skel->rodata->threshold = env.threshold;
 
-	err = dbstat_bpf__load(skel);
+	err = SKEL_LOAD(skel);
 	if (err) {
 		warning("Failed to load BPF skelect: %d\n", err);
 		goto cleanup;
@@ -269,7 +269,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	err = dbstat_bpf__attach(skel);
+	err = SKEL_ATTACH(skel);
 	if (err) {
 		warning("Failed to attach BPF programs: %s\n", strerror(-err));
 		goto cleanup;
@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
-	dbstat_bpf__destroy(skel);
+	SKEL_DESTROY(skel);
 	cleanup_core_btf(&open_opts);
 
 	return err != 0;

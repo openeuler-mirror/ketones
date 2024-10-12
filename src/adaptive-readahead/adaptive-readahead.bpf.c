@@ -5,7 +5,6 @@
 #include <bpf/bpf_helpers.h>
 #include "adaptive-readahead.h"
 #include "compat.bpf.h"
-#include "core_fixes.bpf.h"
 
 static __u64 start_stamp = 0;
 static unsigned long seq_read_count = 0;

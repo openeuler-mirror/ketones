@@ -678,7 +678,7 @@ int main(int argc, char *argv[])
 		.args_doc = args_doc,
 		.doc = argp_program_doc,
 	};
-	struct klockstat_bpf *obj = NULL;
+	DEFINE_SKEL_OBJECT(obj);
 	struct ksyms *ksyms = NULL;
 	int err;
 	void *lock_addr = NULL;
@@ -708,7 +708,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	obj = klockstat_bpf__open();
+	obj = SKEL_OPEN();
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		err = 1;
@@ -726,13 +726,13 @@ int main(int argc, char *argv[])
 	else
 		enable_kprobes(obj);
 
-	err = klockstat_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object\n");
 		goto cleanup;
 	}
 
-	err = klockstat_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs\n");
 		goto cleanup;
@@ -762,8 +762,7 @@ int main(int argc, char *argv[])
 	printf("Exiting trace of mutex/sem locks\n");
 
 cleanup:
-	if (obj)
-		klockstat_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	ksyms__free(ksyms);
 
 	return err != 0;

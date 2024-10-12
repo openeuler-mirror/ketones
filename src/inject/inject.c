@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
 #include "commons.h"
-#include "compat.h"
 #include "inject.h"
 #include "inject.skel.h"
 #include <regex.h>
@@ -409,7 +408,7 @@ int main(int argc, char *argv[])
 		.parser = parse_arg,
 		.doc = argp_program_doc,
 	};
-	struct inject_bpf *obj = NULL;
+	DEFINE_SKEL_OBJECT(obj);
 	int err;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
@@ -431,7 +430,7 @@ int main(int argc, char *argv[])
 	if (parse_spec())
 		return 1;
 
-	obj = inject_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -443,7 +442,7 @@ int main(int argc, char *argv[])
 	obj->rodata->enable_flag = env.enable_flag;
 	obj->rodata->mode = env.mode;
 
-	err = inject_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
@@ -466,7 +465,7 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
-	inject_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 	return err != 0;
 }

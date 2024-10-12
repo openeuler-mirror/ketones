@@ -10,7 +10,6 @@
 #include "cpuunclaimed.h"
 #include "cpuunclaimed.skel.h"
 #include "btf_helpers.h"
-#include "trace_helpers.h"
 #include "compat.h"
 
 static struct env {
@@ -454,7 +453,7 @@ int main(int argc, char *argv[])
 	};
 	struct bpf_buffer *buf = NULL;
 	struct bpf_link **links = NULL;
-	struct cpuunclaimed_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	int err, i;
 	float interval = 0;
 	float wakeup_s = 1.0 / env.wakeup_hz;
@@ -501,7 +500,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	obj = cpuunclaimed_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF objects\n");
 		goto cleanup;
@@ -514,7 +513,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	err = cpuunclaimed_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
@@ -526,7 +525,7 @@ int main(int argc, char *argv[])
 	if (err)
 		goto cleanup;
 
-	err = cpuunclaimed_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs\n");
 		goto cleanup;
@@ -620,7 +619,7 @@ cleanup:
 	free_array(frame_arr);
 	free_array(event_arr);
 	bpf_buffer__free(buf);
-	cpuunclaimed_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 
 	return err != 0;

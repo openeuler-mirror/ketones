@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
 	};
 	struct perf_buffer *pb = NULL;
 	struct ksyms *ksyms = NULL;
-	struct biosnoop_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	__u64 time_end = 0;
 	int err;
 	int cgfd = -1;
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = biosnoop_bpf__open();
+	obj = SKEL_OPEN();
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -288,7 +288,7 @@ int main(int argc, char *argv[])
 		bpf_program__set_autoload(obj->progs.block_rq_issue, false);
 	}
 
-	err = biosnoop_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
@@ -309,7 +309,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	err = biosnoop_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs\n");
 		goto cleanup;
@@ -359,7 +359,7 @@ int main(int argc, char *argv[])
 
 cleanup:
 	perf_buffer__free(pb);
-	biosnoop_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	ksyms__free(ksyms);
 	partitions__free(partitions);
 	if (cgfd > 0)

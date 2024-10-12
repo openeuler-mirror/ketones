@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 		.doc = argp_program_doc,
 	};
 	struct perf_buffer *pb = NULL;
-	struct mdflush_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	int err;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
@@ -90,13 +90,13 @@ int main(int argc, char *argv[])
 	else
 		bpf_program__set_autoload(obj->progs.md_flush_request, false);
 
-	err = mdflush_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
 	}
 
-	err = mdflush_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs\n");
 		goto cleanup;
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
 
 cleanup:
 	perf_buffer__free(pb);
-	mdflush_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 
 	return err != 0;
 }

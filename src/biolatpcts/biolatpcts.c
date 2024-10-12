@@ -4,7 +4,6 @@
 #include "commons.h"
 #include "biolatpcts.h"
 #include "biolatpcts.skel.h"
-#include "compat.h"
 #include "btf_helpers.h"
 #include "trace_helpers.h"
 #include <sys/types.h>
@@ -393,7 +392,7 @@ int main(int argc, char *argv[])
 		.parser = parse_arg,
 		.doc = argp_program_doc,
 	};
-	struct biolatpcts_bpf *obj = NULL;
+	DEFINE_SKEL_OBJECT(obj);
 	int err;
 	__u32 major, minor;
 	__u64 *rwdf_lat[IO_TYPE_NUM] = {NULL};
@@ -413,7 +412,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = biolatpcts_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		goto cleanup;
@@ -440,13 +439,13 @@ int main(int argc, char *argv[])
 	obj->rodata->minor = minor;
 	obj->rodata->which = env.which;
 
-	err = biolatpcts_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
 	}
 
-	err = biolatpcts_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs: %d\n", err);
 		goto cleanup;
@@ -481,7 +480,7 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
-	biolatpcts_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 	if (env.pcts_str)
 		free(env.pcts);

@@ -264,7 +264,7 @@ int main(int argc, char *argv[])
 		.parser = parse_arg,
 		.doc = argp_program_doc,
 	};
-	struct uflow_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	struct bpf_buffer *buf = NULL;
 	int err;
 
@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	obj = uflow_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		goto cleanup;
@@ -316,7 +316,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	err = uflow_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object\n");
 		goto cleanup;
@@ -328,7 +328,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	err = uflow_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF tracepoints programs\n");
 		goto cleanup;
@@ -365,7 +365,7 @@ int main(int argc, char *argv[])
 
 cleanup:
 	bpf_buffer__free(buf);
-	uflow_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 
 	return err != 0;
