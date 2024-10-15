@@ -55,6 +55,7 @@ APPS += bitesize
 APPS += cachestat
 APPS += cachetop
 APPS += capable
+APPS += compactsnoop
 APPS += cpudist
 APPS += cpufreq
 APPS += cpuunclaimed
