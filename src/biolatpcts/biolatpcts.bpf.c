@@ -6,12 +6,13 @@
 #include <bpf/bpf_core_read.h>
 #include <bpf/bpf_tracing.h>
 #include "biolatpcts.h"
+#include "core_fixes.bpf.h"
 
 #define min(a,b)	((a) < (b) ? (a) : (b))
 
-const volatile __u32 major;
-const volatile __u32 minor;
-const volatile __u32 which;
+const volatile __u32 major = 0;
+const volatile __u32 minor = 0;
+const volatile __u32 which = 0;
 
 struct {
 	__uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
@@ -38,6 +39,10 @@ static int block_rq_complete(struct request *rq)
 	u64 dur, time;
 	size_t base, slot, position;
 	u64 *value;
+	struct gendisk *disk = get_disk(rq);
+
+	if (!disk)
+		return 0;
 
 	switch (which) {
 	case FROM_RQ_ALLOC:
@@ -62,9 +67,8 @@ static int block_rq_complete(struct request *rq)
 		return 0;
 	}
 
-	if (!BPF_CORE_READ(rq, q, disk) ||
-	    BPF_CORE_READ(rq, q, disk, major) != major ||
-	    BPF_CORE_READ(rq, q, disk, first_minor) != minor)
+	if (BPF_CORE_READ(disk, major) != major ||
+	    BPF_CORE_READ(disk, first_minor) != minor)
 		return 0;
 
 	cmd_flags = BPF_CORE_READ(rq, cmd_flags);
