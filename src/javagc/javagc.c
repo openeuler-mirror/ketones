@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
 								       env.pid,
 								       binary_path,
 								       "hotspot",
-								       "mem__pool__gc_begin",
+								       "mem__pool__gc__begin",
 								       NULL);
 	if (!obj->links.handle_mem_pool_gc_start) {
 		err = errno;
@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
 								     NULL);
 	if (!obj->links.handle_mem_pool_gc_end) {
 		err = errno;
-		warning("attach usdt mem__pool__gc_end failed: %s\n", strerror(err));
+		warning("attach usdt mem__pool__gc__end failed: %s\n", strerror(err));
 		goto cleanup;
 	}
 
@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
 	obj->links.handle_gc_end = bpf_program__attach_usdt(obj->progs.handle_gc_end,
 							    env.pid,
 							    binary_path,
-							    "hostspot",
+							    "hotspot",
 							    "gc__end", NULL);
 	if (!obj->links.handle_gc_end) {
 		err = errno;
