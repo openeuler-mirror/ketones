@@ -58,6 +58,7 @@ static const struct argp_option opts[] = {
 	{ "spec", 1, "SPEC", 0, "specify call chain" },
 	{ "probability", 'P', "NUM", 0, "probability that this call chain will fail" },
 	{ "count", 'c', "NUM", 0, "Number of fails before bypassing the override" },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show this help" },
 	{}
 };
 
