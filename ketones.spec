@@ -6,7 +6,8 @@ License: GPLv3 License
 URL: https://gitee.com/openkylin/ketones.git
 Source0: %{name}-%{version}.tar.gz
 BuildRequires: make, binutils-devel, libcap-devel, llvm-devel, numactl-devel, elfutils-libelf-devel
-BuildRequires: zlib-devel, gcc, clang
+BuildRequires: zlib-devel, gcc, clang >= 10
+Suggests: numactl-libs
 
 %description
 Our software is a powerful eBPF program assembly designed to help
