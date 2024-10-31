@@ -48,12 +48,12 @@ const char *argp_program_bug_address = "Jackie Liu <liuyun01@kylinos.cn>";
 const char argp_program_doc[] =
 "Show the tcp link currently running on the system.\n"
 "\n"
-"USAGE: tcplink [-h] [-v] [--sort all/sent/received] [interval] [count]\n"
+"USAGE: tcplinks [-h] [-v] [--sort all/sent/received] [interval] [count]\n"
 "\n"
 "EXAMPLES:\n"
-"    tcplink         # tcp links, refresh every 1s\n"
-"    tcplink 5       # refresh every 5s\n"
-"    tcplink 1 10    # refresh every 1s, 10 times\n";
+"    tcplinks         # tcp links, refresh every 1s\n"
+"    tcplinks 5       # refresh every 5s\n"
+"    tcplinks 1 10    # refresh every 1s, 10 times\n";
 
 static struct argp_option opts[] = {
 	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
