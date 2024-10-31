@@ -9,8 +9,8 @@
 #include "compat.bpf.h"
 #include "maps.bpf.h"
 
-const volatile __u64 db_mode;
-const volatile __u64 threshold;
+const volatile __u64 db_mode = 0;
+const volatile __u64 threshold = 0;
 
 struct start_t {
 	union {
