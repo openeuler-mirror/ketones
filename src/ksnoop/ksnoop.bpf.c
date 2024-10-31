@@ -6,8 +6,6 @@
 #include "ksnoop.h"
 #include "maps.bpf.h"
 
-extern int LINUX_KERNEL_VERSION	__kconfig;
-
 /* For kretprobes, the instruction pointer in the struct pt_regs context
  * is the kretprobe_trampoline. we derive the instruction pointer
  * by pushing it onto a function stack on entry and popping it on return.
@@ -93,12 +91,7 @@ static struct trace *get_trace(struct pt_regs *ctx, bool entry)
 		    last_stack_depth < FUNC_MAX_STACK_DEPTH)
 			last_ip = func_stack->ips[last_stack_depth];
 		/* push ip onto stack. return will pop it. */
-		if (LINUX_KERNEL_VERSION >= KERNEL_VERSION(5, 13, 0) &&
-		    bpf_core_enum_value_exists(enum bpf_func_id, BPF_FUNC_get_func_ip)) {
-			ip = bpf_get_func_ip(ctx);
-		} else {
-			ip = KSNOOP_IP_FIX(PT_REGS_IP_CORE(ctx));
-		}
+		ip = KSNOOP_IP_FIX(PT_REGS_IP_CORE(ctx));
 		func_stack->ips[stack_depth] = ip;
 		/* mask used in case bounds checks are optimized out */
 		stack_depth = (stack_depth + 1) & FUNC_STACK_DEPTH_MASK;
