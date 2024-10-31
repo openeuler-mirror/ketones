@@ -27,8 +27,8 @@ const char argp_program_doc[] =
 "USAGE: filesnoop [-v] [-T] [-P] [-f filename] [-o OPEN]\n"
 "\n"
 "EXAMPLE:\n"
-"    filesnoop -o OPEN        # trace open/openat/openat2 syscall\n"
-"                             # (open,write,read,stat,close)\n";
+"    filesnoop -o READ        # trace read/readv syscall\n"
+"                             # (write,read,close)\n";
 
 static const struct argp_option opts[] = {
 	{ "version", 'v', NULL, 0, "Verbose debug output" },
@@ -73,8 +73,10 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 		env.print_ppid = true;
 		break;
 	case 'o':
+		if (env.target_op != F_NONE)
+			break;
 		for (int i = 0; i < ARRAY_SIZE(op2string); i++) {
-			if (strcmp(op2string[i], arg) == 0) {
+			if (op2string[i] && strcmp(op2string[i], arg) == 0) {
 				env.target_op = i;
 			}
 		}
@@ -152,12 +154,14 @@ int main(int argc, char *argv[])
 	int err;
 
 	alias_parse(argv[0]);
-	if (env.target_op == F_NONE)
-		warning("Not set target operation\n");
-
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
 	if (err)
 		return err;
+
+	if (env.target_op == F_NONE) {
+		warning("Not set target operation\n");
+		return -1;
+	}
 
 	if (!bpf_is_root())
 		return 1;
