@@ -599,7 +599,7 @@ static int print_outstanding_allocs(int allocs_fd, int stack_traces_fd)
 			if (env.show_allocs) {
 				struct allocation_node *it = allocs[i].allocations;
 
-				while (!it) {
+				while (it) {
 					struct allocation_node *this = it;
 
 					it = it->next;
