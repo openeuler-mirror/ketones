@@ -38,6 +38,7 @@ LDFLAGS += $(OUTPUT)/libblazesym.a -lrt -lpthread -ldl
 endif
 ALL_LDFLAGS := $(LDFLAGS) $(EXTRA_LDFLAGS)
 
+BZ_APPS += futexctn
 BZ_APPS += memleak
 BZ_APPS += opensnoop
 
