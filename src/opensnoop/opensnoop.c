@@ -257,39 +257,49 @@ static void parse_open_modes(unsigned short mode, int sps_cnt)
 
 static int handle_event(void *ctx, void *data, size_t data_sz)
 {
-	const struct event *e = data;
+	struct event e;
 	int fd, err, sps_cnt;
 	const char *program_name = basename((char *)ctx);
 #ifdef USE_BLAZESYM
 	blazesym_sym_src_cfg src_cfg;
 	const blazesym_result *result = NULL;
 	const blazesym_csym *sym;
+#endif
 
+	if (data_sz < sizeof(e)) {
+		warning("Packet too small\n");
+		return 0;
+	}
+
+	/* Copy data as alignment in the perf buffer isn't guaranteed. */
+	memcpy(&e, data, sizeof(e));
+
+#ifdef USE_BLAZESYM
 	src_cfg.src_type = BLAZESYM_SRC_T_PROCESS;
-	src_cfg.params.process.pid = e->pid;
+	src_cfg.params.process.pid = e.pid;
 #endif
 
 	/* name filtering is currently done in user space */
-	if (env.name && strstr(e->comm, env.name) == NULL)
+	if (env.name && strstr(e.comm, env.name) == NULL)
 		return 0;
 
 	/* skip this program */
-	if (!strcmp(program_name, e->comm))
+	if (!strcmp(program_name, e.comm))
 		return 0;
 
 	/* prepare fileds */
-	if (e->ret >= 0) {
-		fd = e->ret;
+	if (e.ret >= 0) {
+		fd = e.ret;
 		err = 0;
 	} else {
 		fd = -1;
-		err = - e->ret;
+		err = - e.ret;
 	}
 
 #ifdef USE_BLAZESYM
 	if (env.callers)
 		result = blazesym_symbolize(symbolizer, &src_cfg, 1,
-					    (const uint64_t *)&e->callers, 2);
+					    (const uint64_t *)&e.callers, 2);
 #endif
 
 	/* print output */
@@ -303,27 +313,27 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	}
 
 	if (env.print_uid) {
-		printf("%-7s ", get_uid_name(e->uid));
+		printf("%-7s ", get_uid_name(e.uid));
 		sps_cnt += 8;
 	}
 
 	if (env.print_ppid) {
-		printf("%-7d ", e->ppid);
+		printf("%-7d ", e.ppid);
 		sps_cnt += 7;
 	}
 
-	printf("%-7d %-16s %3d %3d ", e->pid, e->comm, fd, err);
+	printf("%-7d %-16s %3d %3d ", e.pid, e.comm, fd, err);
 	sps_cnt += 7 + 17 + 4 + 4;
 
 	if (env.extended && !env.fuller_extended) {
-		printf("%08o %08o ", e->flags, e->modes);
+		printf("%08o %08o ", e.flags, e.modes);
 		sps_cnt += 18;
 	}
-	printf("%s\n", e->fname);
+	printf("%s\n", e.fname);
 
 	if (env.fuller_extended) {
-		parse_open_flags(e->flags, sps_cnt);
-		parse_open_modes(e->modes, sps_cnt);
+		parse_open_flags(e.flags, sps_cnt);
+		parse_open_modes(e.modes, sps_cnt);
 		printf("\n");
 	}
 
