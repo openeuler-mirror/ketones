@@ -102,14 +102,22 @@ static void sig_int(int signo)
 
 void handle_event(void *ctx, int cpu, void *data, __u32 data_sz)
 {
-	const struct runq_event *e = data;
+	struct runq_event e;
 	char ts[32];
+
+	if (data_sz < sizeof(e)) {
+		warning("Packet too small\n");
+		return;
+	}
+
+	/* Copy data as alignment in the perf buffer isn't guaranteed. */
+	memcpy(&e, data, sizeof(e));
 
 	strftime_now(ts, sizeof(ts), "%H:%M:%S");
 	if (env.previous)
-		printf("%-8s %-16s %-7d %-14llu %-16s %-7d\n", ts, e->task, e->pid, e->delta_us, e->prev_task, e->prev_pid);
+		printf("%-8s %-16s %-7d %-14llu %-16s %-7d\n", ts, e.task, e.pid, e.delta_us, e.prev_task, e.prev_pid);
 	else
-		printf("%-8s %-16s %-7d %-14llu\n", ts, e->task, e->pid, e->delta_us);
+		printf("%-8s %-16s %-7d %-14llu\n", ts, e.task, e.pid, e.delta_us);
 }
 
 void handle_lost_events(void *ctx, int cpu, __u64 lost_cnt)
