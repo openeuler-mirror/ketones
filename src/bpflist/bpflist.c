@@ -73,6 +73,7 @@ static char *comm_for_pid(const char *pid)
 static void find_bpf_fds(const char *pid)
 {
 	char root[MAX_PATH_LEN];
+	char *buffer;
 	DIR *dir;
 	struct dirent *entry;
 	regex_t regex;
@@ -128,10 +129,12 @@ static void find_bpf_fds(const char *pid)
 		}
 	}
 
+	buffer = comm_for_pid(pid);
 	for (int i = 0; i < counts_size; i++)
-		printf("%-7s %-16s %-8s %-4d\n", pid, comm_for_pid(pid),
+		printf("%-7s %-16s %-8s %-4d\n", pid, buffer,
 		       counts[i].bpf_name, counts[i].count);
 
+	free(buffer);
 	closedir(dir);
 	regfree(&regex);
 }
