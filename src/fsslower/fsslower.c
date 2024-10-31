@@ -337,7 +337,7 @@ static void handle_event(void *ctx, int cpu, void *data, __u32 data_sz)
 		if (e->size == LLONG_MAX)
 			printf("LL_MAX,");
 		else
-			printf("%ld,", e->size);
+			printf("%zd,", e->size);
 		printf("%lld,%lld,%s\n", e->offset, e->delta_us, e->file);
 		return;
 	}
@@ -348,7 +348,7 @@ static void handle_event(void *ctx, int cpu, void *data, __u32 data_sz)
 	if (e->size == LLONG_MAX)
 		printf("%-10s ", "LL_MAX");
 	else
-		printf("%-10ld ", e->size);
+		printf("%-10zd ", e->size);
 	printf("%-8lld %7.2f %s\n", e->offset / 1024, (double)e->delta_us / 1000, e->file);
 }
 
