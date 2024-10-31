@@ -212,6 +212,26 @@ long argp_parse_long(int key, const char *arg, const struct argp_state *state)
 	return temp;
 }
 
+static inline __maybe_unused
+float argp_parse_float(int key, const char *arg, const struct argp_state *state)
+{
+	float temp;
+
+	if (!arg) {
+		warning("Arg is NULL\n");
+		argp_usage(state);
+	}
+
+	errno = 0;
+	temp = strtof(arg, NULL);
+	if (errno || temp < 0) {
+		warning("Error arg: %c : %s\n", (char)key, arg);
+		argp_usage(state);
+	}
+
+	return temp;
+}
+
 static inline bool do_process_running(int pid)
 {
 	bool ret = kill(pid, 0);
