@@ -80,22 +80,30 @@ static void sig_handler(int sig)
 
 static int handle_event(void *ctx, void *data, size_t data_sz)
 {
-	const struct event *e = data;
+	struct event e;
 	int fd, err;
 
-	if (e->ret >= 0) {
-		fd = e->ret;
+	if (data_sz < sizeof(e)) {
+		warning("Packet too small\n");
+		return 0;
+	}
+
+	/* Copy data as alignment in the perf buffer isn't guaranteed. */
+	memcpy(&e, data, sizeof(e));
+
+	if (e.ret >= 0) {
+		fd = e.ret;
 		err = 0;
 	} else {
 		fd = -1;
-		err = e->ret;
+		err = e.ret;
 	}
 
 	if (emit_timestamp)
 		printf("%-14.9f ", time_since_start());
 	if (print_ppid)
-		printf("%-7d ", e->ppid);
-	printf("%-7d %-20s %4d %8s %-s\n", e->pid, e->comm, fd, strerrno(err), e->pathname);
+		printf("%-7d ", e.ppid);
+	printf("%-7d %-20s %4d %8s %-s\n", e.pid, e.comm, fd, strerrno(err), e.pathname);
 
 	return 0;
 }
