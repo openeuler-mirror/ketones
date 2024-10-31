@@ -54,6 +54,7 @@ APPS += capable
 APPS += cpudist
 APPS += cpufreq
 APPS += cpuwalk
+APPS += dbslower
 APPS += dcsnoop
 APPS += dcstat
 APPS += drsnoop
