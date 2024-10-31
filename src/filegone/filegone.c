@@ -71,7 +71,15 @@ static int libbpf_print_fn(enum libbpf_print_level level, const char *format,
 
 static int handle_event(void *ctx, void *data, size_t data_sz)
 {
-	struct event *e = data;
+	struct event e;
+
+	if (data_sz < sizeof(e)) {
+		warning("Packet too small\n");
+		return 0;
+	}
+
+	/* Copy data as alignment in the perf buffer isn't guaranteed. */
+	memcpy(&e, data, sizeof(e));
 
 	if (env.timestamp) {
 		char ts[32];
@@ -81,12 +89,12 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	}
 
 	if (env.print_ppid)
-		printf("%-7d ", e->ppid);
+		printf("%-7d ", e.ppid);
 
-	printf("%-7d %-16s %10.10s %6s %s", e->pid, e->comm, strerrno(e->ret),
-	       e->action == 'D' ? "DELETE" : "RENAME", e->fname);
-	if (e->action == 'R')
-		printf(" > %s", e->fname2);
+	printf("%-7d %-16s %10.10s %6s %s", e.pid, e.comm, strerrno(e.ret),
+	       e.action == 'D' ? "DELETE" : "RENAME", e.fname);
+	if (e.action == 'R')
+		printf(" > %s", e.fname2);
 	printf("\n");
 
 	return 0;
