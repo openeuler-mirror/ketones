@@ -98,20 +98,18 @@ int BPF_KPROBE(kprobe__tty_write_new)
 		if (BPF_CORE_READ(from, data_source) != WRITE)
 			return 0;
 
-		switch (BPF_CORE_READ(from, iter_type)) {
-		case ITER_IOVEC:
+		if (BPF_CORE_READ(from, iter_type) == ITER_IOVEC) {
 			buf = BPF_CORE_READ(from, kvec, iov_base);
 			count = BPF_CORE_READ(from, kvec, iov_len);
-			break;
+		}
+
 		/* commit fcb14cb1bdac ("new iov_iter flavour - ITER_UBUF")
 		 * implement new iov_iter flavour ITER_UBUF
 		 */
-		case ITER_UBUF:
+		if (bpf_core_field_exists(struct iov_iter___x, ubuf) &&
+		    BPF_CORE_READ(from, iter_type) == ITER_UBUF) {
 			buf = BPF_CORE_READ((struct iov_iter___x *)from, ubuf);
 			count = BPF_CORE_READ(from, count);
-			break;
-		default:
-			return 0;
 		}
 	} else {
 		if (BPF_CORE_READ((struct iov_iter___o *)from, type) !=
