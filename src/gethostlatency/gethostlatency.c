@@ -76,12 +76,20 @@ static void sig_handler(int sig)
 
 static void handle_event(void *ctx, int cpu, void *data, __u32 data_sz)
 {
-	const struct event *e = data;
+	struct event e;
 	char ts[16];
+
+	if (data_sz < sizeof(e)) {
+		warning("Packet too small\n");
+		return;
+	}
+
+	/* Copy data as alignment in the perf buffer isn't guaranteed. */
+	memcpy(&e, data, sizeof(e));
 
 	strftime_now(ts, sizeof(ts), "%H:%M:%S");
 	printf("%-8s %-7d %-16s %-10.3f %-s\n",
-	       ts, e->pid, e->comm, (double)e->time/1000000, e->host);
+	       ts, e.pid, e.comm, (double)e.time/1000000, e.host);
 }
 
 static void handle_lost_events(void *ctx, int cpu, __u64 lost_cnt)
