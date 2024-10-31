@@ -1,6 +1,6 @@
 Name: ketones
 Version: 1.0
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: The key eBPF tool for a new environment
 License: GPLv3 License
 URL: https://gitee.com/openkylin/ketones.git
@@ -32,6 +32,25 @@ export LDFLAGS=
 %license LICENSE
 
 %changelog
+* Fri Jan 19 2024 Youling Tang <tangyouling@kylinos.cn> - 1.0-2
+- softirqs: Fix the naming error
+- Revert "ksnoop: use bpf_get_func_ip() where helper is available"
+- Add criticalstat support
+- ttysnoop: fix iov_iter.ubuf CO-RE mismatch
+- libbpf-tools/gethostlatency: Resolve the path of libc for different namespaces
+- libbpf-tools: Fix misaligned pointer accesses in exitsnoop
+- libbpf-tools/filelife: Fix error tracking caused by failed unlink
+- Added support for f2fs to fsdist and fsslower tools.
+- libbpf-tools: Check biolatency tracepoints using BTF
+- libbpf-tools: Add s390x support
+- libbpf-tools: Fix bindsnoop types usage
+- libbpf-tools: Fix -Wformat errors for 32bit systems
+- ksnoop: use bpf_get_func_ip() where helper is available
+- use tid instead of tgid
+- Add sofdsnoop support
+- spec: mark ketones need clang >= 10
+- package ketones for RPM
+
 * Wed Oct 18 2023 Jackie Liu <liuyun01@kylinos.cn> - 1.0-1
 - inject: add missing -h args
 - filesnoop: fix crash when -o OPEN
