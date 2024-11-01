@@ -7,6 +7,8 @@
 #include "maps.bpf.h"
 #include "core_fixes.bpf.h"
 
+const volatile pid_t target_pid = 0;
+
 #define MAX_ENTRIES	10240
 
 struct {
@@ -33,10 +35,18 @@ struct {
 static __always_inline int trace_start(struct request *req)
 {
 	struct who_t who = {};
+	__u64 pid_tgid;
+	__u32 pid;
 
 	/* cache PID and comm by request */
+	pid_tgid = bpf_get_current_pid_tgid();
+	pid = pid_tgid >> 32;
+
+	if (target_pid && target_pid != pid)
+		return 0;
+
 	bpf_get_current_comm(&who.name, sizeof(who.name));
-	who.pid = bpf_get_current_pid_tgid() >> 32;
+	who.pid = pid;
 	bpf_map_update_elem(&whobyreq, &req, &who, BPF_ANY);
 
 	return 0;
@@ -64,11 +74,16 @@ static __always_inline int trace_done(struct request *req)
 	struct gendisk *disk;
 	struct who_t *whop;
 	u64 delta_us;
+	u64 id = bpf_get_current_pid_tgid();
+	u32 pid = id >> 32;
+
+	if (target_pid && target_pid != pid)
+		goto cleanup;
 
 	/* fetch timestamp and calculate delta */
 	startp = bpf_map_lookup_elem(&start, &req);
 	if (!startp)
-		return 0;	/* missed tracing issue */
+		goto cleanup;	/* missed tracing issue */
 
 	delta_us = (bpf_ktime_get_ns() - startp->ts) / 1000;
 
@@ -93,6 +108,7 @@ static __always_inline int trace_done(struct request *req)
 		valp->io++;
 	}
 
+cleanup:
 	bpf_map_delete_elem(&start, &req);
 	bpf_map_delete_elem(&whobyreq, &req);
 
