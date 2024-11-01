@@ -7,7 +7,7 @@
 #include "compat.bpf.h"
 
 SEC("tracepoint/syscalls/sys_enter_nanosleep")
-int tracepoint__sys_enter_nanosleep(struct trace_event_raw_sys_enter *ctx)
+int tracepoint__sys_enter_nanosleep(struct syscall_trace_enter *ctx)
 {
 	struct __kernel_timespec *rqtp = (struct __kernel_timespec *)(ctx->args[0]);
 	struct event *event;

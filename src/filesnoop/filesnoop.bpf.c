@@ -92,7 +92,7 @@ static __always_inline bool is_target_operation(enum file_op op)
 }
 
 static __always_inline int
-handle_file_syscall_open_enter(struct trace_event_raw_sys_enter *ctx, enum file_op op)
+handle_file_syscall_open_enter(struct syscall_trace_enter *ctx, enum file_op op)
 {
 	struct fsfilename filename = {};
 
@@ -115,7 +115,7 @@ handle_file_syscall_open_enter(struct trace_event_raw_sys_enter *ctx, enum file_
 }
 
 static __always_inline int
-handle_file_syscall_open_exit(struct trace_event_raw_sys_exit *ctx, enum file_op op)
+handle_file_syscall_open_exit(struct syscall_trace_exit *ctx, enum file_op op)
 {
 	struct task_struct *task = (void *)bpf_get_current_task();
 	pid_t tid = BPF_CORE_READ(task, pid);
@@ -203,144 +203,144 @@ handle_file_syscall_exit(void *ctx, enum file_op op, int ret)
 }
 
 SEC("tracepoint/syscalls/sys_enter_open")
-int tracepoint_sys_enter_open(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_sys_enter_open(struct syscall_trace_enter *ctx)
 {
 	return handle_file_syscall_open_enter(ctx, F_OPEN);
 }
 
 SEC("tracepoint/syscalls/sys_exit_open")
-int tracepoint_sys_exit_open(struct trace_event_raw_sys_exit *ctx)
+int tracepoint_sys_exit_open(struct syscall_trace_exit *ctx)
 {
 	return handle_file_syscall_open_exit(ctx, F_OPEN);
 }
 
 SEC("tracepoint/syscalls/sys_enter_openat")
-int tracepoint_sys_enter_openat(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_sys_enter_openat(struct syscall_trace_enter *ctx)
 {
 	return handle_file_syscall_open_enter(ctx, F_OPENAT);
 }
 
 SEC("tracepoint/syscalls/sys_exit_openat")
-int tracepoint_sys_exit_openat(struct trace_event_raw_sys_exit *ctx)
+int tracepoint_sys_exit_openat(struct syscall_trace_exit *ctx)
 {
 	return handle_file_syscall_open_exit(ctx, F_OPENAT);
 }
 
 SEC("tracepoint/syscalls/sys_enter_openat2")
-int tracepoint_sys_enter_openat2(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_sys_enter_openat2(struct syscall_trace_enter *ctx)
 {
 	return handle_file_syscall_open_enter(ctx, F_OPENAT2);
 }
 
 SEC("tracepoint/syscalls/sys_exit_openat2")
-int tracepoint_sys_exit_openat2(struct trace_event_raw_sys_exit *ctx)
+int tracepoint_sys_exit_openat2(struct syscall_trace_exit *ctx)
 {
 	return handle_file_syscall_open_exit(ctx, F_OPENAT2);
 }
 
 SEC("tracepoint/syscalls/sys_enter_write")
-int tracepoint_sys_enter_write(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_sys_enter_write(struct syscall_trace_enter *ctx)
 {
 	return handle_file_syscall_enter(ctx, F_WRITE, (int)ctx->args[0]);
 }
 
 SEC("tracepoint/syscalls/sys_exit_write")
-int tracepoint_sys_exit_write(struct trace_event_raw_sys_exit *ctx)
+int tracepoint_sys_exit_write(struct syscall_trace_exit *ctx)
 {
 	return handle_file_syscall_exit(ctx, F_WRITE, ctx->ret);
 }
 
 SEC("tracepoint/syscalls/sys_enter_writev")
-int tracepoint_sys_enter_writev(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_sys_enter_writev(struct syscall_trace_enter *ctx)
 {
 	return handle_file_syscall_enter(ctx, F_WRITEV, (int)ctx->args[0]);
 }
 
 SEC("tracepoint/syscalls/sys_exit_writev")
-int tracepoint_sys_exit_writev(struct trace_event_raw_sys_exit *ctx)
+int tracepoint_sys_exit_writev(struct syscall_trace_exit *ctx)
 {
 	return handle_file_syscall_exit(ctx, F_WRITEV, ctx->ret);
 }
 
 SEC("tracepoint/syscalls/sys_enter_read")
-int tracepoint_sys_enter_read(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_sys_enter_read(struct syscall_trace_enter *ctx)
 {
 	return handle_file_syscall_enter(ctx, F_READ, (int)ctx->args[0]);
 }
 
 SEC("tracepoint/syscalls/sys_exit_read")
-int tracepoint_sys_exit_read(struct trace_event_raw_sys_exit *ctx)
+int tracepoint_sys_exit_read(struct syscall_trace_exit *ctx)
 {
 	return handle_file_syscall_exit(ctx, F_READ, ctx->ret);
 }
 
 SEC("tracepoint/syscalls/sys_enter_readv")
-int tracepoint_sys_enter_readv(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_sys_enter_readv(struct syscall_trace_enter *ctx)
 {
 	return handle_file_syscall_enter(ctx, F_READV, (int)ctx->args[0]);
 }
 
 SEC("tracepoint/syscalls/sys_exit_readv")
-int tracepoint_sys_exit_readv(struct trace_event_raw_sys_exit *ctx)
+int tracepoint_sys_exit_readv(struct syscall_trace_exit *ctx)
 {
 	return handle_file_syscall_exit(ctx, F_READV, ctx->ret);
 }
 
 SEC("tracepoint/syscalls/sys_enter_unlinkat")
-int tracepoint_sys_enter_unlinkat(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_sys_enter_unlinkat(struct syscall_trace_enter *ctx)
 {
 	return handle_file_syscall_enter(ctx, F_UNLINKAT, (int)ctx->args[0]);
 }
 SEC("tracepoint/syscalls/sys_exit_unlinkat")
-int tracepoint_sys_exit_unlinkat(struct trace_event_raw_sys_exit *ctx)
+int tracepoint_sys_exit_unlinkat(struct syscall_trace_exit *ctx)
 {
 	return handle_file_syscall_exit(ctx, F_UNLINKAT, ctx->ret);
 }
 
 SEC("tracepoint/syscalls/sys_enter_renameat")
-int tracepoint_sys_enter_renameat(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_sys_enter_renameat(struct syscall_trace_enter *ctx)
 {
 	return handle_file_syscall_enter(ctx, F_RENAMEAT, (int)ctx->args[0]);
 }
 
 SEC("tracepoint/syscalls/sys_exit_renameat")
-int tracepoint_sys_exit_renameat(struct trace_event_raw_sys_exit *ctx)
+int tracepoint_sys_exit_renameat(struct syscall_trace_exit *ctx)
 {
 	return handle_file_syscall_exit(ctx, F_RENAMEAT, ctx->ret);
 }
 
 SEC("tracepoint/syscalls/sys_enter_renameat2")
-int tracepoint_sys_enter_renameat2(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_sys_enter_renameat2(struct syscall_trace_enter *ctx)
 {
 	return handle_file_syscall_enter(ctx, F_RENAMEAT2, (int)ctx->args[0]);
 }
 
 SEC("tracepoint/syscalls/sys_exit_renameat2")
-int tracepoint_sys_exit_renameat2(struct trace_event_raw_sys_exit *ctx)
+int tracepoint_sys_exit_renameat2(struct syscall_trace_exit *ctx)
 {
 	return handle_file_syscall_exit(ctx, F_RENAMEAT2, ctx->ret);
 }
 
 SEC("tracepoint/syscalls/sys_enter_close")
-int tracepoint_sys_enter_close(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_sys_enter_close(struct syscall_trace_enter *ctx)
 {
 	return handle_file_syscall_enter(ctx, F_CLOSE, (int)ctx->args[0]);
 }
 
 SEC("tracepoint/syscalls/sys_exit_close")
-int tracepoint_sys_exit_close(struct trace_event_raw_sys_exit *ctx)
+int tracepoint_sys_exit_close(struct syscall_trace_exit *ctx)
 {
 	return handle_file_syscall_exit(ctx, F_CLOSE, ctx->ret);
 }
 
 SEC("tracepoint/syscalls/sys_enter_utimensat")
-int tracepoint_sys_enter_utimensat(struct trace_event_raw_sys_enter *ctx)
+int tracepoint_sys_enter_utimensat(struct syscall_trace_enter *ctx)
 {
 	return handle_file_syscall_enter(ctx, F_UTIMENSAT, (int)ctx->args[0]);
 }
 
 SEC("tracepoint/syscalls/sys_exit_utimensat")
-int tracepoint_sys_exit_utimensat(struct trace_event_raw_sys_exit *ctx)
+int tracepoint_sys_exit_utimensat(struct syscall_trace_exit *ctx)
 {
 	return handle_file_syscall_exit(ctx, F_UTIMENSAT, ctx->ret);
 }

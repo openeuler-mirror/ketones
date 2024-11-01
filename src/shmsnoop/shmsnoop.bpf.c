@@ -21,7 +21,7 @@ struct {
 	__type(value, struct event);
 } values SEC(".maps");
 
-static __always_inline int probe_entry(struct trace_event_raw_sys_enter *ctx, int sys_type)
+static __always_inline int probe_entry(struct syscall_trace_enter *ctx, int sys_type)
 {
 	u64 id = bpf_get_current_pid_tgid();
 	pid_t pid = id >> 32;
@@ -66,7 +66,7 @@ static __always_inline int probe_entry(struct trace_event_raw_sys_enter *ctx, in
 	return 0;
 }
 
-static __always_inline int probe_return(struct trace_event_raw_sys_exit *ctx, unsigned long ret)
+static __always_inline int probe_return(struct syscall_trace_exit *ctx, unsigned long ret)
 {
 	u64 id = bpf_get_current_pid_tgid();
 	pid_t pid = id >> 32;
@@ -96,49 +96,49 @@ static __always_inline int probe_return(struct trace_event_raw_sys_exit *ctx, un
 }
 
 SEC("tracepoint/syscalls/sys_enter_shmat")
-int handle_shmat_entry(struct trace_event_raw_sys_enter *ctx)
+int handle_shmat_entry(struct syscall_trace_enter *ctx)
 {
 	return probe_entry(ctx, SYS_SHMAT);
 }
 
 SEC("tracepoint/syscalls/sys_exit_shmat")
-int handle_shmat_return(struct trace_event_raw_sys_exit *ctx)
+int handle_shmat_return(struct syscall_trace_exit *ctx)
 {
 	return probe_return(ctx, (unsigned long)ctx->ret);
 }
 
 SEC("tracepoint/syscalls/sys_enter_shmctl")
-int handle_shmctl_entry(struct trace_event_raw_sys_enter *ctx)
+int handle_shmctl_entry(struct syscall_trace_enter *ctx)
 {
 	return probe_entry(ctx, SYS_SHMCTL);
 }
 
 SEC("tracepoint/syscalls/sys_exit_shmctl")
-int handle_shmctl_return(struct trace_event_raw_sys_exit *ctx)
+int handle_shmctl_return(struct syscall_trace_exit *ctx)
 {
 	return probe_return(ctx, (unsigned long)ctx->ret);
 }
 
 SEC("tracepoint/syscalls/sys_enter_shmdt")
-int handle_shmdt_entry(struct trace_event_raw_sys_enter *ctx)
+int handle_shmdt_entry(struct syscall_trace_enter *ctx)
 {
 	return probe_entry(ctx, SYS_SHMDT);
 }
 
 SEC("tracepoint/syscalls/sys_exit_shmdt")
-int handle_shmdt_return(struct trace_event_raw_sys_exit *ctx)
+int handle_shmdt_return(struct syscall_trace_exit *ctx)
 {
 	return probe_return(ctx, (unsigned long)ctx->ret);
 }
 
 SEC("tracepoint/syscalls/sys_enter_shmget")
-int handle_shmget_entry(struct trace_event_raw_sys_enter *ctx)
+int handle_shmget_entry(struct syscall_trace_enter *ctx)
 {
 	return probe_entry(ctx, SYS_SHMGET);
 }
 
 SEC("tracepoint/syscalls/sys_exit_shmget")
-int handle_shmget_return(struct trace_event_raw_sys_exit *ctx)
+int handle_shmget_return(struct syscall_trace_exit *ctx)
 {
 	return probe_return(ctx, (unsigned long)ctx->ret);
 }
