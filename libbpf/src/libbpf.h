@@ -177,10 +177,29 @@ struct bpf_object_open_opts {
 	 * logs through its print callback.
 	 */
 	__u32 kernel_log_level;
+	/* Path to BPF FS mount point to derive BPF token from.
+	 *
+	 * Created BPF token will be used for all bpf() syscall operations
+	 * that accept BPF token (e.g., map creation, BTF and program loads,
+	 * etc) automatically within instantiated BPF object.
+	 *
+	 * If bpf_token_path is not specified, libbpf will consult
+	 * LIBBPF_BPF_TOKEN_PATH environment variable. If set, it will be
+	 * taken as a value of bpf_token_path option and will force libbpf to
+	 * either create BPF token from provided custom BPF FS path, or will
+	 * disable implicit BPF token creation, if envvar value is an empty
+	 * string. bpf_token_path overrides LIBBPF_BPF_TOKEN_PATH, if both are
+	 * set at the same time.
+	 *
+	 * Setting bpf_token_path option to empty string disables libbpf's
+	 * automatic attempt to create BPF token from default BPF FS mount
+	 * point (/sys/fs/bpf), in case this default behavior is undesirable.
+	 */
+	const char *bpf_token_path;
 
 	size_t :0;
 };
-#define bpf_object_open_opts__last_field kernel_log_level
+#define bpf_object_open_opts__last_field bpf_token_path
 
 /**
  * @brief **bpf_object__open()** creates a bpf_object by opening
@@ -266,6 +285,7 @@ LIBBPF_API int bpf_object__pin_programs(struct bpf_object *obj,
 LIBBPF_API int bpf_object__unpin_programs(struct bpf_object *obj,
 					  const char *path);
 LIBBPF_API int bpf_object__pin(struct bpf_object *object, const char *path);
+LIBBPF_API int bpf_object__unpin(struct bpf_object *object, const char *path);
 
 LIBBPF_API const char *bpf_object__name(const struct bpf_object *obj);
 LIBBPF_API unsigned int bpf_object__kversion(const struct bpf_object *obj);
@@ -519,17 +539,66 @@ struct bpf_kprobe_multi_opts {
 	size_t cnt;
 	/* create return kprobes */
 	bool retprobe;
-	/* use regular expression */
-	bool use_regex;
 	size_t :0;
 };
 
-#define bpf_kprobe_multi_opts__last_field use_regex
+#define bpf_kprobe_multi_opts__last_field retprobe
 
 LIBBPF_API struct bpf_link *
 bpf_program__attach_kprobe_multi_opts(const struct bpf_program *prog,
 				      const char *pattern,
-				      struct bpf_kprobe_multi_opts *opts);
+				      const struct bpf_kprobe_multi_opts *opts);
+
+struct bpf_uprobe_multi_opts {
+	/* size of this struct, for forward/backward compatibility */
+	size_t sz;
+	/* array of function symbols to attach to */
+	const char **syms;
+	/* array of function addresses to attach to */
+	const unsigned long *offsets;
+	/* optional, array of associated ref counter offsets */
+	const unsigned long *ref_ctr_offsets;
+	/* optional, array of associated BPF cookies */
+	const __u64 *cookies;
+	/* number of elements in syms/addrs/cookies arrays */
+	size_t cnt;
+	/* create return uprobes */
+	bool retprobe;
+	size_t :0;
+};
+
+#define bpf_uprobe_multi_opts__last_field retprobe
+
+/**
+ * @brief **bpf_program__attach_uprobe_multi()** attaches a BPF program
+ * to multiple uprobes with uprobe_multi link.
+ *
+ * User can specify 2 mutually exclusive set of inputs:
+ *
+ *   1) use only path/func_pattern/pid arguments
+ *
+ *   2) use path/pid with allowed combinations of
+ *      syms/offsets/ref_ctr_offsets/cookies/cnt
+ *
+ *      - syms and offsets are mutually exclusive
+ *      - ref_ctr_offsets and cookies are optional
+ *
+ *
+ * @param prog BPF program to attach
+ * @param pid Process ID to attach the uprobe to, 0 for self (own process),
+ * -1 for all processes
+ * @param binary_path Path to binary
+ * @param func_pattern Regular expression to specify functions to attach
+ * BPF program to
+ * @param opts Additional options (see **struct bpf_uprobe_multi_opts**)
+ * @return 0, on success; negative error code, otherwise
+ */
+LIBBPF_API struct bpf_link *
+bpf_program__attach_uprobe_multi(const struct bpf_program *prog,
+				 pid_t pid,
+				 const char *binary_path,
+				 const char *func_pattern,
+				 const struct bpf_uprobe_multi_opts *opts);
 
 struct bpf_ksyscall_opts {
 	/* size of this struct, for forward/backward compatibility */
@@ -651,27 +720,6 @@ struct bpf_usdt_opts {
 };
 #define bpf_usdt_opts__last_field usdt_cookie
 
-struct usdt_note {
-	const char *provider;
-	const char *name;
-	/* USDT args specification string, e.g.:
-	 * "-4@%esi -4@-24(%rbp) -4@%ecx 2@%ax 8@%rdx"
-	 */
-	const char *args;
-	long loc_addr;
-	long base_addr;
-	long sema_addr;
-};
-
-struct usdt_array{
-	size_t nr;
-	size_t capacity;
-	struct usdt_note *notes;
-};
-
-void free_usdt_notes(struct usdt_array *usdt_notes);
-struct usdt_array* probe_usdt_notes(const char *path);
-
 /**
  * @brief **bpf_program__attach_usdt()** is just like
  * bpf_program__attach_uprobe_opts() except it covers USDT (User-space
@@ -740,6 +788,51 @@ bpf_program__attach_xdp(const struct bpf_program *prog, int ifindex);
 LIBBPF_API struct bpf_link *
 bpf_program__attach_freplace(const struct bpf_program *prog,
 			     int target_fd, const char *attach_func_name);
+
+struct bpf_netfilter_opts {
+	/* size of this struct, for forward/backward compatibility */
+	size_t sz;
+
+	__u32 pf;
+	__u32 hooknum;
+	__s32 priority;
+	__u32 flags;
+};
+#define bpf_netfilter_opts__last_field flags
+
+LIBBPF_API struct bpf_link *
+bpf_program__attach_netfilter(const struct bpf_program *prog,
+			      const struct bpf_netfilter_opts *opts);
+
+struct bpf_tcx_opts {
+	/* size of this struct, for forward/backward compatibility */
+	size_t sz;
+	__u32 flags;
+	__u32 relative_fd;
+	__u32 relative_id;
+	__u64 expected_revision;
+	size_t :0;
+};
+#define bpf_tcx_opts__last_field expected_revision
+
+LIBBPF_API struct bpf_link *
+bpf_program__attach_tcx(const struct bpf_program *prog, int ifindex,
+			const struct bpf_tcx_opts *opts);
+
+struct bpf_netkit_opts {
+	/* size of this struct, for forward/backward compatibility */
+	size_t sz;
+	__u32 flags;
+	__u32 relative_fd;
+	__u32 relative_id;
+	__u64 expected_revision;
+	size_t :0;
+};
+#define bpf_netkit_opts__last_field expected_revision
+
+LIBBPF_API struct bpf_link *
+bpf_program__attach_netkit(const struct bpf_program *prog, int ifindex,
+			   const struct bpf_netkit_opts *opts);
 
 struct bpf_map;
 
@@ -892,8 +985,22 @@ LIBBPF_API int bpf_map__set_numa_node(struct bpf_map *map, __u32 numa_node);
 /* get/set map key size */
 LIBBPF_API __u32 bpf_map__key_size(const struct bpf_map *map);
 LIBBPF_API int bpf_map__set_key_size(struct bpf_map *map, __u32 size);
-/* get/set map value size */
+/* get map value size */
 LIBBPF_API __u32 bpf_map__value_size(const struct bpf_map *map);
+/**
+ * @brief **bpf_map__set_value_size()** sets map value size.
+ * @param map the BPF map instance
+ * @return 0, on success; negative error, otherwise
+ *
+ * There is a special case for maps with associated memory-mapped regions, like
+ * the global data section maps (bss, data, rodata). When this function is used
+ * on such a map, the mapped region is resized. Afterward, an attempt is made to
+ * adjust the corresponding BTF info. This attempt is best-effort and can only
+ * succeed if the last variable of the data section map is an array. The array
+ * BTF type is replaced by a new BTF array type with a different length.
+ * Any previously existing pointers returned from bpf_map__initial_value() or
+ * corresponding data section skeleton pointer must be reinitialized.
+ */
 LIBBPF_API int bpf_map__set_value_size(struct bpf_map *map, __u32 size);
 /* get map key/value BTF type IDs */
 LIBBPF_API __u32 bpf_map__btf_key_type_id(const struct bpf_map *map);
@@ -907,7 +1014,7 @@ LIBBPF_API int bpf_map__set_map_extra(struct bpf_map *map, __u64 map_extra);
 
 LIBBPF_API int bpf_map__set_initial_value(struct bpf_map *map,
 					  const void *data, size_t size);
-LIBBPF_API const void *bpf_map__initial_value(struct bpf_map *map, size_t *psize);
+LIBBPF_API void *bpf_map__initial_value(struct bpf_map *map, size_t *psize);
 
 /**
  * @brief **bpf_map__is_internal()** tells the caller whether or not the
@@ -1099,9 +1206,10 @@ struct bpf_xdp_query_opts {
 	__u32 skb_prog_id;	/* output */
 	__u8 attach_mode;	/* output */
 	__u64 feature_flags;	/* output */
+	__u32 xdp_zc_max_segs;	/* output */
 	size_t :0;
 };
-#define bpf_xdp_query_opts__last_field feature_flags
+#define bpf_xdp_query_opts__last_field xdp_zc_max_segs
 
 LIBBPF_API int bpf_xdp_attach(int ifindex, int prog_fd, __u32 flags,
 			      const struct bpf_xdp_attach_opts *opts);
@@ -1155,6 +1263,7 @@ LIBBPF_API int bpf_tc_query(const struct bpf_tc_hook *hook,
 
 /* Ring buffer APIs */
 struct ring_buffer;
+struct ring;
 struct user_ring_buffer;
 
 typedef int (*ring_buffer_sample_fn)(void *ctx, void *data, size_t size);
@@ -1174,6 +1283,78 @@ LIBBPF_API int ring_buffer__add(struct ring_buffer *rb, int map_fd,
 LIBBPF_API int ring_buffer__poll(struct ring_buffer *rb, int timeout_ms);
 LIBBPF_API int ring_buffer__consume(struct ring_buffer *rb);
 LIBBPF_API int ring_buffer__epoll_fd(const struct ring_buffer *rb);
+
+/**
+ * @brief **ring_buffer__ring()** returns the ringbuffer object inside a given
+ * ringbuffer manager representing a single BPF_MAP_TYPE_RINGBUF map instance.
+ *
+ * @param rb A ringbuffer manager object.
+ * @param idx An index into the ringbuffers contained within the ringbuffer
+ * manager object. The index is 0-based and corresponds to the order in which
+ * ring_buffer__add was called.
+ * @return A ringbuffer object on success; NULL and errno set if the index is
+ * invalid.
+ */
+LIBBPF_API struct ring *ring_buffer__ring(struct ring_buffer *rb,
+					  unsigned int idx);
+
+/**
+ * @brief **ring__consumer_pos()** returns the current consumer position in the
+ * given ringbuffer.
+ *
+ * @param r A ringbuffer object.
+ * @return The current consumer position.
+ */
+LIBBPF_API unsigned long ring__consumer_pos(const struct ring *r);
+
+/**
+ * @brief **ring__producer_pos()** returns the current producer position in the
+ * given ringbuffer.
+ *
+ * @param r A ringbuffer object.
+ * @return The current producer position.
+ */
+LIBBPF_API unsigned long ring__producer_pos(const struct ring *r);
+
+/**
+ * @brief **ring__avail_data_size()** returns the number of bytes in the
+ * ringbuffer not yet consumed. This has no locking associated with it, so it
+ * can be inaccurate if operations are ongoing while this is called. However, it
+ * should still show the correct trend over the long-term.
+ *
+ * @param r A ringbuffer object.
+ * @return The number of bytes not yet consumed.
+ */
+LIBBPF_API size_t ring__avail_data_size(const struct ring *r);
+
+/**
+ * @brief **ring__size()** returns the total size of the ringbuffer's map data
+ * area (excluding special producer/consumer pages). Effectively this gives the
+ * amount of usable bytes of data inside the ringbuffer.
+ *
+ * @param r A ringbuffer object.
+ * @return The total size of the ringbuffer map data area.
+ */
+LIBBPF_API size_t ring__size(const struct ring *r);
+
+/**
+ * @brief **ring__map_fd()** returns the file descriptor underlying the given
+ * ringbuffer.
+ *
+ * @param r A ringbuffer object.
+ * @return The underlying ringbuffer file descriptor
+ */
+LIBBPF_API int ring__map_fd(const struct ring *r);
+
+/**
+ * @brief **ring__consume()** consumes available ringbuffer data without event
+ * polling.
+ *
+ * @param r A ringbuffer object.
+ * @return The number of records consumed (or INT_MAX, whichever is less), or
+ * a negative number if any of the callbacks return an error.
+ */
+LIBBPF_API int ring__consume(struct ring *r);
 
 struct user_ring_buffer_opts {
 	size_t sz; /* size of this struct, for forward/backward compatibility */
