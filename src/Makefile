@@ -140,6 +140,7 @@ APPS += uobjnew
 APPS += ustat
 APPS += vfsstat
 APPS += wakeuptime
+APPS += wqlat
 APPS += writeback
 APPS += $(BZ_APPS)
 
