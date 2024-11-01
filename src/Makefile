@@ -42,6 +42,7 @@ BZ_APPS += futexctn
 BZ_APPS += memleak
 BZ_APPS += opensnoop
 
+APPS += adaptive-readahead
 APPS += bashreadline
 APPS += bindsnoop
 APPS += biolatency
