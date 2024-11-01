@@ -94,16 +94,24 @@ static void sig_handler(int sig)
 
 void handle_event(void *ctx, int cpu, void *data, __u32 data_sz)
 {
-	const struct event *e = data;
+	struct event e;
 	const struct argument *argument = ctx;
 	char ts[32];
 
+	if (data_sz < sizeof(e)) {
+		warning("Packet too small\n");
+		return;
+	}
+
+	/* Copy data as alignment in the perf buffer isn't guaranteed. */
+	memcpy(&e, data, sizeof(e));
+
 	strftime_now(ts, sizeof(ts), "%H:%M:%S");
 
-	printf("%-8s %-16s %-7d %9.3f %7lld", ts, e->task, e->pid,
-	       e->delta_ns / 1000000.0, e->nr_reclaimed);
+	printf("%-8s %-16s %-7d %9.3f %7lld", ts, e.task, e.pid,
+	       e.delta_ns / 1000000.0, e.nr_reclaimed);
 	if (argument->extended)
-		printf(" %9llu", e->nr_free_pages * pagesize / 1024);
+		printf(" %9llu", e.nr_free_pages * pagesize / 1024);
 	printf("\n");
 }
 
