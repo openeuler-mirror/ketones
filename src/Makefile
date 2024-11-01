@@ -62,6 +62,7 @@ APPS += dbslower
 APPS += dbstat
 APPS += dcsnoop
 APPS += dcstat
+APPS += dddos
 APPS += drsnoop
 APPS += execsnoop
 APPS += exitsnoop
