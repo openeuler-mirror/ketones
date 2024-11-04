@@ -21,21 +21,8 @@ ARCH ?= $(shell uname -m | sed 's/x86_64/x86/' | sed 's/aarch64/arm64/' \
 			 | sed 's/s390x/s390/')
 VMLINUX := ../vmlinux/$(ARCH)/vmlinux.h
 
-ifeq ($(ARCH),x86)
-CARGO ?= $(shell which cargo)
-ifeq ($(strip $(CARGO)),)
-USE_BLAZESYM ?= 0
-else
-USE_BLAZESYM ?= 1
-endif
-endif
-
 INCLUDES := -I$(OUTPUT) -I../libbpf/include/uapi -I$(dir $(VMLINUX)) -I./include
 CFLAGS := -g -Wall $(CLANG_CROSS_FLAGS) -Wunused-variable -Wmissing-field-initializers -Werror -Werror=undef
-ifeq ($(USE_BLAZESYM),1)
-CFLAGS  += -DUSE_BLAZESYM=1
-LDFLAGS += $(OUTPUT)/libblazesym.a -lrt -lpthread -ldl
-endif
 ALL_LDFLAGS := $(LDFLAGS) $(EXTRA_LDFLAGS)
 
 BZ_APPS += futexctn
@@ -160,11 +147,6 @@ COMMON_LIBS_OBJ += $(OUTPUT)/libs/map_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/compat.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/syscall_helpers.o
 COMMON_LIBS_OBJ += $(OUTPUT)/libs/errno_helpers.o
-
-ifeq ($(USE_BLAZESYM),1)
-COMMON_LIBS_OBJ += $(OUTPUT)/libblazesym.a
-COMMON_LIBS_OBJ += $(OUTPUT)/blazesym.h
-endif
 
 FSDIST_ALIASES	 := $(addprefix $(BINARIES_DIR)/, bcachefsdist btrfsdist ext4dist nfsdist \
 		    xfsdist zfsdist f2fsdist)
@@ -301,10 +283,6 @@ bin/tplist: tplist/tplist.c $(COMMON_LIBS_OBJ) $(LIBBPF_OBJ) | $(BINARIES_DIR)
 bin/reset-trace: reset-trace/reset-trace.c $(COMMON_LIBS_OBJ) $(LIBBPF_OBJ) | $(BINARIES_DIR)
 	$(call msg,BINARY,$(notdir $@))
 	$(Q)$(CC) $(CFLAGS) $^ $(INCLUDES) -lelf -lz -o $@
-
-ifeq ($(USE_BLAZESYM),1)
-$(patsubst %,$(OUTPUT)/%.o,$(BZ_APPS)): $(OUTPUT)/blazesym.h
-endif
 
 $(FSSLOWER_ALIASES): $(addprefix $(BINARIES_DIR)/, fsslower)
 	$(call msg,SYMLINK,$(notdir $@))

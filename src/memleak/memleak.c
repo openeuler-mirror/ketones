@@ -4,10 +4,6 @@
 #include "memleak.skel.h"
 #include "trace_helpers.h"
 
-#ifdef USE_BLAZESYM
-#include "blazesym.h"
-#endif
-
 #include <sys/eventfd.h>
 #include <sys/wait.h>
 #include <sys/param.h>
@@ -352,58 +348,6 @@ static pid_t fork_sync_exec(const char *command, int fd)
 
 static void (*print_stack_frames_func)();
 
-#ifdef USE_BLAZESYM
-static blazesym *symbolizer;
-static blazesym_sym_src_cfg src_cfg;
-
-static void print_stack_frame_by_blazesym(size_t frame, uint64_t addr, const blazesym_csym *sym)
-{
-	if (!sym)
-		printf("\t%5zu [<%016lx>] <%s>\n", frame, addr, "null sym");
-	else if (sym->path && strlen(sym->path))
-		printf("\t%5zu [<%016lx>] %s+0x%lx %s:%ld\n", frame, addr, sym->symbol, addr - sym->start_address, sym->path, sym->line_no);
-	else
-		printf("\t%5zu [<%016lx>] %s+0x%lx\n", frame, addr, sym->symbol, addr - sym->start_address);
-}
-
-static void print_stack_frames_by_blazesym()
-{
-	const blazesym_result *result = blazesym_symbolize(symbolizer, &src_cfg, 1, stack, env.perf_max_stack_depth);
-
-	for (size_t i = 0; i < result->size; i++) {
-		const uint64_t addr = stack[i];
-
-		if (!addr)
-			break;
-
-		// no symbol found
-		if (!result || i >= result->size || result->entries[i].size == 0) {
-			print_stack_frame_by_blazesym(i, addr, NULL);
-			continue;
-		}
-
-		// single symbol found
-		if (result->entries[i].size == 1) {
-			const blazesym_csym *sym = &result->entries[i].syms[0];
-			print_stack_frame_by_blazesym(i, addr, sym);
-			continue;
-		}
-
-		// multi symbol found
-		printf("\t%zu [<%016lx>] (%lu entries)\n", i, addr, result->entries[i].size);
-
-		for (size_t j = 0; j < result->entries[i].size; j++) {
-			const blazesym_csym *sym = &result->entries[i].syms[j];
-			if (sym->path && strlen(sym->path))
-				printf("\t\t%s@0x%lx %s:%ld\n", sym->symbol, sym->start_address, sym->path, sym->line_no);
-			else
-				printf("\t\t%s@0x%lx\n", sym->symbol, sym->start_address);
-		}
-	}
-
-	blazesym_result_free(result);
-}
-#else
 struct syms_cache *syms_cache;
 struct ksyms *ksyms;
 
@@ -452,7 +396,6 @@ static void print_stack_frames_by_syms_cache()
 		}
 	}
 }
-#endif
 
 static int print_stack_frames(struct allocation *allocs, size_t nr_allocs, int stack_traces_fd)
 {
@@ -825,17 +768,6 @@ int main(int argc, char *argv[])
 		return -ENOMEM;
 	}
 
-#ifdef USE_BLAZESYM
-	if (env.pid < 0) {
-		src_cfg.src_type = BLAZESYM_SRC_T_KERNEL;
-		src_cfg.params.kernel.kallsyms = NULL;
-		src_cfg.params.kernel.kernel_image = NULL;
-	} else {
-		src_cfg.src_type = BLAZESYM_SRC_T_PROCESS;
-		src_cfg.params.process.pid = env.pid;
-	}
-#endif
-
 	// allocate space for storing "allocation" structs
 	if (env.combined_only)
 		allocs = calloc(COMBINED_ALLOCS_MAX_ENTRIES, sizeof(*allocs));
@@ -915,15 +847,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-#ifdef USE_BLAZESYM
-	symbolizer = blazesym_new();
-	if (!symbolizer) {
-		warning("Failed to load blazesym");
-		ret = -ENOMEM;
-		goto cleanup;
-	}
-	print_stack_frames_func = print_stack_frames_by_blazesym;
-#else
 	if (env.kernel_trace) {
 		ksyms = ksyms__load();
 		if (!ksyms) {
@@ -941,7 +864,6 @@ int main(int argc, char *argv[])
 		}
 		print_stack_frames_func = print_stack_frames_by_syms_cache;
 	}
-#endif
 
 	printf("Tracing outstanding memory allocs... Hit Ctrl-C to end\n");
 
@@ -977,14 +899,11 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
-#ifdef USE_BLAZESYM
-	blazesym_free(symbolizer);
-#else
 	if (syms_cache)
 		syms_cache__free(syms_cache);
 	if (ksyms)
 		ksyms__free(ksyms);
-#endif
+
 	SKEL_DESTROY(skel);
 	free(allocs);
 	free(stack);
