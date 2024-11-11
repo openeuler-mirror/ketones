@@ -82,11 +82,7 @@ struct trace_event_raw_block_rq_completion___x {
 
 static __always_inline bool has_block_rq_completion()
 {
-#if __has_builtin(__builtin_preserve_type_info)
 	if (bpf_core_type_exists(struct trace_event_raw_block_rq_completion___x))
-		return true;
-#endif
-	if (LINUX_KERNEL_VERSION >= KERNEL_VERSION(5, 18, 0))
 		return true;
 
 	return false;
@@ -207,11 +203,7 @@ struct trace_event_raw_kmem_cache_free___x {
 
 static __always_inline bool has_kfree()
 {
-#if __has_builtin(__builtin_preserve_type_info)
 	if (bpf_core_type_exists(struct trace_event_raw_kfree___x))
-		return true;
-#endif
-	if (LINUX_KERNEL_VERSION >= KERNEL_VERSION(5, 12, 0))
 		return true;
 
 	return false;
@@ -219,11 +211,7 @@ static __always_inline bool has_kfree()
 
 static __always_inline bool has_kmem_cache_free()
 {
-#if __has_builtin(__builtin_preserve_type_info)
 	if (bpf_core_type_exists(struct trace_event_raw_kmem_cache_free___x))
-		return true;
-#endif
-	if (LINUX_KERNEL_VERSION >= KERNEL_VERSION(5, 12, 0))
 		return true;
 
 	return false;
@@ -251,11 +239,7 @@ struct trace_event_raw_kmem_cache_alloc___x {
 
 static __always_inline bool has_kmalloc()
 {
-#if __has_builtin(__builtin_preserve_type_info)
 	if (bpf_core_type_exists(struct trace_event_raw_kmalloc___x))
-		return true;
-#endif
-	if (LINUX_KERNEL_VERSION >= KERNEL_VERSION(6, 1, 0))
 		return true;
 
 	return false;
@@ -263,11 +247,7 @@ static __always_inline bool has_kmalloc()
 
 static __always_inline bool has_kmem_cache_alloc()
 {
-#if __has_builtin(__builtin_preserve_type_info)
 	if (bpf_core_type_exists(struct trace_event_raw_kmem_cache_alloc___x))
-		return true;
-#endif
-	if (LINUX_KERNEL_VERSION >= KERNEL_VERSION(6, 1, 0))
 		return true;
 
 	return false;
@@ -285,11 +265,7 @@ struct trace_event_raw_kmem_alloc_node___o {
 
 static __always_inline bool has_kmem_alloc_node()
 {
-#if __has_builtin(__builtin_preserve_type_info)
         if (bpf_core_type_exists(struct trace_event_raw_kmem_alloc_node___o))
-		return true;
-#endif
-        if (LINUX_KERNEL_VERSION < KERNEL_VERSION(6, 1, 0))
 		return true;
 
 	return false;
@@ -311,13 +287,9 @@ static __always_inline bool has_kmem_alloc_node()
  */
 static __always_inline __u64 get_sock_ident(struct sock *sk)
 {
-#if __has_builtin(__builtin_preserve_enum_value)
 	if (bpf_core_enum_value_exists(enum bpf_func_id, BPF_FUNC_check_mtu)) {
 		return bpf_get_socket_cookie(sk);
 	}
-#endif
-	if (LINUX_KERNEL_VERSION >= KERNEL_VERSION(5, 12, 0))
-		return bpf_get_socket_cookie(sk);
 
 	return (__u64)sk;
 }
@@ -330,11 +302,7 @@ static __always_inline __u64 get_sock_ident(struct sock *sk)
  */
 static __always_inline int compat_bpf_strncmp(const char *s1, size_t s1_sz, const char *s2)
 {
-#if __has_builtin(__builtin_preserve_enum_value)
 	if (bpf_core_enum_value_exists(enum bpf_func_id, BPF_FUNC_strncmp))
-		return bpf_strncmp(s1, s1_sz, s2);
-#endif
-	if (LINUX_KERNEL_VERSION >= KERNEL_VERSION(5, 17, 0))
 		return bpf_strncmp(s1, s1_sz, s2);
 
 	while (s1_sz--) {
