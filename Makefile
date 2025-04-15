@@ -16,13 +16,15 @@ mandir=${prefix}/man
 datadir=${prefix}/share
 bindir=${prefix}/bin
 
+.PHONY: all install default clean
+.PHONY: FORCE
+
 default: all
+
+MAKEFLAGS += --no-print-directory
 
 all:
 	@$(MAKE) -C src
-
-.PHONY: all install default clean
-.PHONY: FORCE
 
 clean:
 	@$(MAKE) -C src clean

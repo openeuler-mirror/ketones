@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdbool.h>
 #include <signal.h>
 #include <time.h>
 #include <bpf/bpf.h>
