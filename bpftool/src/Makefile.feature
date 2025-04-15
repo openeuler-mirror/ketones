@@ -4,9 +4,7 @@ pound := \#
 
 CFLAGS_BACKUP := $(CFLAGS)
 CFLAGS := $(EXTRA_CFLAGS)
-ifneq ($(LLVM),)
-  CFLAGS += -Wno-unused-command-line-argument
-endif
+CFLAGS += -Wno-unused-command-line-argument
 
 ifeq ($(V),1)
   LOG=$(warning $(1))
@@ -27,7 +25,7 @@ endif
 ### feature-clang-bpf-co-re
 
 CLANG_BPF_CO_RE_PROBE_CMD = \
-  printf '%s\n' 'struct s { int i; } __attribute__((preserve_access_index)); struct s foo;' | \
+  printf '%s\n' 'struct s { int i; } __attribute__((preserve_access_index)); struct s foo = {};' | \
     $(CLANG) -g -target bpf -S -o - -x c - $(QUIET_STDERR) | grep -q BTF_KIND_VAR
 
 ifneq ($(findstring clang-bpf-co-re,$(FEATURE_TESTS)),)
@@ -45,7 +43,7 @@ LIBBFD_PROBE += '	bfd_demangle(0, 0, 0);'
 LIBBFD_PROBE += '	return 0;'
 LIBBFD_PROBE += '}'
 LIBBFD_PROBE_CMD = printf '%b\n' $(LIBBFD_PROBE) | \
-  $(CC) $(CFLAGS) -Wall -Werror -x c - $(1) -o /dev/null >/dev/null
+  $(CC) $(CFLAGS) -Wall -Werror -x c -DPACKAGE='"bpftool"' - $(1) -o /dev/null >/dev/null
 
 define libbfd_build
   $(call detect,$(LIBBFD_PROBE_CMD))
@@ -78,7 +76,7 @@ DISASSEMBLER_PROBE += '	return 0;'
 DISASSEMBLER_PROBE += '}'
 
 DISASSEMBLER_PROBE_CMD = printf '%b\n' $(1) | \
-  $(CC) $(CFLAGS) -Wall -Werror -x c - -lbfd -lopcodes -S -o - >/dev/null
+  $(CC) $(CFLAGS) -Wall -Werror -x c -DPACKAGE='"bpftool"' - -lbfd -lopcodes -S -o - >/dev/null
 define disassembler_build
   $(call detect,$(DISASSEMBLER_PROBE_CMD))
 endef
