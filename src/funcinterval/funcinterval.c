@@ -82,6 +82,12 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 		}
 		env.functions = arg;
 		break;
+	case ARGP_KEY_END:
+		if (state->arg_num != 1) {
+			warning("The number of positional parameters is incorrect.\n");
+			argp_usage(state);
+		}
+		break;
 	default:
 		return ARGP_ERR_UNKNOWN;
 	}
