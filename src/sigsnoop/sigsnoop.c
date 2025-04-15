@@ -9,7 +9,7 @@
 static volatile sig_atomic_t exiting;
 
 static pid_t target_pid = 0;
-static int target_signal = 0;
+static int target_signals = 0;
 static bool failed_only = false;
 static bool kill_only = false;
 static bool signal_name = false;
@@ -62,13 +62,13 @@ const char argp_program_doc[] =
 "    sigsnoop -k          # trace signals issued by kill syscall only\n"
 "    sigsnoop -x          # trace failed signals only\n"
 "    sigsnoop -p 1216     # only trace PID 1216\n"
-"    sigsnoop -s 9        # only trace signal 9\n";
+"    sigsnoop -s 1,9,15   # only trace signal 1, 9, 15\n";
 
 static const struct argp_option opts[] = {
 	{ "failed", 'x', NULL, 0, "Trace failed signals only.", 0 },
 	{ "kill", 'k', NULL, 0, "Trace signals issued by kill syscall only.", 0 },
 	{ "pid", 'p', "PID", 0, "Process ID to trace", 0 },
-	{ "signal", 's', "SIGNAL", 0, "Signal to trace.", 0 },
+	{ "signal", 's', "SIGNAL", 0, "Signals to trace.", 0 },
 	{ "name", 'n', NULL, 0, "Output signal name instead of signal number.", 0 },
 	{ "verbose", 'v', NULL, 0, "verbose debug output", 0 },
 	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help", 0 },
@@ -77,12 +77,24 @@ static const struct argp_option opts[] = {
 
 static error_t parse_arg(int key, char *arg, struct argp_state *state)
 {
+	char *token;
+	long sig;
+
 	switch (key) {
 	case 'p':
 		target_pid = argp_parse_pid(key, arg, state);
 		break;
 	case 's':
-		target_signal = argp_parse_long(key, arg, state);
+		token = strtok(arg, ",");
+		while (token) {
+			sig = strtol(token, NULL, 10);
+			if (errno || sig <= 0 || sig > 31) {
+				warning("Invalid SIGNAL: %s\n", token);
+				argp_usage(state);
+			}
+			target_signals |= (1 << (sig - 1));
+			token = strtok(NULL, ",");
+		}
 		break;
 	case 'n':
 		signal_name = true;
@@ -178,7 +190,7 @@ int main(int argc, char *argv[])
 	}
 
 	obj->rodata->filtered_pid = target_pid;
-	obj->rodata->target_signal = target_signal;
+	obj->rodata->target_signals = target_signals;
 	obj->rodata->failed_only = failed_only;
 
 	if (kill_only) {
