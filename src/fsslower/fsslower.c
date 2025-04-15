@@ -8,6 +8,7 @@
 
 enum fs_type {
 	NONE,
+	BCACHEFS,
 	BTRFS,
 	EXT4,
 	NFS,
@@ -20,6 +21,12 @@ static struct fs_config {
 	const char *fs;
 	const char *op_funcs[F_MAX_OP];
 } fs_configs[] = {
+	[BCACHEFS] = { "bcachefs", {
+		[F_READ] = "bch2_read_iter",
+		[F_WRITE] = "bch2_write_iter",
+		[F_OPEN] = "bch2_open",
+		[F_FSYNC] = "bch2_fsync",
+	}},
 	[BTRFS] = { "btrfs", {
 		[F_READ] = "btrfs_file_read_iter",
 		[F_WRITE] = "btrfs_file_write_iter",
@@ -92,7 +99,7 @@ static const struct argp_option opts[] = {
 	{ "duration", 'd', "DURATION", 0, "Total duration of trace in seconds" },
 	{ "pid", 'p', "PID", 0, "Process ID to trace" },
 	{ "min", 'm', "MIN", 0, "Min latency to trace, in ms (default 10)" },
-	{ "type", 't', "Filesystem", 0, "Which filesystem to trace, [btrfs/ext4/nfs/xfs/zfs/f2fs]" },
+	{ "type", 't', "Filesystem", 0, "Which filesystem to trace, [bcachefs/btrfs/ext4/nfs/xfs/zfs/f2fs]" },
 	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
 	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
 	{}
@@ -124,7 +131,9 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 		}
 		break;
 	case 't':
-		if (!strcmp(arg, "btrfs")) {
+		if (!strcmp(arg, "bcachefs")) {
+			fs_type = BCACHEFS;
+		} else if (!strcmp(arg, "btrfs")) {
 			fs_type = BTRFS;
 		} else if (!strcmp(arg, "ext4")) {
 			fs_type = EXT4;
@@ -157,7 +166,9 @@ static void alias_parse(char *prog)
 {
 	char *name = basename(prog);
 
-	if (!strcmp(name, "btrfsslower"))
+	if (!strcmp(name, "bcachefsslower"))
+		fs_type = BCACHEFS;
+	else if (!strcmp(name, "btrfsslower"))
 		fs_type = BTRFS;
 	else if (!strcmp(name, "ext4slower"))
 		fs_type = EXT4;
