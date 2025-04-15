@@ -332,6 +332,8 @@ int main(int argc, char *argv[])
 
 	signal(SIGINT, sig_handler);
 
+	warning("Summarize futex contention latency, hit ctrl-c to exit\n");
+
 	/* main: poll */
 	while (1) {
 		sleep(env.interval);
