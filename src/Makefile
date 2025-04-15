@@ -1,33 +1,8 @@
 # SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
-OUTPUT ?= $(abspath .output)
-CLANG ?= clang
-LLVM_STRIP ?= llvm-strip
+# Author: Jackie Liu <liuyun01@kylinos.cn>
+# Copyright @ 2024 KYLIN Software
 
-LIBBPF_SRC := $(abspath ../libbpf/src)
-BPFTOOL_SRC := $(abspath ../bpftool/src)
-LIBBPF_OBJ := $(abspath $(OUTPUT)/libbpf.a)
-BPFTOOL_OUTPUT ?= $(abspath $(OUTPUT)/bpftool)
-BPFTOOL ?= $(BPFTOOL_OUTPUT)/bpftool
-LIBBLAZESYM_SRC := $(abspath ../blazesym/target/release/libblazesym.a)
-BINARIES_DIR := $(abspath ./bin)
-
-INSTALL := install
-CP := cp
-LN := ln
-
-ARCH ?= $(shell uname -m | sed 's/x86_64/x86/' | sed 's/aarch64/arm64/' \
-			 | sed 's/ppc64le/powerpc/' | sed 's/mips.*/mips/' \
-			 | sed 's/loongarch64/loongarch/' | sed 's/riscv64/riscv/' \
-			 | sed 's/s390x/s390/')
-VMLINUX := ../vmlinux/$(ARCH)/vmlinux.h
-
-INCLUDES := -I$(OUTPUT) -I../libbpf/include/uapi -I$(dir $(VMLINUX)) -I./include
-CFLAGS := -g -Wall $(CLANG_CROSS_FLAGS) -Wunused-variable -Wmissing-field-initializers -Werror -Werror=undef
-ALL_LDFLAGS := $(LDFLAGS) $(EXTRA_LDFLAGS)
-
-BZ_APPS += futexctn
-BZ_APPS += memleak
-BZ_APPS += opensnoop
+include Makefile.inc
 
 APPS += adaptive-readahead
 APPS += bashreadline
@@ -67,6 +42,7 @@ APPS += funccount
 APPS += funcinterval
 APPS += funclatency
 APPS += funcslower
+APPS += futexctn
 APPS += gethostlatency
 APPS += hardirqs
 APPS += icstat
@@ -78,6 +54,7 @@ APPS += kvmexit
 APPS += llcstat
 APPS += loads
 APPS += mdflush
+APPS += memleak
 APPS += mountsnoop
 APPS += mysqld-qslower
 APPS += naptime
@@ -88,6 +65,7 @@ APPS += numasched
 APPS += offcputime
 APPS += offwaketime
 APPS += oomkill
+APPS += opensnoop
 APPS += pidpersec
 APPS += profile
 APPS += readahead
@@ -138,202 +116,83 @@ APPS += virtiostat
 APPS += wakeuptime
 APPS += wqlat
 APPS += writeback
-APPS += $(BZ_APPS)
 
-COMMON_LIBS_OBJ := $(OUTPUT)/libs/trace_helpers.o
-COMMON_LIBS_OBJ += $(OUTPUT)/libs/uprobe_helpers.o
-COMMON_LIBS_OBJ += $(OUTPUT)/libs/btf_helpers.o
-COMMON_LIBS_OBJ += $(OUTPUT)/libs/map_helpers.o
-COMMON_LIBS_OBJ += $(OUTPUT)/libs/compat.o
-COMMON_LIBS_OBJ += $(OUTPUT)/libs/syscall_helpers.o
-COMMON_LIBS_OBJ += $(OUTPUT)/libs/errno_helpers.o
+.PHONY: all clean $(APPS)
 
-FSDIST_ALIASES	 := $(addprefix $(BINARIES_DIR)/, bcachefsdist btrfsdist ext4dist nfsdist \
-		    xfsdist zfsdist f2fsdist)
-FSSLOWER_ALIASES := $(addprefix $(BINARIES_DIR)/, bcachefsslower btrfsslower ext4slower \
-		    nfsslower xfsslower zfsslower f2fsslower)
-SIGSNOOP_ALIAS := $(addprefix $(BINARIES_DIR)/, killsnoop)
-FILESNOOP_ALIAS := $(addprefix $(BINARIES_DIR)/, closesnoop writesnoop readsnoop)
-FUNCCOUNT_ALIAS := $(addprefix $(BINARIES_DIR)/, vfscount)
-UCALLS_ALIAS := $(addprefix $(BINARIES_DIR)/, javacalls perlcalls phpcalls \
-		pythoncalls rubycalls tclcalls)
-UFLOW_ALIAS := $(addprefix $(BINARIES_DIR)/, javaflow perlflow phpflow \
-		pythonflow rubyflow tclflow)
-UGC_ALIAS := $(addprefix $(BINARIES_DIR)/, nodegc pythongc rubygc)
-UOBJNEW_ALIAS := $(addprefix $(BINARIES_DIR)/, cobjnew javaobjnew rubyobjnew tclobjnew)
-USTAT_ALIAS := $(addprefix $(BINARIES_DIR)/, javastat nodestat perlstat phpstat pythonstat \
-	       rubystat tclstat)
-UTHREADS_ALIAS := $(addprefix $(BINARIES_DIR)/, javathreads)
+default: all
 
-ifeq ($(NOALIASES),)
-APP_ALIASES := $(FSDIST_ALIASES) $(FSSLOWER_ALIASES) $(SIGSNOOP_ALIAS) $(FILESNOOP_ALIAS) \
-	       $(FUNCCOUNT_ALIAS) $(UCALLS_ALIAS) $(UOBJNEW_ALIAS) $(UTHREADS_ALIAS) \
-	       $(UFLOW_ALIAS) $(UGC_ALIAS) $(USTAT_ALIAS)
-endif
+TOPDIR := ..
+OUTPUT := .output
+OUTPUT_ABS := $(abspath $(OUTPUT))
 
-OUTPUT_BINARIES := $(addprefix $(BINARIES_DIR)/, $(APPS))
+BPFTOOL_SRC := $(abspath ../bpftool/src)
+BPFTOOL_OUTPUT ?= $(OUTPUT)/bpftool
+BPFTOOL_OUTPUT_ABS ?= $(abspath $(OUTPUT)/bpftool)
+BPFTOOL ?= $(BPFTOOL_OUTPUT)/bpftool
 
-# Get Clang's default includes on this system. We'll explicitly add these dirs
-# to the includes list when compiling with `-target bpf` because otherwise some
-# architecture-specific dirs will be "missing" on some architectures/distros -
-# headers such as asm/types.h, asm/byteorder.h, asm/socket.h, asm/sockios.h,
-# sys/cdefs.h etc. might be missing.
-#
-# Use '-idirafter': Don't interfere with include mechanics except where the
-# build would have failed anyways.
-CLANG_BPF_SYS_INCLUDES = $(shell $(CLANG) -v -E - </dev/null 2>&1 \
-	| sed -n '/<...> search starts here:/,/End of search list./{ s| \(/.*\)|-idirafter \1|p }')
+LIBBPF_SRC := $(abspath ../libbpf/src)
+LIBBPF_OBJ ?= $(OUTPUT)/libbpf.a
 
-ifeq ($(V),1)
-	Q =
-	msg =
-else
-	Q = @
-	msg = @printf '  %-8s %s%s\n'					\
-			"$(1)"						\
-			"$(patsubst $(abspath $(OUTPUT))/%,%,$(2))"	\
-			"$(if $(3), $(3))";
-	MAKEFLAGS += --no-print-directory
-endif
+BINARIES_DIR := ./bin
+CFLAGS := -g -O0 -Wall $(CLANG_CROSS_FLAGS) -Wunused-variable -Wmissing-field-initializers -Werror -Werror=undef
 
-define allow-override
-  $(if $(or $(findstring environment,$(origin $(1))),\
-	    $(findstring command line,$(origin $(1)))),,\
-	$(eval $(1) = $(2)))
-endef
+VMLINUX := $(TOPDIR)/vmlinux/$(ARCH)/vmlinux.h
+INCLUDES := -I$(OUTPUT) -I$(OUTPUT)/include -I$(dir $(VMLINUX)) \
+            -Iinclude -I.
 
-$(call allow-override,CC,$(CROSS_COMPILE)cc)
-$(call allow-override,LD,$(CROSS_COMPILE)ld)
-
-.PHONY: all
-all: $(OUTPUT_BINARIES) $(APP_ALIASES) bin/bpflist bin/tplist bin/reset-trace
-
-.PHONY: clean
-clean:
-	$(call msg,CLEAN)
-	$(Q)rm -rf $(OUTPUT) $(BINARIES_DIR) $(APP_ALIASES)
-
-$(LIBBLAZESYM_SRC)::
-	$(Q)cd ../blazesym && cargo build --release
-
-$(OUTPUT)/libblazesym.a: $(LIBBLAZESYM_SRC) | $(OUTPUT)
-	$(call msg,LIB,$@)
-	$(Q)cp $(LIBBLAZESYM_SRC) $@
-
-$(OUTPUT)/blazesym.h: $(LIBBLAZESYM_SRC) | $(OUTPUT)
-	$(call msg,INC,$@)
-	$(Q)cp ../blazesym/include/blazesym.h $@
-
-$(OUTPUT) $(OUTPUT)/libbpf $(BPFTOOL_OUTPUT) $(OUTPUT)/libs $(BINARIES_DIR):
+$(OUTPUT)/libbpf:
 	$(call msg,MKDIR,$(notdir $@))
 	$(Q)mkdir -p $@
+
+$(BPFTOOL_OUTPUT):
+	$(call msg,MKDIR,$(notdir $@))
+	$(Q)mkdir -p $@
+
+$(OUTPUT)/libs:
+	$(call msg,MKDIR,$(notdir $@))
+	$(Q)mkdir -p $@
+
+$(BINARIES_DIR):
+	$(call msg,MKDIR,$(notdir $@))
+	$(Q)mkdir -p $@
+
+.PHONY: libbpf-headers
+libbpf-headers: | $(OUTPUT)/include
 
 # Build libbpf.a
 $(LIBBPF_OBJ): $(wildcard $(LIBBPF_SRC)/*.[ch] $(LIBBPF_SRC)/Makefile) | $(OUTPUT)/libbpf
 	$(call msg,LIB,$(notdir $@))
-	$(Q)$(MAKE) -C $(LIBBPF_SRC) BUILD_STATIC_ONLY=1		\
-		    OBJDIR=$(dir $@)/libbpf DESTDIR=$(dir $@)		\
-		    INCLUDEDIR= LIBDIR= UAPIDIR=			\
-		    install
+	$(Q)$(MAKE) -C $(LIBBPF_SRC) BUILD_STATIC_ONLY=1                	\
+		OBJDIR=$(OUTPUT_ABS)/libbpf PREFIX=$(OUTPUT_ABS) DESTDIR=	\
+		LIBDIR=$(OUTPUT_ABS)/						\
+		install install_uapi_headers
 
 # Build bpftool
 $(BPFTOOL): | $(BPFTOOL_OUTPUT)
 	$(call msg,BPFTOOL,$(notdir $@))
-	$(Q)$(MAKE) ARCH= CROSS_COMPILE= OUTPUT=$(BPFTOOL_OUTPUT)/ -C $(BPFTOOL_SRC)
+	$(Q)$(MAKE) ARCH= CROSS_COMPILE= OUTPUT=$(BPFTOOL_OUTPUT_ABS)/ -C $(BPFTOOL_SRC)
 
-# Build BPF Code
-$(OUTPUT)/%.bpf.o: %/*.bpf.c $(LIBBPF_OBJ) $(wildcard include/*.bpf.h) $(VMLINUX) | $(OUTPUT)
-	$(call msg,BPF,$(notdir $@))
-	$(Q)$(CLANG) -Wunused-variable -g -O2 -target bpf -D__TARGET_ARCH_$(ARCH) $(INCLUDES) $(CLANG_BPF_SYS_INCLUDES) -c $< -o $@
-	$(Q)$(LLVM_STRIP) -g $@ # strip useless DWARF info
+# Build common libs objects
+$(OUTPUT_ABS)/libs/%.o: libs/%.c $(LIBBPF_OBJ) | $(OUTPUT)/libs
+	$(call msg,CC,$(notdir $@))
+	$(Q)$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-# Generate BPF skeletons
-$(OUTPUT)/%.skel.h: $(OUTPUT)/%.bpf.o | $(OUTPUT) $(BPFTOOL)
-	$(call msg,GEN-SKEL,$(notdir $@))
-	$(Q)$(BPFTOOL) gen skeleton $< > $@
+COMMON_LIBS_OBJ := $(patsubst %.c,$(OUTPUT_ABS)/%.o,$(wildcard libs/*.c))
 
-# Build user-space code
-$(patsubst %,$(OUTPUT)/%.o,$(APPS)): %.o: %.skel.h
+all: $(APPS)
 
-$(OUTPUT)/libs/%.o: libs/%.c include/%.h $(LIBBPF_OBJ) | $(OUTPUT)/libs
-	$(call msg,CC,$@)
-	$(Q)$(CC) $(CFLAGS) $(INCLUDES) -c $(filter %.c,$^) -o $@
-
-$(OUTPUT)/%.o: %/*.c $(wildcard include/*.h) $(LIBBPF_OBJ) | $(OUTPUT)
-	$(call msg,CC,$@)
-	$(Q)$(CC) $(CFLAGS) $(INCLUDES) -c $(lastword $(filter %.c, $(sort $^))) -DSKEL_NAME=$(subst /,,$(basename $(dir $<)))_bpf -o $@
-
-# Build application binary
-$(BINARIES_DIR)/%: $(OUTPUT)/%.o $(COMMON_LIBS_OBJ) $(LIBBPF_OBJ) | $(OUTPUT) $(BINARIES_DIR)
-	$(call msg,BINARY,$(notdir $@))
-	$(Q)$(CC) $(CFLAGS) $^ $(ALL_LDFLAGS) -lelf -lz -o $@
-
-$(addprefix $(BINARIES_DIR)/, numasched numamove): ALL_LDFLAGS += -lnuma
-$(addprefix $(BINARIES_DIR)/, tcplinks): ALL_LDFLAGS += -lncurses
-
-# Build user application binary
-bin/bpflist: bpflist/bpflist.c include/commons.h $(LIBBPF_OBJ) | $(BINARIES_DIR)
-	$(call msg,BINARY,$(notdir $@))
-	$(Q)$(CC) $(CFLAGS) $< $(INCLUDES) -lelf -lz -o $@
-
-bin/tplist: tplist/tplist.c $(COMMON_LIBS_OBJ) $(LIBBPF_OBJ) | $(BINARIES_DIR)
-	$(call msg,BINARY,$(notdir $@))
-	$(Q)$(CC) $(CFLAGS) $^ $(INCLUDES) -lelf -lz -o $@
-
-bin/reset-trace: reset-trace/reset-trace.c $(COMMON_LIBS_OBJ) $(LIBBPF_OBJ) | $(BINARIES_DIR)
-	$(call msg,BINARY,$(notdir $@))
-	$(Q)$(CC) $(CFLAGS) $^ $(INCLUDES) -lelf -lz -o $@
-
-$(FSSLOWER_ALIASES): $(addprefix $(BINARIES_DIR)/, fsslower)
-	$(call msg,SYMLINK,$(notdir $@))
-	$(Q)$(LN) -f -s $(notdir $^) $@
-
-$(FSDIST_ALIASES): $(addprefix $(BINARIES_DIR)/, fsdist)
-	$(call msg,SYMLINK,$(notdir $@))
-	$(Q)$(LN) -f -s $(notdir $^) $@
-
-$(SIGSNOOP_ALIAS): $(addprefix $(BINARIES_DIR)/, sigsnoop)
-	$(call msg,SYMLINK,$(notdir $@))
-	$(Q)$(LN) -f -s $(notdir $^) $@
-
-$(FILESNOOP_ALIAS): $(addprefix $(BINARIES_DIR)/, filesnoop)
-	$(call msg,SYMLINK,$(notdir $@))
-	$(Q)$(LN) -f -s $(notdir $^) $@
-
-$(FUNCCOUNT_ALIAS): $(addprefix $(BINARIES_DIR)/, funccount)
-	$(call msg,SYMLINK,$(notdir $@))
-	$(Q)$(LN) -f -s $(notdir $^) $@
-
-$(UCALLS_ALIAS): $(addprefix $(BINARIES_DIR)/, ucalls)
-	$(call msg,SYMLINK,$(notdir $@))
-	$(Q)$(LN) -f -s $(notdir $^) $@
-
-$(UFLOW_ALIAS): $(addprefix $(BINARIES_DIR)/, uflow)
-	$(call msg,SYMLINK,$(notdir $@))
-	$(Q)$(LN) -f -s $(notdir $^) $@
-
-$(UGC_ALIAS): $(addprefix $(BINARIES_DIR)/, ugc)
-	$(call msg,SYMLINK,$(notdir $@))
-	$(Q)ln -f -s $(notdir $^) $@
-
-$(UOBJNEW_ALIAS): $(addprefix $(BINARIES_DIR)/, uobjnew)
-	$(call msg,SYMLINK,$(notdir $@))
-	$(Q)$(LN) -f -s $(notdir $^) $@
-
-$(USTAT_ALIAS): $(addprefix $(BINARIES_DIR)/, ustat)
-	$(call msg,SYMLINK,$(notdir $@))
-	$(Q)$(LN) -f -s $(notdir $^) $@
-
-$(UTHREADS_ALIAS): $(addprefix $(BINARIES_DIR)/, uthreads)
-	$(call msg,SYMLINK,$(notdir $@))
-	$(Q)$(LN) -f -s $(notdir $^) $@
+$(APPS): $(BPFTOOL) $(LIBBPF_OBJ) $(COMMON_LIBS_OBJ) | $(BINARIES_DIR)
+	$(MAKE) -C $@ COMMON_LIBS_OBJ="$(COMMON_LIBS_OBJ)" CFLAGS="$(CFLAGS)"
 
 install:
 	$(INSTALL) -d ${bindir}/
 	$(CP) -P bin/* ${bindir}/
 
-# delete failed targets
-.DELETE_ON_ERROR:
-
-# keep intermediate (.skel.h, .bpf.o, etc) targets
-.SECONDARY:
+clean:
+	for dir in $(APPS); do \
+		$(MAKE) -C $$dir clean; \
+	done
+	$(call msg,CLEAN,OUTPUT)
+	$(Q)rm -rf $(OUTPUT)
+	$(call msg,CLEAN,BIN)
+	$(Q)rm -rf $(BINARIES_DIR)
