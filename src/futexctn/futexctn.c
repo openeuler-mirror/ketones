@@ -143,9 +143,9 @@ static void sig_handler(int sig)
 static int print_stack(struct futexctn_bpf *obj, struct hist_key *info)
 {
 #ifdef USE_BLAZESYM
-	sym_src_cfg cfgs[] = {
+	blazesym_sym_src_cfg cfgs[] = {
 		{
-			.src_type = SRC_T_PROCESS,
+			.src_type = BLAZESYM_SRC_T_PROCESS,
 			.params = {
 				.process = {
 					.pid = info->pid_tgid >> 32
