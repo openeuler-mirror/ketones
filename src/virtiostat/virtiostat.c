@@ -154,13 +154,13 @@ int main(int argc, char *argv[])
 
 	if (env.is_filter_devname) {
 		obj->rodata->is_filter_devname = env.is_filter_devname;
-		strncpy(obj->rodata->filter_devname, env.filter_devname, CMPMAX - 1);
-		obj->rodata->filter_devname[CMPMAX - 1] = '\0';
+		strncpy(obj->rodata->filter_devname, env.filter_devname, MAX_NAME_LEN - 1);
+		obj->rodata->filter_devname[MAX_NAME_LEN - 1] = '\0';
 	}
 	if (env.is_filter_driver) {
 		obj->rodata->is_filter_driver = env.is_filter_driver;
-		strncpy(obj->rodata->filter_driver, env.filter_driver, CMPMAX - 1);
-		obj->rodata->filter_driver[CMPMAX - 1] = '\0';
+		strncpy(obj->rodata->filter_driver, env.filter_driver, MAX_NAME_LEN - 1);
+		obj->rodata->filter_driver[MAX_NAME_LEN - 1] = '\0';
 	}
 
 	err = virtiostat_bpf__load(obj);
