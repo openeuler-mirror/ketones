@@ -20,6 +20,16 @@ static const struct argp_option opts[] = {
 	{}
 };
 
+static const char *funcnames[SYS_T_MAX] = {
+	[SYS_T_MIN]		= "N/A",
+	[SYS_SYNC]		= "sync",
+	[SYS_FSYNC]		= "fsync",
+	[SYS_FDATASYNC]		= "fdatasync",
+	[SYS_MSYNC]		= "msync",
+	[SYS_SYNC_FILE_RANGE]	= "sync_file_range",
+	[SYS_SYNCFS]		= "syncfs",
+};
+
 static error_t parse_arg(int key, char *arg, struct argp_state *state)
 {
 	switch (key) {
@@ -53,10 +63,9 @@ static void sig_handler(int sig)
 static int handle_event(void *ctx, void *data, size_t data_sz)
 {
 	const struct event *e = data;
-	char ts[16];
 
-	strftime_now(ts, sizeof(ts), "%H:%M:%S ");
-	printf("%-9s %-7d %-16s %s\n", ts, e->pid, e->comm, e->funcname);
+	printf("%-18.9f %-*d %-16s %s\n", (float)e->ts_us / 1000000, get_pid_maxlen(),
+	       e->pid, e->comm, funcnames[e->sys]);
 
 	return 0;
 }
@@ -124,7 +133,7 @@ int main(int argc, char *argv[])
 	}
 
 	printf("Tracing sync syscalls... Hit Ctrl-C to end.\n");
-	printf("%-9s %-7s %-16s %s\n", "TIME", "PID", "COMM", "EVENT");
+	printf("%-18s %-*s %-16s %s\n", "TIME(s)", get_pid_maxlen(), "PID", "COMM", "CALL");
 
 	while (!exiting) {
 		err = bpf_buffer__poll(buf, POLL_TIMEOUT_MS);
