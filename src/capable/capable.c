@@ -70,7 +70,7 @@ const char *cap_name[] = {
 };
 
 static volatile sig_atomic_t exiting;
-static volatile bool verbose = false;
+static volatile bool verbose;
 struct syms_cache *syms_cache = NULL;
 struct ksyms *ksyms = NULL;
 int ifd, sfd;
@@ -185,7 +185,8 @@ static void print_map(struct ksyms *ksyms, struct syms_cache *syms_cache,
 	const struct ksym *ksym;
 	const struct syms *syms;
 	const struct sym *sym;
-	int err;
+	struct sym_info sinfo;
+	int err, idx;
 	unsigned long *ip;
 	struct cap_event val;
 	int ifd = ((struct context *)ctx)->ifd;
@@ -199,6 +200,8 @@ static void print_map(struct ksyms *ksyms, struct syms_cache *syms_cache,
 	}
 
 	while (!bpf_map_get_next_key(ifd, &lookup_key, &next_key)) {
+		idx = 0;
+
 		err = bpf_map_lookup_elem(ifd, &next_key, &val);
 		if (err < 0) {
 			warning("Failed to lookup info: %d\n", err);
@@ -211,7 +214,15 @@ static void print_map(struct ksyms *ksyms, struct syms_cache *syms_cache,
 				warning("    [Missed Kernel Stack]\n");
 			for (int i = 0; i < argument->perf_max_stack_depth && ip[i]; i++) {
 				ksym = ksyms__map_addr(ksyms, ip[i]);
-				printf("    %s\n", ksym ? ksym->name : "Unknown");
+				if (!verbose) {
+					printf("    %s\n", ksym ? ksym->name : "Unknown");
+				} else {
+					if (ksym)
+						printf("    #%-2d 0x%lx %s+0x%lx\n", idx++,
+						       ip[i], ksym->name, ip[i] - ksym->addr);
+					else
+						printf("    #%-2d 0x%lx [unknown]\n", idx++, ip[i]);
+				}
 			}
 		}
 
@@ -231,8 +242,21 @@ static void print_map(struct ksyms *ksyms, struct syms_cache *syms_cache,
 			}
 
 			for (int i = 0; i < argument->perf_max_stack_depth && ip[i]; i++) {
-				sym = syms__map_addr(syms, ip[i]);
-				printf("    %s\n", sym ? sym->name : "Unknown");
+				if (!verbose) {
+					sym = syms__map_addr(syms, ip[i]);
+					printf("    %s\n", sym ? sym->name : "Unknown");
+				} else {
+					err = syms__map_addr_dso(syms, ip[i], &sinfo);
+					printf("    #%-2d 0x%016lx", idx++, ip[i]);
+
+					if (err == 0) {
+						if (sinfo.sym_name)
+							printf(" %s+0x%lx", sinfo.sym_name, sinfo.sym_offset);
+
+						printf(" (%s+0x%lx)", sinfo.dso_name, sinfo.dso_offset);
+					}
+					printf("\n");
+				}
 			}
 		}
 
