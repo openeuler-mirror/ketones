@@ -92,6 +92,7 @@ APPS += mdflush
 APPS += mountsnoop
 APPS += mysqld-qslower
 APPS += naptime
+APPS += netfilter
 APPS += netqtop
 APPS += numamove
 APPS += numasched
