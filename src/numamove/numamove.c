@@ -1,4 +1,8 @@
 // SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
+//  8-Jun-2020   Wenbo Zhang   Created this.
+// 30-Jan-2023   Rong Tao      Use fentry_can_attach() to decide use fentry/kprobe.
+// 06-Apr-2024   Rong Tao      Support migrate_misplaced_folio()
+
 #include "commons.h"
 #include "numamove.skel.h"
 #include "trace_helpers.h"
@@ -69,6 +73,7 @@ int main(int argc, char *argv[])
 	struct numamove_bpf *bpf_obj;
 	int err;
 	bool has_bss;
+	bool use_folio, use_fentry;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
 	if (err)
@@ -91,13 +96,39 @@ int main(int argc, char *argv[])
 	}
 
 	/* It's fallback to kprobe when kernel does not support fentry. */
-	if (fentry_can_attach("migrate_misplaced_page", NULL)) {
-		bpf_program__set_autoload(bpf_obj->progs.kprobe_migrate_misplaced_page, false);
-		bpf_program__set_autoload(bpf_obj->progs.kretprobe_migrate_misplaced_page, false);
+	if (fentry_can_attach("migrate_misplaced_folio", NULL)) {
+		use_fentry = true;
+		use_folio = true;
+	} else if (fentry_can_attach("migrate_misplaced_page", NULL)) {
+		use_fentry = true;
+		use_folio = false;
+	} else if (kprobe_exists("migrate_misplaced_folio")) {
+		use_fentry = false;
+		use_folio = true;
+	} else if (kprobe_exists("migrate_misplaced_page")) {
+		use_fentry = false;
+		use_folio = false;
 	} else {
-		bpf_program__set_autoload(bpf_obj->progs.fentry_migrate_misplaced_page, false);
-		bpf_program__set_autoload(bpf_obj->progs.fexit_migrate_misplaced_page, false);
+		warning("can't found any fentry/kprobe of migrate misplaced folio/page\n");
+		return 1;
 	}
+
+	bpf_program__set_autoload(bpf_obj->progs.fentry_migrate_misplaced_folio,
+				  use_fentry && use_folio);
+	bpf_program__set_autoload(bpf_obj->progs.fexit_migrate_misplaced_folio_exit,
+				  use_fentry && use_folio);
+	bpf_program__set_autoload(bpf_obj->progs.kprobe_migrate_misplaced_folio,
+				  !use_fentry && use_folio);
+	bpf_program__set_autoload(bpf_obj->progs.kretprobe_migrate_misplaced_folio_exit,
+				  !use_fentry && use_folio);
+	bpf_program__set_autoload(bpf_obj->progs.fentry_migrate_misplaced_page,
+				  use_fentry && !use_folio);
+	bpf_program__set_autoload(bpf_obj->progs.fexit_migrate_misplaced_page_exit,
+				  use_fentry && !use_folio);
+	bpf_program__set_autoload(bpf_obj->progs.kprobe_migrate_misplaced_page,
+				  !use_fentry && !use_folio);
+	bpf_program__set_autoload(bpf_obj->progs.kretprobe_migrate_misplaced_page_exit,
+				  !use_fentry && !use_folio);
 
 	err = numamove_bpf__load(bpf_obj);
 	if (err) {
