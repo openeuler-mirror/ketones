@@ -42,7 +42,7 @@ and RISC-V architectures, catering to different hardware platforms.
 ***Install build depends***
 
 ```bash
-# apt install llvm clang make gcc libcap-dev binutils-dev
+# apt install llvm-dev clang make gcc libcap-dev binutils-dev libnuma-dev
 ```
 
 ***Make***
