@@ -172,13 +172,11 @@ int main(int argc, char *argv[])
 		bpf_program__set_autoload(obj->progs.tcp_v6_connect, false);
 		bpf_program__set_autoload(obj->progs.tcp_rcv_state_process, false);
 		bpf_program__set_autoload(obj->progs.tcp_v4_destroy_sock, false);
-		bpf_program__set_autoload(obj->progs.tcp_v6_destroy_sock, false);
 	} else {
 		bpf_program__set_autoload(obj->progs.fentry_tcp_v4_connect, false);
 		bpf_program__set_autoload(obj->progs.fentry_tcp_v6_connect, false);
 		bpf_program__set_autoload(obj->progs.fentry_tcp_rcv_state_process, false);
 		bpf_program__set_autoload(obj->progs.fentry_tcp_v4_destroy_sock, false);
-		bpf_program__set_autoload(obj->progs.fentry_tcp_v6_destroy_sock, false);
 	}
 
 	buf = bpf_buffer__new(obj->maps.events, obj->maps.heap);
