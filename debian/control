@@ -2,7 +2,7 @@ Source: ketones
 Section: devel
 Priority: optional
 Maintainer: Jackie Liu <liuyun01@kylinos.cn>
-Build-Depends: debhelper (>=11~), clang
+Build-Depends: debhelper (>=11~), clang (>= 10), libcap-dev, llvm, binutils-dev
 Standards-Version: 4.1.4
 Homepage: https://gitee.com/openkylin/ketones/blob/master/README.md
 Vcs-Git: https://gitee.com/openkylin/ketones.git
