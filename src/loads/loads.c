@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
 		.doc = argp_program_doc,
 	};
 	struct bpf_link *link[MAX_NR_CPUS] = {};
-	struct loads_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	struct ksyms *ksyms = NULL;
 	const struct ksym *ksym;
 	int err;
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	obj = loads_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
 
 	obj->rodata->avenrun_kaddr = ksym->addr;
 
-	err = loads_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
@@ -225,7 +225,7 @@ cleanup:
 	for (int i = 0; i < nr_cpus; i++)
 		bpf_link__destroy(link[i]);
 
-	loads_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 	ksyms__free(ksyms);
 

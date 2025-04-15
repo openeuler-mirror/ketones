@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
 		.doc = argp_program_doc,
 	};
 	struct bpf_buffer *buf = NULL;
-	struct stacksnoop_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	int err;
 	bool support_fentry;
 
@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = stacksnoop_bpf__open();
+	obj = SKEL_OPEN();
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -235,13 +235,13 @@ int main(int argc, char *argv[])
 		bpf_program__set_autoload(obj->progs.fentry_function, false);
 	}
 
-	err = stacksnoop_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
 	}
 
-	err = support_fentry ? stacksnoop_bpf__attach(obj) : attach_kprobes(obj);
+	err = support_fentry ? SKEL_ATTACH(obj) : attach_kprobes(obj);
 	if (err) {
 		warning("Failed to attach BPF programs: %d\n", err);
 		goto cleanup;
@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
 
 cleanup:
 	bpf_buffer__free(buf);
-	stacksnoop_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	ksyms__free(ksyms);
 	free(stacks);
 

@@ -6,7 +6,6 @@
 #include "llcstat.h"
 #include "llcstat.skel.h"
 #include "btf_helpers.h"
-#include "trace_helpers.h"
 
 struct env {
 	int sample_period;
@@ -180,7 +179,7 @@ int main(int argc, char *argv[])
 		.parser = parse_arg,
 		.doc = argp_program_doc,
 	};
-	struct llcstat_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	int err, i;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
@@ -212,7 +211,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	obj = llcstat_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF objects\n");
 		goto cleanup;
@@ -220,7 +219,7 @@ int main(int argc, char *argv[])
 
 	obj->rodata->target_per_thread = env.per_thread;
 
-	err = llcstat_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
@@ -255,7 +254,7 @@ cleanup:
 	}
 	free(mlinks);
 	free(rlinks);
-	llcstat_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 
 	return err != 0;

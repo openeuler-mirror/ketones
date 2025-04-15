@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 		.doc = argp_program_doc,
 	};
 	struct perf_buffer *pb = NULL;
-	struct runqslower_bpf *bpf_obj;
+	DEFINE_SKEL_OBJECT(bpf_obj);
 	int err;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	bpf_obj = runqslower_bpf__open();
+	bpf_obj = SKEL_OPEN();
 	if (!bpf_obj) {
 		warning("failed to open and/or load BPF object\n");
 		return 1;
@@ -166,13 +166,13 @@ int main(int argc, char *argv[])
 		bpf_program__set_autoload(bpf_obj->progs.sched_switch, false);
 	}
 
-	err = runqslower_bpf__load(bpf_obj);
+	err = SKEL_LOAD(bpf_obj);
 	if (err) {
 		warning("failed to load BPF object: %d", err);
 		goto cleanup;
 	}
 
-	err = runqslower_bpf__attach(bpf_obj);
+	err = SKEL_ATTACH(bpf_obj);
 	if (err) {
 		warning("failed to attach BPF programs\n");
 		goto cleanup;
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
 
 cleanup:
 	perf_buffer__free(pb);
-	runqslower_bpf__destroy(bpf_obj);
+	SKEL_DESTROY(bpf_obj);
 
 	return err != 0;
 }

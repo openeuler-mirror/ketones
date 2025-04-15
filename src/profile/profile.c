@@ -369,7 +369,7 @@ int main(int argc, char *argv[])
 	struct bpf_link *links[MAX_CPU_NR] = {};
 	struct syms_cache *syms_cache = NULL;
 	struct ksyms *ksyms = NULL;
-	struct profile_bpf *bpf_obj;
+	DEFINE_SKEL_OBJECT(bpf_obj);
 	int err;
 	int pids_fd, tids_fd;
 	__u8 val = 0;
@@ -401,7 +401,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	bpf_obj = profile_bpf__open();
+	bpf_obj = SKEL_OPEN();
 	if (!bpf_obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -420,7 +420,7 @@ int main(int argc, char *argv[])
 	bpf_map__set_max_entries(bpf_obj->maps.stackmap, env.stack_storage_size);
 
 
-	err = profile_bpf__load(bpf_obj);
+	err = SKEL_LOAD(bpf_obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
@@ -478,7 +478,7 @@ cleanup:
 	/* cleanup bpf link to detach & free */
 	for (int i = 0; i < nr_cpus; i++)
 		bpf_link__destroy(links[i]);
-	profile_bpf__destroy(bpf_obj);
+	SKEL_DESTROY(bpf_obj);
 	syms_cache__free(syms_cache);
 	ksyms__free(ksyms);
 

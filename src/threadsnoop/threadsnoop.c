@@ -109,7 +109,7 @@ cleanup:
 int main(int argc, char *argv[])
 {
 	struct syms_cache *syms_cache = NULL;
-	struct threadsnoop_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	struct bpf_buffer *buf = NULL;
 	struct bpf_link *link = NULL;
 	static const struct argp argp = {
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	obj = threadsnoop_bpf__open();
+	obj = SKEL_OPEN();
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		err = 1;
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	err = threadsnoop_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 
 cleanup:
 	bpf_buffer__free(buf);
-	threadsnoop_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	if (syms_cache)
 		syms_cache__free(syms_cache);
 	if (link)

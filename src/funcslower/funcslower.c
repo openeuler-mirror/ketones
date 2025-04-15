@@ -371,7 +371,7 @@ int main(int argc, char *argv[])
 		.parser = parse_arg,
 		.doc = argp_program_doc,
 	};
-	struct funcslower_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	struct bpf_buffer *buf;
 	int err;
 
@@ -384,7 +384,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = funcslower_bpf__open();
+	obj = SKEL_OPEN();
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -406,7 +406,7 @@ int main(int argc, char *argv[])
 	}
 
 	autoload_programs(obj);
-	err = funcslower_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF objects: %d\n", err);
 		goto cleanup;
@@ -463,7 +463,7 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
-	funcslower_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	bpf_buffer__free(buf);
 	ksyms__free(ksyms);
 	syms_cache__free(syms_cache);

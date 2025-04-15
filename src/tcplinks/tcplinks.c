@@ -435,7 +435,7 @@ static void init_ncurses_windows(void)
 int main(int argc, char *argv[])
 {
 	LIBBPF_OPTS(bpf_object_open_opts, open_opts);
-	struct tcplinks_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	static struct argp argp = {
 		.options = opts,
 		.parser = parse_arg,
@@ -458,7 +458,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	obj = tcplinks_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -469,13 +469,13 @@ int main(int argc, char *argv[])
 	else
 		bpf_program__set_autoload(obj->progs.inet_sock_set_state, false);
 
-	err = tcplinks_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object\n");
 		goto cleanup;
 	}
 
-	err = tcplinks_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs\n");
 		goto cleanup;
@@ -494,7 +494,7 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
-	tcplinks_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	delwin(windows.scroll_window);
 	/* ncurses finish */
 	endwin();

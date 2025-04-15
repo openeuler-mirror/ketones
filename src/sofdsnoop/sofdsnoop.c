@@ -137,7 +137,7 @@ static int attach_progs(struct sofdsnoop_bpf *obj)
 		goto cleanup;
 	}
 
-	err = sofdsnoop_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs: %d\n", err);
 		goto cleanup;
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
 		.doc = argp_program_doc,
 	};
 	struct perf_buffer *pb = NULL;
-	struct sofdsnoop_bpf *obj = NULL;
+	DEFINE_SKEL_OBJECT(obj);
 	double start;
 	int err;
 
@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	obj = sofdsnoop_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -265,7 +265,7 @@ int main(int argc, char *argv[])
 	obj->rodata->g_pid = env.pid;
 	obj->rodata->g_tid = env.tid;
 
-	err = sofdsnoop_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
@@ -309,7 +309,7 @@ int main(int argc, char *argv[])
 
 cleanup:
 	perf_buffer__free(pb);
-	sofdsnoop_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 
 	return err != 0;

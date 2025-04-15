@@ -235,8 +235,8 @@ int main(int argc, char *argv[])
 	};
 
 	struct perf_buffer *pb = NULL;
-	struct execsnoop_bpf *bpf_obj;
-	int err, cgfd;
+	DEFINE_SKEL_OBJECT(bpf_obj);
+	int err, cgfd = -1;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
 	if (err)
@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	bpf_obj = execsnoop_bpf__open_opts(&open_opts);
+	bpf_obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!bpf_obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
 		bpf_program__set_autoload(bpf_obj->progs.tracepoint_syscall_exit_execveat, false);
 	}
 
-	err = execsnoop_bpf__load(bpf_obj);
+	err = SKEL_LOAD(bpf_obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	err = execsnoop_bpf__attach(bpf_obj);
+	err = SKEL_ATTACH(bpf_obj);
 	if (err) {
 		warning("Failed to attach BPF programs\n");
 		goto cleanup;
@@ -338,7 +338,7 @@ int main(int argc, char *argv[])
 
 cleanup:
 	perf_buffer__free(pb);
-	execsnoop_bpf__destroy(bpf_obj);
+	SKEL_DESTROY(bpf_obj);
 	cleanup_core_btf(&open_opts);
 	if (cgfd > 0)
 		close(cgfd);

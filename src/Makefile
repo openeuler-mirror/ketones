@@ -277,7 +277,7 @@ $(OUTPUT)/libs/%.o: libs/%.c include/%.h $(LIBBPF_OBJ) | $(OUTPUT)/libs
 
 $(OUTPUT)/%.o: %/*.c $(wildcard include/*.h) $(LIBBPF_OBJ) | $(OUTPUT)
 	$(call msg,CC,$@)
-	$(Q)$(CC) $(CFLAGS) $(INCLUDES) -c $(lastword $(filter %.c, $(sort $^))) -o $@
+	$(Q)$(CC) $(CFLAGS) $(INCLUDES) -c $(lastword $(filter %.c, $(sort $^))) -DSKEL_NAME=$(subst /,,$(basename $(dir $<)))_bpf -o $@
 
 # Build application binary
 $(BINARIES_DIR)/%: $(OUTPUT)/%.o $(COMMON_LIBS_OBJ) $(LIBBPF_OBJ) | $(OUTPUT) $(BINARIES_DIR)

@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
 		.doc = argp_program_doc,
 		.args_doc = args_doc
 	};
-	struct dcstat_bpf *skel;
+	DEFINE_SKEL_OBJECT(skel);
 	int err;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	skel = dcstat_bpf__open();
+	skel = SKEL_OPEN();
 	if (!skel) {
 		warning("Failed to open BPF objects\n");
 		goto cleanup;
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 		bpf_program__set_autoload(skel->progs.d_lookup_fexit, false);
 	}
 
-	err = dcstat_bpf__load(skel);
+	err = SKEL_LOAD(skel);
 	if (err) {
 		warning("Failed to load BPF skelect: %d\n", err);
 		goto cleanup;
@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	err = dcstat_bpf__attach(skel);
+	err = SKEL_ATTACH(skel);
 	if (err) {
 		warning("Failed to attach BPF programs: %s\n", strerror(-err));
 		goto cleanup;
@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
-	dcstat_bpf__destroy(skel);
+	SKEL_DESTROY(skel);
 	cleanup_core_btf(&open_opts);
 
 	return err != 0;

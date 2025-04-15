@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 		.parser = parse_arg,
 		.doc = argp_program_doc,
 	};
-	struct swapin_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	int err;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = swapin_bpf__open();
+	obj = SKEL_OPEN();
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -140,13 +140,13 @@ int main(int argc, char *argv[])
 
 	obj->rodata->target_pid = env.pid;
 
-	err = swapin_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
 	}
 
-	err = swapin_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs: %d\n", err);
 		goto cleanup;
@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
-	swapin_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 
 	return err != 0;
 }

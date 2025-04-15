@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
 		.doc = argp_program_doc,
 	};
 	struct bpf_link *links[MAX_CPU_NR] = {};
-	struct cpufreq_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	int err, cgfd = -1;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	obj = cpufreq_bpf__open();
+	obj = SKEL_OPEN();
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
 	else
 		bpf_program__set_autoload(obj->progs.cpu_frequency, false);
 
-	err = cpufreq_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object\n");
 		goto cleanup;
@@ -264,7 +264,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	err = cpufreq_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs\n");
 		goto cleanup;
@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
 cleanup:
 	for (int i = 0; i < nr_cpus; i++)
 		bpf_link__destroy(links[i]);
-	cpufreq_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	if (cgfd > 0)
 		close(cgfd);
 

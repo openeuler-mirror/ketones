@@ -763,7 +763,7 @@ static int child_exec_event_fd = -1;
 int main(int argc, char *argv[])
 {
 	int ret = 0;
-	struct memleak_bpf *skel = NULL;
+	DEFINE_SKEL_OBJECT(skel);
 	static const struct argp argp = {
 		.options = opts,
 		.parser = parse_arg,
@@ -850,7 +850,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	skel = memleak_bpf__open();
+	skel = SKEL_OPEN();
 	if (!skel) {
 		warning("Failed to open bpf object\n");
 		ret = 1;
@@ -880,7 +880,7 @@ int main(int argc, char *argv[])
 		disable_kernel_tracepoints(skel);
 	}
 
-	ret = memleak_bpf__load(skel);
+	ret = SKEL_LOAD(skel);
 	if (ret) {
 		warning("Failed to load BPF object\n");
 		goto cleanup;
@@ -899,7 +899,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	ret = memleak_bpf__attach(skel);
+	ret = SKEL_ATTACH(skel);
 	if (ret) {
 		warning("Failed to attach BPF programs\n");
 		goto cleanup;
@@ -985,7 +985,7 @@ cleanup:
 	if (ksyms)
 		ksyms__free(ksyms);
 #endif
-	memleak_bpf__destroy(skel);
+	SKEL_DESTROY(skel);
 	free(allocs);
 	free(stack);
 	printf("done\n");

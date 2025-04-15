@@ -53,7 +53,7 @@ static int libbpf_print_fn(enum libbpf_print_level level, const char *format,
 
 int main(int argc, char *argv[])
 {
-	struct pidpersec_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	static const struct argp argp = {
 		.options = opts,
 		.parser = parse_arg,
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = pidpersec_bpf__open();
+	obj = SKEL_OPEN();
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 	else
 		bpf_program__set_autoload(obj->progs.sched_process_fork, false);
 
-	err = pidpersec_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object\n");
 		goto cleanup;
@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	err = pidpersec_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF object\n");
 		goto cleanup;
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
-	pidpersec_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 
 	return err != 0;
 }

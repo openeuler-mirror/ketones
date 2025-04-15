@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
 		.doc = argp_program_doc,
 	};
 
-	struct hardirqs_bpf *bpf_obj;
+	DEFINE_SKEL_OBJECT(bpf_obj);
 	char ts[32];
 	int err;
 	int idx, memcg_map_fd;
@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	bpf_obj = hardirqs_bpf__open();
+	bpf_obj = SKEL_OPEN();
 	if (!bpf_obj) {
 		warning("failed to open BPF object\n");
 		return 1;
@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
 		bpf_obj->rodata->target_ns = env.nanoseconds;
 	}
 
-	err = hardirqs_bpf__load(bpf_obj);
+	err = SKEL_LOAD(bpf_obj);
 	if (err) {
 		warning("failed to load BPF object: %d\n", err);
 		goto cleanup;
@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	err = hardirqs_bpf__attach(bpf_obj);
+	err = SKEL_ATTACH(bpf_obj);
 	if (err) {
 		warning("Failed to attach BPF object: %d\n", err);
 		goto cleanup;
@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
-	hardirqs_bpf__destroy(bpf_obj);
+	SKEL_DESTROY(bpf_obj);
 	if (memcg_fd > 0)
 		close(memcg_fd);
 

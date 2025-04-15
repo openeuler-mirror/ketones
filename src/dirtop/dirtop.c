@@ -4,7 +4,6 @@
 #include "commons.h"
 #include "dirtop.h"
 #include "dirtop.skel.h"
-#include "compat.h"
 #include "btf_helpers.h"
 #include "trace_helpers.h"
 #include <sys/stat.h>
@@ -280,7 +279,7 @@ int main(int argc, char *argv[])
 		.parser = parse_arg,
 		.doc = argp_program_doc,
 	};
-	struct dirtop_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	int err;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
@@ -298,7 +297,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = dirtop_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		goto cleanup;
@@ -319,13 +318,13 @@ int main(int argc, char *argv[])
 		bpf_program__set_autoload(obj->progs.trace_write_entry_fentry, false);
 	}
 
-	err = dirtop_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
 	}
 
-	err = dirtop_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs: %d\n", err);
 		goto cleanup;
@@ -352,7 +351,7 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
-	dirtop_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 
 	return err != 0;

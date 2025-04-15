@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 		.times = 99999999,
 	};
 	__u64 buffers, cached, mbd;
-	struct cachestat_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	__s64 total, misses, hits;
 	int err;
 
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = cachestat_bpf__open();
+	obj = SKEL_OPEN();
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
 	else
 		bpf_program__set_autoload(obj->progs.fentry_mark_buffer_dirty, false);
 
-	err = cachestat_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object\n");
 		goto cleanup;
@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	err = cachestat_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs\n");
 		goto cleanup;
@@ -258,6 +258,6 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
-	cachestat_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	return err != 0;
 }

@@ -13,7 +13,6 @@
 #include "stackcount.skel.h"
 #include "trace_helpers.h"
 #include "uprobe_helpers.h"
-#include "map_helpers.h"
 #include "stackcount.h"
 
 static struct ksyms *ksyms;
@@ -430,7 +429,7 @@ int main(int argc, char *argv[])
 		.parser = parse_arg,
 		.doc = argp_program_doc,
 	};
-	struct stackcount_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	enum TRACE_TYPE type;
 	const char *library, *pattern;
 	int err, cnt;
@@ -449,7 +448,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = stackcount_bpf__open();
+	obj = SKEL_OPEN();
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -497,7 +496,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	err = stackcount_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
@@ -564,7 +563,7 @@ int main(int argc, char *argv[])
 		printf("Detaching...\n");
 
 cleanup:
-	stackcount_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	ksyms__free(ksyms);
 	syms_cache__free(syms_cache);
 

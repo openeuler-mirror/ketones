@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
 		.doc = argp_program_doc,
 	};
 	struct bpf_buffer *buf = NULL;
-	struct dcsnoop_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	int err;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = dcsnoop_bpf__open();
+	obj = SKEL_OPEN();
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -198,13 +198,13 @@ int main(int argc, char *argv[])
 		bpf_program__set_autoload(obj->progs.d_lookup_fexit, false);
 	}
 
-	err = dcsnoop_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
 	}
 
-	err = dcsnoop_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF object: %d\n", err);
 		goto cleanup;
@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
 	err = print_events(buf);
 
 cleanup:
-	dcsnoop_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 
 	return err != 0;
 }

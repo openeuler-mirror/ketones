@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 		.doc = argp_program_doc,
 		.args_doc = args_doc
 	};
-	struct vfsstat_bpf *skel;
+	DEFINE_SKEL_OBJECT(skel);
 	int err;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	skel = vfsstat_bpf__open();
+	skel = SKEL_OPEN();
 	if (!skel) {
 		warning("Failed to open BPF objects\n");
 		goto cleanup;
@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
 		bpf_program__set_autoload(skel->progs.fentry_vfs_rmdir, false);
 	}
 
-	err = vfsstat_bpf__load(skel);
+	err = SKEL_LOAD(skel);
 	if (err) {
 		warning("Failed to load BPF skelect: %d\n", err);
 		goto cleanup;
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	err = vfsstat_bpf__attach(skel);
+	err = SKEL_ATTACH(skel);
 	if (err) {
 		warning("Failed to attach BPF programs: %s\n", strerror(-err));
 		goto cleanup;
@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
-	vfsstat_bpf__destroy(skel);
+	SKEL_DESTROY(skel);
 	cleanup_core_btf(&open_opts);
 
 	return err != 0;

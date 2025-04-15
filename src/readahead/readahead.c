@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
 		.parser = parse_arg,
 		.doc = argp_program_doc,
 	};
-	struct readahead_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	struct hist *histp;
 	int err;
 	bool support_fentry;
@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = readahead_bpf__open();
+	obj = SKEL_OPEN();
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
 			goto cleanup;
 	}
 
-	err = readahead_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("failed to load BPF object\n");
 		goto cleanup;
@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	err = support_fentry ? readahead_bpf__attach(obj) : attach_kprobes(obj);
+	err = support_fentry ? SKEL_ATTACH(obj) : attach_kprobes(obj);
 	if (err) {
 		warning("Failed to attach BPF programs\n");
 		goto cleanup;
@@ -281,6 +281,6 @@ int main(int argc, char *argv[])
 	print_log2_hist(histp->slots, MAX_SLOTS, "msecs");
 
 cleanup:
-	readahead_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	return err != 0;
 }

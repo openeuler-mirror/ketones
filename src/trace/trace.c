@@ -8,7 +8,6 @@
 #include "trace.skel.h"
 #include "trace_helpers.h"
 #include "uprobe_helpers.h"
-#include "map_helpers.h"
 #include "trace.h"
 
 static struct ksyms *ksyms;
@@ -779,7 +778,7 @@ int main(int argc, char *argv[])
 		.parser = parse_arg,
 		.doc = argp_program_doc,
 	};
-	struct trace_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	enum TRACE_TYPE type;
 	const char *library, *pattern;
 	char *function;
@@ -799,7 +798,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = trace_bpf__open();
+	obj = SKEL_OPEN();
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -846,7 +845,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	err = trace_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
@@ -904,7 +903,7 @@ int main(int argc, char *argv[])
 cleanup:
 	if (has_expr_array)
 		free_expr_array(expr_array);
-	trace_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	ksyms__free(ksyms);
 	syms_cache__free(syms_cache);
 

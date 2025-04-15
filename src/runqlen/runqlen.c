@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
 	};
 
 	struct bpf_link *links[MAX_CPU_NR] = {};
-	struct runqlen_bpf *bpf_obj;
+	DEFINE_SKEL_OBJECT(bpf_obj);
 	int err;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	bpf_obj = runqlen_bpf__open_opts(&open_opts);
+	bpf_obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!bpf_obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
 	bpf_obj->rodata->target_per_cpu = env.per_cpu;
 	bpf_obj->rodata->target_host = env.host;
 
-	err = runqlen_bpf__load(bpf_obj);
+	err = SKEL_LOAD(bpf_obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
@@ -299,7 +299,7 @@ cleanup:
 	for (int i = 0; i < nr_cpus; i++)
 		bpf_link__destroy(links[i]);
 
-	runqlen_bpf__destroy(bpf_obj);
+	SKEL_DESTROY(bpf_obj);
 	cleanup_core_btf(&open_opts);
 
 	return err != 0;

@@ -833,7 +833,7 @@ static int cmd_trace(int argc, char *argv[])
 {
 	struct bpf_map *perf_map, *func_map;
 	struct perf_buffer *pb = NULL;
-	struct ksnoop_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	int i, nr_traces, ret = -1;
 	struct trace *traces = NULL;
 
@@ -841,7 +841,7 @@ static int cmd_trace(int argc, char *argv[])
 	if (nr_traces < 0)
 		return nr_traces;
 
-	obj = ksnoop_bpf__open_and_load();
+	obj = SKEL_OPEN_AND_LOAD();
 	if (!obj) {
 		ret = -errno;
 		pr_err("Could not load ksnoop BPF: %s", strerror(-ret));
@@ -902,7 +902,7 @@ cleanup:
 	}
 	free(traces);
 	perf_buffer__free(pb);
-	ksnoop_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 
 	return ret;
 }

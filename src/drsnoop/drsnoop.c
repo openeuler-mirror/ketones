@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 	};
 	struct argument argument = {};
 	struct perf_buffer *pb = NULL;
-	struct drsnoop_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	__u64 time_end = 0;
 	int err;
 
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = drsnoop_bpf__open();
+	obj = SKEL_OPEN();
 	if (!obj) {
 		warning("Faild to open BPF object\n");
 		return 1;
@@ -180,13 +180,13 @@ int main(int argc, char *argv[])
 		bpf_program__set_autoload(obj->progs.direct_reclaim_end_btf, false);
 	}
 
-	err = drsnoop_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
 	}
 
-	err = drsnoop_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs\n");
 		goto cleanup;
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
 
 cleanup:
 	perf_buffer__free(pb);
-	drsnoop_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 
 	return err != 0;
 }

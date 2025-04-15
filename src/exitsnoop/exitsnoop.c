@@ -3,7 +3,6 @@
 #include "exitsnoop.h"
 #include "exitsnoop.skel.h"
 #include "btf_helpers.h"
-#include "trace_helpers.h"
 
 static volatile sig_atomic_t exiting;
 static volatile bool verbose = false;
@@ -146,7 +145,7 @@ int main(int argc, char *argv[])
 		.trace_by_process = true,
 	};
 	struct perf_buffer *pb = NULL;
-	struct exitsnoop_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	int err;
 	int cgfd = -1;
 
@@ -165,7 +164,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	obj = exitsnoop_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -176,7 +175,7 @@ int main(int argc, char *argv[])
 	obj->rodata->trace_by_process = argument.trace_by_process;
 	obj->rodata->filter_cg = argument.cg;
 
-	err = exitsnoop_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
@@ -198,7 +197,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	err = exitsnoop_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs: %d\n", err);
 		goto cleanup;
@@ -235,7 +234,7 @@ int main(int argc, char *argv[])
 
 cleanup:
 	perf_buffer__free(pb);
-	exitsnoop_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 	if (cgfd > 0)
 		close(cgfd);

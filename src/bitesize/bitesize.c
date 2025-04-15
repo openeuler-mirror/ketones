@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
 		.parser = parse_arg,
 		.doc = argp_program_doc,
 	};
-	struct bitesize_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	int err;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, &argument);
@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
 
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = bitesize_bpf__open();
+	obj = SKEL_OPEN();
 	if (!obj) {
 		warning("Failed to load partitions info\n");
 		goto cleanup;
@@ -189,13 +189,13 @@ int main(int argc, char *argv[])
 		obj->rodata->target_dev = partition->dev;
 	}
 
-	err = bitesize_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
 	}
 
-	err = bitesize_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs\n");
 		goto cleanup;
@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
-	bitesize_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	partitions__free(partitions);
 
 	return err != 0;

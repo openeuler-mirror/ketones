@@ -7,7 +7,6 @@
 #include <string.h>
 
 #include "uobjnew.skel.h"
-#include "compat.h"
 #include "uobjnew.h"
 #include "uprobe_helpers.h"
 #include "btf_helpers.h"
@@ -347,7 +346,7 @@ int main(int argc, char *argv[])
 		.parser = parse_arg,
 		.doc = argp_program_doc,
 	};
-	struct uobjnew_bpf *obj = NULL;
+	DEFINE_SKEL_OBJECT(obj);
 	int err;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
@@ -375,13 +374,13 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	obj = uobjnew_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		goto cleanup;
 	}
 
-	err = uobjnew_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
@@ -410,7 +409,7 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
-	uobjnew_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 
 	return err != 0;

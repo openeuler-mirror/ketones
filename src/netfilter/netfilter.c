@@ -8,7 +8,6 @@
 #include "btf_helpers.h"
 #include "trace_helpers.h"
 #include "compat.h"
-#include "map_helpers.h"
 #include <arpa/inet.h>
 #include <linux/netfilter.h>
 
@@ -261,7 +260,7 @@ int main(int argc, char *argv[])
 		.parser = parse_arg,
 		.doc = argp_program_doc,
 	};
-	struct netfilter_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	struct bpf_buffer *buf = NULL;
 	int err;
 
@@ -281,7 +280,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	obj = netfilter_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF objects\n");
 		err = 1;
@@ -313,13 +312,13 @@ int main(int argc, char *argv[])
 
 	kprobe_hook_check(obj);
 
-	err = netfilter_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("failed to load BPF object: %d\n", err);
 		goto cleanup;
 	}
 
-	err = netfilter_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF programs: %s\n", strerror(-err));
 		goto cleanup;
@@ -348,7 +347,7 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
-	netfilter_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 	ksyms__free(ksyms);
 

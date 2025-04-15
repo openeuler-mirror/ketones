@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
 		.parser = parse_arg,
 		.doc = argp_program_doc,
 	};
-	struct ttysnoop_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	struct bpf_buffer *buf = NULL;
 	int err, fd = -1;
 	bool new_tty_write = false;
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
 	new_tty_write = tty_write_is_newly();
 	libbpf_set_print(libbpf_print_fn);
 
-	obj = ttysnoop_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -248,13 +248,13 @@ int main(int argc, char *argv[])
 	else
 		bpf_program__set_autoload(obj->progs.kprobe__tty_write_new, false);
 
-	err = ttysnoop_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
 	}
 
-	err = ttysnoop_bpf__attach(obj);
+	err = SKEL_ATTACH(obj);
 	if (err) {
 		warning("Failed to attach BPF object: %d\n", err);
 		goto cleanup;
@@ -296,7 +296,7 @@ int main(int argc, char *argv[])
 
 cleanup:
 	bpf_buffer__free(buf);
-	ttysnoop_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 
 	if (fd > 0)

@@ -412,7 +412,7 @@ int main(int argc, char *argv[])
 		.parser = parse_arg,
 		.doc = argp_program_doc,
 	};
-	struct ucalls_bpf *obj;
+	DEFINE_SKEL_OBJECT(obj);
 	int err;
 
 	init_syscall_names();
@@ -443,7 +443,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	obj = ucalls_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		goto cleanup;
@@ -461,7 +461,7 @@ int main(int argc, char *argv[])
 		bpf_program__set_autoload(obj->progs.tracepoint_syscall_exit, false);
 	}
 
-	err = ucalls_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object\n");
 		goto cleanup;
@@ -507,7 +507,7 @@ int main(int argc, char *argv[])
 
 cleanup:
 	free_syscall_names();
-	ucalls_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 
 	return err != 0;

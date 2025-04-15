@@ -8,7 +8,6 @@
 #include "dbslower.h"
 #include "dbslower.skel.h"
 #include "btf_helpers.h"
-#include "trace_helpers.h"
 #include "uprobe_helpers.h"
 
 static volatile sig_atomic_t exiting;
@@ -299,7 +298,7 @@ int main(int argc, char *argv[])
 		.doc = argp_program_doc,
 	};
 	struct bpf_buffer *buf = NULL;
-	struct dbslower_bpf *obj = NULL;
+	DEFINE_SKEL_OBJECT(obj);
 	int err;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
@@ -323,7 +322,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	obj = dbslower_bpf__open_opts(&open_opts);
+	obj = SKEL_OPEN_OPTS(&open_opts);
 	if (!obj) {
 		warning("Failed to open BPF object\n");
 		return 1;
@@ -339,7 +338,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	err = dbslower_bpf__load(obj);
+	err = SKEL_LOAD(obj);
 	if (err) {
 		warning("Failed to load BPF object\n");
 		goto cleanup;
@@ -375,7 +374,7 @@ int main(int argc, char *argv[])
 
 cleanup:
 	bpf_buffer__free(buf);
-	dbslower_bpf__destroy(obj);
+	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
 
 	return err != 0;
