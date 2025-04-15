@@ -10,7 +10,6 @@
 #include <bpf/bpf_tracing.h>
 #include <bpf/usdt.bpf.h>
 #include "maps.bpf.h"
-#include "compat.bpf.h"
 #include "ustat.h"
 
 #define DEF_MAP_COUNTS(map_name)		\
