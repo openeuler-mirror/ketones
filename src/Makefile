@@ -46,6 +46,7 @@ APPS += adaptive-readahead
 APPS += bashreadline
 APPS += bindsnoop
 APPS += biolatency
+APPS += biolatpcts
 APPS += biopattern
 APPS += biosnoop
 APPS += biostacks
