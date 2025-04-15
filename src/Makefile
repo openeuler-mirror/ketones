@@ -121,6 +121,7 @@ APPS += syncsnoop
 APPS += syscount
 APPS += swapin
 APPS += tcpaccept
+APPS += tcpcong
 APPS += tcpconnect
 APPS += tcpconnlat
 APPS += tcpdrop
