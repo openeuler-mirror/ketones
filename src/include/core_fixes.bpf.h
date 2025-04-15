@@ -323,6 +323,33 @@ static __always_inline __u64 get_sock_ident(struct sock *sk)
 }
 
 /**
+ * The bpf_strncmp helper is landed since kernel v5.17
+ *
+ * See:
+ *    https://github.com/torvalds/linux/commit/c5fb19937455
+ */
+static __always_inline int compat_bpf_strncmp(const char *s1, size_t s1_sz, const char *s2)
+{
+#if __has_builtin(__builtin_preserve_enum_value)
+	if (bpf_core_enum_value_exists(enum bpf_func_id, BPF_FUNC_strncmp))
+		return bpf_strncmp(s1, s1_sz, s2);
+#endif
+	if (LINUX_KERNEL_VERSION >= KERNEL_VERSION(5, 17, 0))
+		return bpf_strncmp(s1, s1_sz, s2);
+
+	while (s1_sz--) {
+		char c1 = *s1++;
+		char c2 = *s2++;
+
+		if (c1 != c2)
+			return c1 < c2 ? -1 : 1;
+		if (!c1)
+			break;
+	}
+	return 0;
+}
+
+/**
  * During kernel 6.6 development cycle, several bitfields in struct inet_sock gone,
  * they are placed in inet_sock::inet_flags instead ([0]).
  *
