@@ -142,6 +142,7 @@ APPS += uthreads
 APPS += uobjnew
 APPS += ustat
 APPS += vfsstat
+APPS += virtiostat
 APPS += wakeuptime
 APPS += wqlat
 APPS += writeback
