@@ -56,9 +56,9 @@ const char argp_program_doc[] =
 "    tcplinks 1 10    # refresh every 1s, 10 times\n";
 
 static struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "sort", 's', "SORT", 0, "Sort columns, default received [pid, sent, received]" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "sort", 's', "SORT", 0, "Sort columns, default received [pid, sent, received]", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help", 0 },
 	{}
 };
 

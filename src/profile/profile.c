@@ -56,21 +56,21 @@ const char argp_program_doc[] =
 #define OPT_STACK_STORAGE_SIZE		2 /* --stack-storage-size */
 
 static const struct argp_option opts[] = {
-	{ "pid", 'p', "PID", 0, "Trace this PID only" },
-	{ "tid", 'L', "TID", 0, "Trace this TID only" },
+	{ "pid", 'p', "PID", 0, "Trace this PID only", 0 },
+	{ "tid", 'L', "TID", 0, "Trace this TID only", 0 },
 	{ "user-threads-only", 'U', NULL, 0,
-	  "User threads only (no kernel threads)" },
+	  "User threads only (no kernel threads)", 0 },
 	{ "kernel-threads-only", 'K', NULL, 0,
-	  "Kernel threads only (no user threads)" },
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "folded", 'f', NULL, 0, "output folded format" },
-	{ "frequency", 'F', "FREQUENCY", 0, "sample frequency Hertz(default 49)" },
-	{ "cpu", 'C', "CPU", 0, "cpu number to run profile(default -1)" },
+	  "Kernel threads only (no user threads)", 0 },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "folded", 'f', NULL, 0, "output folded format", 0 },
+	{ "frequency", 'F', "FREQUENCY", 0, "sample frequency Hertz (default 49)", 0 },
+	{ "cpu", 'C', "CPU", 0, "cpu number to run profile (default -1)", 0 },
 	{ "perf-max-stack-depth", OPT_PERF_MAX_STACK_DEPTH,
-	  "PERF-MAX-STACK-DEPTH", 0, "the limit for both kernel and user stack traces (default 127)" },
+	  "PERF-MAX-STACK-DEPTH", 0, "the limit for both kernel and user stack traces (default 127)", 0 },
 	{ "stack-storage-size", OPT_STACK_STORAGE_SIZE, "STACK-STORAGE-SIZE", 0,
-	  "the number of unique stack traces that can be stored and displayed (default 1024)" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
+	  "the number of unique stack traces that can be stored and displayed (default 1024)", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help", 0 },
 	{},
 };
 

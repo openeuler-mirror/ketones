@@ -38,10 +38,10 @@ const char config_doc[] =
 ;
 
 static const struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "help", 'h', NULL, 0, "Show this help message and exit" },
-	{ "preempt", 'p', NULL, 0, "Find long sections where preemption was off(default is irq)" },
-	{ "duration", 'd', "NUM", 0, "Duration in uS (microseconds) below which we filter" },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "help", 'h', NULL, 0, "Show this help message and exit", 0 },
+	{ "preempt", 'p', NULL, 0, "Find long sections where preemption was off(default is irq)", 0 },
+	{ "duration", 'd', "NUM", 0, "Duration in uS (microseconds) below which we filter", 0 },
 	{}
 };
 

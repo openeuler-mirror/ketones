@@ -29,8 +29,8 @@ const char argp_program_doc[] =
 "    mysqld-qslower 1218 0.1  # Tracing MySQL server queries for PID 1218 slower than 0.1 ms\n";
 
 static const struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help", 0 },
 	{}
 };
 

@@ -50,13 +50,13 @@ const char argp_program_doc[] =
 "    funccount ./test:read*        # count \"read*\" calls in the ./test binary\n";
 
 static const struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "interval", 'i', "INTERVAL", 0, "Output interval, in seconds" },
-	{ "pid", 'p', "PID", 0, "Trace process id PID only" },
-	{ "duration", 'd', "DURATION", 0, "total duration of trace, seconds" },
-	{ "timestamp", 'T', NULL, 0, "include timestamp on output" },
-	{ "regexp", 'r', NULL, 0, "use regular expressions" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "interval", 'i', "INTERVAL", 0, "Output interval, in seconds", 0 },
+	{ "pid", 'p', "PID", 0, "Trace process id PID only", 0 },
+	{ "duration", 'd', "DURATION", 0, "total duration of trace, seconds", 0 },
+	{ "timestamp", 'T', NULL, 0, "include timestamp on output", 0 },
+	{ "regexp", 'r', NULL, 0, "use regular expressions", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help", 0 },
 	{}
 };
 

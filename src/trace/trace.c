@@ -98,18 +98,18 @@ const char argp_program_doc[] =
 #define OPT_STACK_STORAGE_SIZE		2	/* for --stack-storage-size */
 
 static struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "print_cpu", 'C', NULL, 0, "print CPU id" },
-	{ "pid", 'p', "PID", 0, "id of the process to trace (optional)" },
-	{ "tid", 'L', "TID", 0, "id of the thread to trace (optional)" },
-	{ "timestamp", 'T', NULL, 0, "Include timestamp on output" },
-	{ "kernel-stacks-only", 'K', NULL, 0, "kernel stack only" },
-	{ "user-stacks-only", 'U', NULL, 0, "user stack only" },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "print_cpu", 'C', NULL, 0, "print CPU id", 0 },
+	{ "pid", 'p', "PID", 0, "id of the process to trace (optional)", 0 },
+	{ "tid", 'L', "TID", 0, "id of the thread to trace (optional)", 0 },
+	{ "timestamp", 'T', NULL, 0, "Include timestamp on output", 0 },
+	{ "kernel-stacks-only", 'K', NULL, 0, "kernel stack only", 0 },
+	{ "user-stacks-only", 'U', NULL, 0, "user stack only", 0 },
 	{ "perf-max-stack-depth", OPT_PERF_MAX_STACK_DEPTH,
-	  "PERF-MAX-STACK-DEPTH", 0, "the limit for both kernel and user stack traces (default: 127)" },
+	  "PERF-MAX-STACK-DEPTH", 0, "the limit for both kernel and user stack traces (default: 127)", 0 },
 	{ "stack-storage-size", OPT_STACK_STORAGE_SIZE, "STACK-STORAGE-SIZE", 0,
-	  "the number of unique stack traces that can be stored and displayed (default: 1024)" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show this help" },
+	  "the number of unique stack traces that can be stored and displayed (default: 1024)", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show this help", 0 },
 	{}
 };
 

@@ -40,11 +40,11 @@ const char argp_program_doc[] =
 "    uflow -C '<stdin>' -l python 180 # trace only REPL-defined methods\n";
 
 const struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "method", 'M', "METHOD", 0, "trace only calls to methods starting with this prefix" },
-	{ "class", 'C', "CLASS", 0, "trace only calls to classes starting with this prefix" },
-	{ "language", 'l', "LANGUAGE", 0, "language to trace [java,perl,php,python,ruby,tcl]" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "show the help" },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "method", 'M', "METHOD", 0, "trace only calls to methods starting with this prefix", 0 },
+	{ "class", 'C', "CLASS", 0, "trace only calls to classes starting with this prefix", 0 },
+	{ "language", 'l', "LANGUAGE", 0, "language to trace [java,perl,php,python,ruby,tcl]", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "show the help", 0 },
 	{}
 };
 

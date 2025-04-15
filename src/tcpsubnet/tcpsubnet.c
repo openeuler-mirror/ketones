@@ -33,10 +33,10 @@ const char argp_program_doc[] =
 ;
 
 static const struct argp_option opts[] = {
-	{ "interval", 'i', "INTERVAL", 0, "output interval, in seconds (default 1)" },
+	{ "interval", 'i', "INTERVAL", 0, "output interval, in seconds (default 1)", 0 },
 	{ "format", 'f', "FORMAT", 0, "[bkmBKM] format to report: bits, Kbits, \
-				       Mbits, bytes, KBytes, MBytes (default B)" },
-	{ "help", 'h', NULL, OPTION_HIDDEN, "Show this help message and exit" },
+				       Mbits, bytes, KBytes, MBytes (default B)", 0 },
+	{ "help", 'h', NULL, OPTION_HIDDEN, "Show this help message and exit", 0 },
 	{}
 };
 

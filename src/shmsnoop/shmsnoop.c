@@ -33,13 +33,13 @@ const char argp_program_doc[] =
 "    shmsnoop -n main   # only print process names containing \"main\"\n";
 
 static const struct argp_option opts[] = {
-	{ "pid", 'p', "PID", 0, "Process ID to trace" },
-	{ "tid", 't', "TID", 0, "Thread TID to trace" },
-	{ "timestamp", 'T', NULL, 0, "Include timestamp on output" },
-	{ "duration", 'd', "SECONDS", 0, "Duration to trace" },
-	{ "name", 'n', "NAME", 0, "Trace process names containing this" },
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
+	{ "pid", 'p', "PID", 0, "Process ID to trace", 0 },
+	{ "tid", 't', "TID", 0, "Thread TID to trace", 0 },
+	{ "timestamp", 'T', NULL, 0, "Include timestamp on output", 0 },
+	{ "duration", 'd', "SECONDS", 0, "Duration to trace", 0 },
+	{ "name", 'n', "NAME", 0, "Trace process names containing this", 0 },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help", 0 },
 	{},
 };
 

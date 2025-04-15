@@ -34,12 +34,12 @@ const char argp_program_doc[] =
 "    ./numasched -v          # Verbose debug output\n";
 
 static const struct argp_option opts[] = {
-	{ "timestamp", 'T', NULL, 0, "Include timestamp" },
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "pid", 'p', "PID", 0, "Trace this PID only" },
-	{ "tid", 't', "TID", 0, "Trace this TID only" },
-	{ "comm", 'c', "COMM", 0, "Trace this comm only" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
+	{ "timestamp", 'T', NULL, 0, "Include timestamp", 0 },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "pid", 'p', "PID", 0, "Trace this PID only", 0 },
+	{ "tid", 't', "TID", 0, "Trace this TID only", 0 },
+	{ "comm", 'c', "COMM", 0, "Trace this comm only", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help", 0 },
 	{},
 };
 

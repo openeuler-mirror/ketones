@@ -39,12 +39,12 @@ const char argp_program_doc[] =
 "    ./wqlat -w nvmet_tcp_wq 1 # 1s summaries for workqueue nvmet_tcp_wq\n";
 
 static struct argp_option opts[] = {
-	{ "timestamp", 'T', NULL, 0, "Include timestamp on output" },
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "nanoseconds", 'N', NULL, 0, "Output in nanoseconds" },
-	{ NULL, 'w', "WQNAME", 0, "Trace WQNAME only" },
-	{ NULL, 'W', NULL, 0, "Output for per workqueue" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show this help" },
+	{ "timestamp", 'T', NULL, 0, "Include timestamp on output", 0 },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "nanoseconds", 'N', NULL, 0, "Output in nanoseconds", 0 },
+	{ NULL, 'w', "WQNAME", 0, "Trace WQNAME only", 0 },
+	{ NULL, 'W', NULL, 0, "Output for per workqueue", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show this help", 0 },
 	{}
 };
 

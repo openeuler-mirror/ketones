@@ -17,9 +17,9 @@ const char argp_program_doc[] =
 "USAGE:    naptime [-v] [-T]\n";
 
 static const struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "timestamp", 'T', NULL, 0, "Include timestamp on output" },
-	{ NULL, 'h', NULL, 0, "Show the full help" },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "timestamp", 'T', NULL, 0, "Include timestamp on output", 0 },
+	{ NULL, 'h', NULL, 0, "Show the full help", 0 },
 	{}
 };
 

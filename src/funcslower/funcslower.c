@@ -61,21 +61,21 @@ const char argp_program_doc[] =
 #define OPT_STACK_STORAGE_SIZE		2	/* --stack-storage-size */
 
 const struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "folded", 'f', NULL, 0, "output folded format, one line per stack (for flame graphs)" },
-	{ "pid", 'p', "PID", 0, "trace this PID only" },
-	{ "min-ms", 'm', "MIN-MS", 0, "minimum duration to trace (ms)" },
-	{ "min-us", 'u', "MIN-US", 0, "minimum duration to trace (us)" },
-	{ "arguments", 'a', "ARGUMENTS", 0, "print this many entry arguments, as hex" },
-	{ "time", 'T', NULL, 0, "show HH:MM:SS timestamp" },
-	{ "timestamp", 't', NULL, 0, "show timestamp in seconds at us resolution" },
-	{ "user-stack", 'U', NULL, 0, "output user stack trace" },
-	{ "kernel-stack", 'K', NULL, 0, "output kernel stack trace" },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "folded", 'f', NULL, 0, "output folded format, one line per stack (for flame graphs)", 0 },
+	{ "pid", 'p', "PID", 0, "trace this PID only", 0 },
+	{ "min-ms", 'm', "MIN-MS", 0, "minimum duration to trace (ms)", 0 },
+	{ "min-us", 'u', "MIN-US", 0, "minimum duration to trace (us)", 0 },
+	{ "arguments", 'a', "ARGUMENTS", 0, "print this many entry arguments, as hex", 0 },
+	{ "time", 'T', NULL, 0, "show HH:MM:SS timestamp", 0 },
+	{ "timestamp", 't', NULL, 0, "show timestamp in seconds at us resolution", 0 },
+	{ "user-stack", 'U', NULL, 0, "output user stack trace", 0 },
+	{ "kernel-stack", 'K', NULL, 0, "output kernel stack trace", 0 },
 	{ "perf-max-stack-depth", OPT_PERF_MAX_STACK_DEPTH, "PERF_MAX_STACK_DEPTH",
-	   0, "The limit for both kernel and user stack traces (default 127)" },
+	   0, "The limit for both kernel and user stack traces (default 127)", 0 },
 	{ "stack-storage-size", OPT_STACK_STORAGE_SIZE, "STACK_STORAGE_SIZE",
-	   0, "The number of unique stack traces that can be stored and displayed (default 1024)" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show this help" },
+	   0, "The number of unique stack traces that can be stored and displayed (default 1024)", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show this help", 0 },
 	{}
 };
 

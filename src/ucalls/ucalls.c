@@ -47,13 +47,13 @@ const char argp_program_doc[] =
 "    ./ucalls -l python 2020 -mL # trace Python calls including latency in ms\n";
 
 const struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "language", 'l', "LANGUAGE", 0, "language to trace [java,perl,php,python,ruby,tcl] (if none, trace syscalls only)" },
-	{ "top", 'T', "TOP", 0, "number of most frequent/slow calls to print" },
-	{ "latency", 'L', NULL, 0, "record method latency from enter to exit (except recursive calls)" },
-	{ "syscalls", 'S', NULL, 0, "record syscall latency (adds overhead)" },
-	{ "milliseconds", 'm', NULL, 0, "report times in milliseconds (default is microseconds)" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "show the help" },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "language", 'l', "LANGUAGE", 0, "language to trace [java,perl,php,python,ruby,tcl] (if none, trace syscalls only)", 0 },
+	{ "top", 'T', "TOP", 0, "number of most frequent/slow calls to print", 0 },
+	{ "latency", 'L', NULL, 0, "record method latency from enter to exit (except recursive calls)", 0 },
+	{ "syscalls", 'S', NULL, 0, "record syscall latency (adds overhead)", 0 },
+	{ "milliseconds", 'm', NULL, 0, "report times in milliseconds (default is microseconds)", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "show the help", 0 },
 	{}
 };
 

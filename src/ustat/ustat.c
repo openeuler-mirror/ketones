@@ -49,12 +49,12 @@ const char argp_program_doc[] =
 "	./ustat 5 10         # 5 second summaries, 10 times only\n";
 
 const struct argp_option opts[] = {
-	{ "verbose", 'd', NULL, 0, "Verbose debug output" },
-	{ "language", 'l', "LANGUAGE", 0, "language to trace [java,node,perl,php,python,ruby,tcl] (default: all languages)" },
-	{ "noclear", 'C', NULL, 0, "don't clear the screen" },
-	{ "sort", 'S', "SORT", 0, "sort by this field (cload,excp,gc,method,objnew,thread),descending order" },
-	{ "maxrows", 'r', "MAXROWS", 0, "maximum rows to print, default 20" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "show the help" },
+	{ "verbose", 'd', NULL, 0, "Verbose debug output", 0 },
+	{ "language", 'l', "LANGUAGE", 0, "language to trace [java,node,perl,php,python,ruby,tcl] (default: all languages)", 0 },
+	{ "noclear", 'C', NULL, 0, "don't clear the screen", 0 },
+	{ "sort", 'S', "SORT", 0, "sort by this field (cload,excp,gc,method,objnew,thread),descending order", 0 },
+	{ "maxrows", 'r', "MAXROWS", 0, "maximum rows to print, default 20", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "show the help", 0 },
 	{}
 };
 

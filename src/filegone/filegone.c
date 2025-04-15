@@ -28,11 +28,11 @@ const char argp_program_doc[] =
 "USAGE: filegone [-h] [-p PID] [-v]\n";
 
 static const struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "pid", 'p', "PID", 0, "Trace PID only" },
-	{ "print-ppid", 'P', NULL, 0, "Print parent pid" },
-	{ "timestamp", 'T', NULL, 0, "Print timestamp" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show this help" },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "pid", 'p', "PID", 0, "Trace PID only", 0 },
+	{ "print-ppid", 'P', NULL, 0, "Print parent pid", 0 },
+	{ "timestamp", 'T', NULL, 0, "Print timestamp", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show this help", 0 },
 	{}
 };
 

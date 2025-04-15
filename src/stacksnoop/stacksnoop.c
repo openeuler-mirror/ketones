@@ -38,14 +38,14 @@ const char argp_program_doc[] =
 #define OPT_STACK_MAP_MAX_ENTRIES	2	/* --stack-map-max-entries */
 
 static const struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "show extra columns" },
-	{ "pid", 'p', "PID", 0, "Trace PID only" },
-	{ "offset", 's', NULL, 0, "Also show symbol offsets" },
+	{ "verbose", 'v', NULL, 0, "show extra columns", 0 },
+	{ "pid", 'p', "PID", 0, "Trace PID only", 0 },
+	{ "offset", 's', NULL, 0, "Also show symbol offsets", 0 },
 	{ "perf-max-stack-depth", OPT_PERF_MAX_STACK_DEPTH, "PERF_MAX_STACK_DEPTH",
-	  0, "The limit for both kernel and user stack traces (default 127)" },
+	  0, "The limit for both kernel and user stack traces (default 127)", 0 },
 	{ "stack-map-max-entries", OPT_STACK_MAP_MAX_ENTRIES, "STACK_MAP_MAX_ENTRIES",
-	  0, "The number of unique stack traces that can be stored and displayed (default 1024)" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
+	  0, "The number of unique stack traces that can be stored and displayed (default 1024)", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help", 0 },
 	{}
 };
 

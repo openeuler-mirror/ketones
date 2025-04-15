@@ -33,13 +33,13 @@ const char argp_program_doc[] =
 "    dcsnoop -t 188        # trace tid 188 only\n";
 
 static const struct argp_option opts[] = {
-	{ "trace-all", 'a', NULL, 0, "Trace all lookups (default is fails only)" },
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "timestamp", 'T', NULL, 0, "Include timestamp on output" },
-	{ "duration", 'd', "DURATION", 0, "Duration to trace" },
-	{ "pid", 'p', "PID", 0, "Trace process ID only" },
-	{ "tid", 't', "TID", 0, "Trace thread ID only" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
+	{ "trace-all", 'a', NULL, 0, "Trace all lookups (default is fails only)", 0 },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "timestamp", 'T', NULL, 0, "Include timestamp on output", 0 },
+	{ "duration", 'd', "DURATION", 0, "Duration to trace", 0 },
+	{ "pid", 'p', "PID", 0, "Trace process ID only", 0 },
+	{ "tid", 't', "TID", 0, "Trace thread ID only", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help", 0 },
 	{}
 };
 

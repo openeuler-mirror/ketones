@@ -34,9 +34,9 @@ const char argp_program_doc[] =
 "    ./uthreads -l none 12245  # trace only pthreads in process 12245\n";
 
 const struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "language", 'l', "LANGUAGE", 0, "language to trace [c,java,none]" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "show the help" },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "language", 'l', "LANGUAGE", 0, "language to trace [c,java,none]", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "show the help", 0 },
 	{}
 };
 

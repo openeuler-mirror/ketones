@@ -112,14 +112,14 @@ const char argp_program_doc[] =
 "    ./kvmexit -T '395490,395491'           # Display for a union like {395490, 395491}\n";
 
 static const struct argp_option opts[] = {
-	{ "verbose", 'V', NULL, 0, "Verbose debug output" },
-	{ "pid", 'p', "PID", 0, "Collpase all tids for PID with exit reasons" },
-	{ "tid", 't', "TID", 0, "Display only for tid 395490 with exit reasons sorted in descending order" },
-	{ "cpu", 'c', "CPU", 0, "Display only vcpu0" },
-	{ "alltids", 'a', NULL, 0, "Display all tids" },
-	{ "vcpu", 'v', "VCPU", 0, "Trace this vcpu only" },
-	{ "tids", 'T', "TID1,TID2", 0, "Trace a comma separated series of tids with no space in between" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show this help" },
+	{ "verbose", 'V', NULL, 0, "Verbose debug output", 0 },
+	{ "pid", 'p', "PID", 0, "Collpase all tids for PID with exit reasons", 0 },
+	{ "tid", 't', "TID", 0, "Display only for tid 395490 with exit reasons sorted in descending order", 0 },
+	{ "cpu", 'c', "CPU", 0, "Display only vcpu0", 0 },
+	{ "alltids", 'a', NULL, 0, "Display all tids", 0 },
+	{ "vcpu", 'v', "VCPU", 0, "Trace this vcpu only", 0 },
+	{ "tids", 'T', "TID1,TID2", 0, "Trace a comma separated series of tids with no space in between", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show this help", 0 },
 	{}
 };
 

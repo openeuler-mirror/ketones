@@ -30,10 +30,10 @@ const char argp_program_doc[] =
 ;
 
 static const struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "help", 'h', NULL, 0, "Show this help message and exit" },
-	{ "receive", 'r', NULL, 0, "Trace TCP rst receive only" },
-	{ "send", 's', NULL, 0, "Trace TCP rst send only" },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "help", 'h', NULL, 0, "Show this help message and exit", 0 },
+	{ "receive", 'r', NULL, 0, "Trace TCP rst receive only", 0 },
+	{ "send", 's', NULL, 0, "Trace TCP rst send only", 0 },
 	{}
 };
 

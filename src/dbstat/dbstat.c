@@ -28,12 +28,12 @@ const char argp_program_doc[] =
 static char args_doc[] = "[interval [count]]";
 
 static const struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "microseconds", 'u', NULL, 0, "display query latencies in microseconds (default: milliseconds)"},
-	{ "threshold", 'm', "NUM", 0, "trace queries slower than this threshold (ms)"},
-	{ "pid", 'p', "PID", 0, "the pid(s) to trace"},
-	{ "interval", 'i', "INT", 0, "print summary at this interval (seconds)"},
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "microseconds", 'u', NULL, 0, "display query latencies in microseconds (default: milliseconds)", 0 },
+	{ "threshold", 'm', "NUM", 0, "trace queries slower than this threshold (ms)", 0 },
+	{ "pid", 'p', "PID", 0, "the pid(s) to trace", 0 },
+	{ "interval", 'i', "INT", 0, "print summary at this interval (seconds)", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help", 0 },
 	{},
 };
 

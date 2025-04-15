@@ -27,10 +27,10 @@ const char argp_program_doc[] =
 "USAGE: tplist [-p PID] [-l LIB] [-v] [filter]\n";
 
 static const struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "Increase verbosity level (print variables, arguments, etc.)" },
-	{ "pid", 'p', "PID", 0, "List USDT probes in the specified process" },
-	{ "lib", 'l', "LIB", 0, "List USDT probes in the specified library or executable" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
+	{ "verbose", 'v', NULL, 0, "Increase verbosity level (print variables, arguments, etc.)", 0 },
+	{ "pid", 'p', "PID", 0, "List USDT probes in the specified process", 0 },
+	{ "lib", 'l', "LIB", 0, "List USDT probes in the specified library or executable", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help", 0 },
 	{}
 };
 

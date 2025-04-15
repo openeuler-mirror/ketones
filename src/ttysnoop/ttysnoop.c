@@ -40,11 +40,11 @@ const char argp_program_doc[] =
 "                                   (potentially retrieving 512 bytes)\n";
 
 static const struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "noclear", 'C', NULL, 0, "Don't clear the screen" },
-	{ "datacount", 'c', "COUNT", 0, "Number of times we check for 'data-size' data (default 16)" },
-	{ "record", 'r', "RECORD", 0, "Record tty history" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "noclear", 'C', NULL, 0, "Don't clear the screen", 0 },
+	{ "datacount", 'c', "COUNT", 0, "Number of times we check for 'data-size' data (default 16)", 0 },
+	{ "record", 'r', "RECORD", 0, "Record tty history", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help", 0 },
 	{}
 };
 

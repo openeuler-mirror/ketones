@@ -32,10 +32,10 @@ const char argp_program_doc[] =
 ;
 
 static const struct argp_option opts[] = {
-	{ "verbose", 'v', NULL, 0, "Verbose debug output" },
-	{ "ipv4", '4', NULL, 0, "trace IPv4 family only" },
-	{ "ipv6", '6', NULL, 0, "trace IPv6 family only" },
-	{ "help", 'h', NULL, 0, "Show this help message and exit" },
+	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "ipv4", '4', NULL, 0, "trace IPv4 family only", 0 },
+	{ "ipv6", '6', NULL, 0, "trace IPv6 family only", 0 },
+	{ "help", 'h', NULL, 0, "Show this help message and exit", 0 },
 	{}
 };
 

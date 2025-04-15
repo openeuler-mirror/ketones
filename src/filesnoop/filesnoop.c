@@ -31,12 +31,12 @@ const char argp_program_doc[] =
 "                             # (write,read,close)\n";
 
 static const struct argp_option opts[] = {
-	{ "version", 'v', NULL, 0, "Verbose debug output" },
-	{ "timestamp", 'T', NULL, 0, "Include timestamp on output" },
-	{ "filename", 'f', "FILENAME", 0, "Trace FILENAME only" },
-	{ "operation", 'o', "OPERATION", 0, "Trace OPERATION only" },
-	{ "print-ppid", 'P', NULL, 0, "Trace parent pid" },
-	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help" },
+	{ "version", 'v', NULL, 0, "Verbose debug output", 0 },
+	{ "timestamp", 'T', NULL, 0, "Include timestamp on output", 0 },
+	{ "filename", 'f', "FILENAME", 0, "Trace FILENAME only", 0 },
+	{ "operation", 'o', "OPERATION", 0, "Trace OPERATION only", 0 },
+	{ "print-ppid", 'P', NULL, 0, "Trace parent pid", 0 },
+	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help", 0 },
 	{}
 };
 
