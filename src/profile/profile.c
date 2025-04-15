@@ -12,8 +12,8 @@
 #include <sys/syscall.h>
 
 static struct env {
-	pid_t pid;
-	pid_t tid;
+	pid_t pids[MAX_PID_NR];
+	pid_t tids[MAX_TID_NR];
 	bool verbose;
 	bool folded;
 	bool user_threads_only;
@@ -24,8 +24,6 @@ static struct env {
 	int frequency;
 	int duration;
 } env = {
-	.pid = -1,
-	.tid = -1,
 	.stack_storage_size = 1024,
 	.perf_max_stack_depth = 127,
 	.cpu = -1,
@@ -74,9 +72,31 @@ static const struct argp_option opts[] = {
 	{},
 };
 
+static int split_pidstr(char *s, char *sep, int max_split, pid_t *pids)
+{
+	char *pid;
+	int nr = 0;
+
+	errno = 0;
+	pid = strtok(s, sep);
+	while (pid) {
+		if (nr >= max_split)
+			return -ENOBUFS;
+
+		pids[nr++] = strtol(pid, NULL, 0);
+		if (errno)
+			return -errno;
+
+		pid = strtok(NULL, ",");
+	}
+
+	return 0;
+}
+
 static error_t parse_arg(int key, char *arg, struct argp_state *state)
 {
 	static int pos_args;
+	int ret;
 
 	switch (key) {
 	case 'h':
@@ -89,10 +109,28 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 		env.folded = true;
 		break;
 	case 'p':
-		env.pid = argp_parse_pid(key, arg, state);
+		ret = split_pidstr(strdup(arg), ",", MAX_PID_NR, env.pids);
+		if (ret) {
+			if (ret == -ENOBUFS)
+				warning("the number of pid is too big, please "
+					"increase MAX_PID_NR's value and recompile\n");
+			else
+				warning("invalid PID: %s\n", arg);
+
+			argp_usage(state);
+		}
 		break;
 	case 'L':
-		env.tid = argp_parse_pid(key, arg, state);
+		ret = split_pidstr(strdup(arg), ",", MAX_TID_NR, env.tids);
+		if (ret) {
+			if (ret == -ENOBUFS)
+				warning("the number of tid is too big, please "
+					"increase MAX_TID_NR's value and recompile\n");
+			else
+				warning("invalid TID: %s\n", arg);
+
+			argp_usage(state);
+		}
 		break;
 	case 'U':
 		env.user_threads_only = true;
@@ -286,6 +324,40 @@ cleanup:
 	free(ip);
 }
 
+static void print_headers(void)
+{
+	int i;
+
+	printf("Sampling at %d Hertz of ", env.frequency);
+
+	if (env.pids[0]) {
+		printf("PID [");
+		for (i = 0; i < MAX_PID_NR && env.pids[i]; i++)
+			printf("%d%s", env.pids[i], (i < MAX_PID_NR - 1 && env.pids[i + 1]) ? ", " : "]");
+	} else if (env.tids[0]) {
+		printf("TID [");
+		for (i = 0; i < MAX_TID_NR && env.tids[i]; i++)
+			printf("%d%s", env.tids[i], (i < MAX_TID_NR - 1 && env.tids[i + 1]) ? ", " : "]");
+	} else {
+		printf("all threads");
+	}
+
+	if (env.user_threads_only)
+		printf(" by user");
+	else if (env.kernel_threads_only)
+		printf(" by kernel");
+	else
+		printf(" by user + kernel");
+
+	if (env.cpu != -1)
+		printf(" on CPU#%d", env.cpu);
+
+	if (env.duration < INT_MAX)
+		printf(" for %d secs.\n", env.duration);
+	else
+		printf("... Hit Ctrl-C to end.\n");
+}
+
 int main(int argc, char *argv[])
 {
 	static const struct argp argp = {
@@ -299,6 +371,8 @@ int main(int argc, char *argv[])
 	struct ksyms *ksyms = NULL;
 	struct profile_bpf *bpf_obj;
 	int err;
+	int pids_fd, tids_fd;
+	__u8 val = 0;
 
 	err = argp_parse(&argp, argc, argv, 0, NULL, NULL);
 	if (err)
@@ -334,10 +408,12 @@ int main(int argc, char *argv[])
 	}
 
 	/* Init global data (filtering options) */
-	bpf_obj->rodata->target_tgid = env.pid;
-	bpf_obj->rodata->target_pid = env.tid;
 	bpf_obj->rodata->user_threads_only = env.user_threads_only;
 	bpf_obj->rodata->kernel_threads_only = env.kernel_threads_only;
+	if (env.pids[0])
+		bpf_obj->rodata->filter_by_pid = true;
+	else if (env.tids[0])
+		bpf_obj->rodata->filter_by_tid = true;
 
 	bpf_map__set_value_size(bpf_obj->maps.stackmap,
 				env.perf_max_stack_depth * sizeof(unsigned long));
@@ -348,6 +424,24 @@ int main(int argc, char *argv[])
 	if (err) {
 		warning("Failed to load BPF object: %d\n", err);
 		goto cleanup;
+	}
+
+	if (env.pids[0]) {
+		pids_fd = bpf_map__fd(bpf_obj->maps.pids);
+		for (int i = 0; i < MAX_PID_NR && env.pids[i]; i++) {
+			if (bpf_map_update_elem(pids_fd, &(env.pids[i]), &val, BPF_ANY) != 0) {
+				warning("failed to init pids map: %s\n", strerror(errno));
+				goto cleanup;
+			}
+		}
+	} else if (env.tids[0]) {
+		tids_fd = bpf_map__fd(bpf_obj->maps.tids);
+		for (int i = 0; i < MAX_TID_NR && env.tids[i]; i++) {
+			if (bpf_map_update_elem(tids_fd, &(env.tids[i]), &val, BPF_ANY) != 0) {
+				warning("failed to init tids map: %s\n", strerror(errno));
+				goto cleanup;
+			}
+		}
 	}
 
 	ksyms = ksyms__load();
@@ -369,6 +463,9 @@ int main(int argc, char *argv[])
 	}
 
 	signal(SIGINT, sig_handler);
+
+	if (!env.folded)
+		print_headers();
 
 	/*
 	 * We'll get sleep interrupted when someone presses Ctrl-C (which will
