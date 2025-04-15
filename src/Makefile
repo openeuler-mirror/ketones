@@ -31,7 +31,7 @@ endif
 endif
 
 INCLUDES := -I$(OUTPUT) -I../libbpf/include/uapi -I$(dir $(VMLINUX)) -I./include
-CFLAGS := -g -Wall $(CLANG_CROSS_FLAGS) -Wunused-variable -Wmissing-field-initializers -Werror
+CFLAGS := -g -Wall $(CLANG_CROSS_FLAGS) -Wunused-variable -Wmissing-field-initializers -Werror -Werror=undef
 ifeq ($(USE_BLAZESYM),1)
 CFLAGS  += -DUSE_BLAZESYM=1
 LDFLAGS += $(OUTPUT)/libblazesym.a -lrt -lpthread -ldl
