@@ -10,7 +10,7 @@
 
 const volatile __u32 target_tgid = 0;
 const volatile __u32 inodes_number = 0;
-const volatile __u32 dir_ids[MAX_DIR_NUM];
+const volatile __u32 dir_ids[MAX_DIR_NUM] = {};
 
 struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
