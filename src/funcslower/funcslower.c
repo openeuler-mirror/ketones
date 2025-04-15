@@ -294,21 +294,21 @@ print_ustack:
 			else
 				printf("%s;", "[unknown]");
 		} else {
-			const struct sym *sym;
-			char *dso_name;
-			unsigned long dso_offset;
+			struct sym_info sinfo;
+			int err;
 
-			sym = syms__map_addr_dso(syms, ip[i], &dso_name, &dso_offset);
-			if (env.folded) {
-				printf("%s;", sym ? sym->name : "[unknown]");
+			err = syms__map_addr_dso(syms, ip[i], &sinfo);
+			if (env.folded && err == 0) {
+				printf("%s;", sinfo.sym_name ?: "[unknown]");
 				continue;
 			}
 
 			printf("    #%-2d 0x%016lx", idx++, ip[i]);
-			if (sym) {
-				printf(" %s+0x%lx", sym->name, sym->offset);
-				if (dso_name)
-					printf(" (%s+0x%lx)", dso_name, dso_offset);
+			if (err == 0) {
+				if (sinfo.sym_name)
+					printf(" %s+0x%lx", sinfo.sym_name, sinfo.sym_offset);
+				if (sinfo.dso_name)
+					printf(" (%s+0x%lx)", sinfo.dso_name, sinfo.dso_offset);
 			} else {
 				printf(" [unknown]");
 			}
