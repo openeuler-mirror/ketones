@@ -112,6 +112,7 @@ APPS += slabratetop
 APPS += sofdsnoop
 APPS += softirqs
 APPS += solisten
+APPS += sslsniff
 APPS += stackcount
 APPS += stacksnoop
 APPS += statsnoop
