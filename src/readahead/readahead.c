@@ -64,6 +64,17 @@ static void sig_handler(int sig)
 
 static bool readahead__set_attach_target(struct bpf_program *prog)
 {
+	/*
+	 * 56a4d67c264e ("mm/readahead: Switch to page_cache_ra_order") in v5.18
+	 * renamed do_page_cache_ra to page_cache_ra_order
+	 */
+	if (!bpf_program__set_attach_target(prog, 0, "page_cache_ra_order"))
+		return true;
+
+	/*
+	 * 8238287eadb2 ("mm/readahead: make do_page_cache_ra take a readahead_control")
+	 * in v5.10 renamed __do_page_cache_readahead to do_page_cache_ra
+	 */
 	if (!bpf_program__set_attach_target(prog, 0, "do_page_cache_ra"))
 		return true;
 
@@ -81,6 +92,7 @@ static void disable_kprobes(struct readahead_bpf *obj)
 	bpf_program__set_autoload(obj->progs.page_cache_alloc_kretprobe, false);
 	bpf_program__set_autoload(obj->progs.mark_page_accessed_kprobe, false);
 	bpf_program__set_autoload(obj->progs.filemap_alloc_folio_kretprobe, false);
+	bpf_program__set_autoload(obj->progs.filemap_alloc_folio_noprof_kretprobe, false);
 	bpf_program__set_autoload(obj->progs.folio_mark_accessed_kprobe, false);
 }
 
@@ -91,11 +103,15 @@ static void disable_fentry(struct readahead_bpf *obj)
 	bpf_program__set_autoload(obj->progs.page_cache_alloc_ret, false);
 	bpf_program__set_autoload(obj->progs.mark_page_accessed, false);
 	bpf_program__set_autoload(obj->progs.filemap_alloc_folio_ret, false);
+	bpf_program__set_autoload(obj->progs.filemap_alloc_folio_noprof_ret, false);
 	bpf_program__set_autoload(obj->progs.folio_mark_accessed, false);
 }
 
 static bool try_fentry(struct readahead_bpf *obj)
 {
+	/* Disable all progs */
+	disable_fentry(obj);
+
 	/*
 	 * starting from v5.10-rc1, __do_page_cache_readahead has renamed to
 	 * do_page_cache_ra, so we specify the function dynamically.
@@ -105,17 +121,22 @@ static bool try_fentry(struct readahead_bpf *obj)
 	if (!readahead__set_attach_target(obj->progs.do_page_cache_ra_ret))
 		goto out_shutdown_fentry;
 
-	if (fentry_can_attach("folio_mark_accessed", NULL) &&
-	    fentry_can_attach("filemap_alloc_folio", NULL)) {
-		bpf_program__set_autoload(obj->progs.page_cache_alloc_ret, false);
-		bpf_program__set_autoload(obj->progs.mark_page_accessed, false);
-	} else if (fentry_can_attach("mark_page_accessed", NULL) &&
-		   fentry_can_attach("__page_cache_alloc", NULL)) {
-		bpf_program__set_autoload(obj->progs.filemap_alloc_folio_ret, false);
-		bpf_program__set_autoload(obj->progs.folio_mark_accessed, false);
-	} else {
+	bpf_program__set_autoload(obj->progs.do_page_cache_ra, true);
+	bpf_program__set_autoload(obj->progs.do_page_cache_ra_ret, true);
+
+	if (fentry_can_attach("folio_mark_accessed", NULL))
+		bpf_program__set_autoload(obj->progs.folio_mark_accessed, true);
+	else if (fentry_can_attach("mark_page_accessed", NULL))
+		bpf_program__set_autoload(obj->progs.mark_page_accessed, true);
+	else
 		goto out_shutdown_fentry;
-	}
+
+	if (fentry_can_attach("filemap_alloc_folio", NULL))
+		bpf_program__set_autoload(obj->progs.filemap_alloc_folio_ret, true);
+	else if (fentry_can_attach("filemap_alloc_folio_noprof", NULL))
+		bpf_program__set_autoload(obj->progs.filemap_alloc_folio_noprof_ret, true);
+	else
+		goto out_shutdown_fentry;
 
 	disable_kprobes(obj);
 	return true;
@@ -127,58 +148,76 @@ out_shutdown_fentry:
 
 static int set_autoload_kprobes(struct readahead_bpf *obj)
 {
-	if (kprobe_exists("folio_mark_accessed") &&
-	    kprobe_exists("filemap_alloc_folio")) {
-		bpf_program__set_autoload(obj->progs.page_cache_alloc_kretprobe, false);
-		bpf_program__set_autoload(obj->progs.mark_page_accessed_kprobe, false);
-	} else if (kprobe_exists("mark_page_accessed") &&
-		   kprobe_exists("__page_cache_alloc")) {
-		bpf_program__set_autoload(obj->progs.filemap_alloc_folio_kretprobe, false);
-		bpf_program__set_autoload(obj->progs.folio_mark_accessed_kprobe, false);
-	} else {
-		return 1;
-	}
+	disable_kprobes(obj);
+
+	if (kprobe_exists("folio_mark_accessed"))
+		bpf_program__set_autoload(obj->progs.folio_mark_accessed_kprobe, true);
+	else if (kprobe_exists("mark_page_accessed"))
+		bpf_program__set_autoload(obj->progs.mark_page_accessed_kprobe, true);
+	else
+		goto cleanup;
+
+	if (kprobe_exists("filemap_alloc_folio_noprof"))
+		bpf_program__set_autoload(obj->progs.filemap_alloc_folio_noprof_kretprobe, true);
+	else if (kprobe_exists("filemap_alloc_folio"))
+		bpf_program__set_autoload(obj->progs.filemap_alloc_folio_kretprobe, true);
+	else if (kprobe_exists("__page_cache_alloc"))
+		bpf_program__set_autoload(obj->progs.page_cache_alloc_kretprobe, true);
+	else
+		goto cleanup;
 
 	return 0;
+
+cleanup:
+	disable_kprobes(obj);
+	return 1;
 }
 
 static int attach_kprobes(struct readahead_bpf *obj)
 {
-	/*
-	 * starting from v5.10-rc1, __do_page_cache_readahead has renamed to
-	 * do_page_cache_ra, so we specify the function dynamically.
-	 */
-	if (kprobe_exists("do_page_cache_ra")) {
+	if (kprobe_exists("page_cache_ra_order")) {
+		/*
+		 * 56a4d67c264e ("mm/readahead: Switch to page_cache_ra_order") in v5.18
+		 * renamed do_page_cache_ra to page_cache_ra_order
+		 */
 		obj->links.do_page_cache_ra_kprobe =
 			bpf_program__attach_kprobe(obj->progs.do_page_cache_ra_kprobe,
-						   false,
-						   "do_page_cache_ra");
-		if (!obj->links.do_page_cache_ra_kprobe)
-			return 1;
-	} else {
+						   false, "page_cache_ra_order");
+	} else if (kprobe_exists("do_page_cache_ra")) {
+		/*
+		 * starting from v5.10-rc1, __do_page_cache_readahead has renamed to
+		 * do_page_cache_ra, so we specify the function dynamically.
+		 */
 		obj->links.do_page_cache_ra_kprobe =
 			bpf_program__attach_kprobe(obj->progs.do_page_cache_ra_kprobe,
-						   false,
-						   "__do_page_cache_readahead");
-		if (!obj->links.do_page_cache_ra_kprobe)
-			return 1;
+						   false, "do_page_cache_ra");
+	} else if (kprobe_exists("__do_page_cache_readahead")) {
+		obj->links.do_page_cache_ra_kprobe =
+			bpf_program__attach_kprobe(obj->progs.do_page_cache_ra_kprobe,
+						   false, "__do_page_cache_readahead");
 	}
 
-	if (kprobe_exists("do_page_cache_ra")) {
+	/* Not set or Failed */
+	if (!obj->links.do_page_cache_ra_kprobe)
+		return 1;
+
+	if (kprobe_exists("page_cache_ra_order")) {
 		obj->links.do_page_cache_ra_kretprobe =
 			bpf_program__attach_kprobe(obj->progs.do_page_cache_ra_kretprobe,
-						   true,
-						   "do_page_cache_ra");
-		if (!obj->links.do_page_cache_ra_kretprobe)
-			return 1;
+						   true, "page_cache_ra_order");
+	} else if (kprobe_exists("do_page_cache_ra")) {
+		obj->links.do_page_cache_ra_kretprobe =
+			bpf_program__attach_kprobe(obj->progs.do_page_cache_ra_kretprobe,
+						   true, "do_page_cache_ra");
 	} else {
 		obj->links.do_page_cache_ra_kretprobe =
 			bpf_program__attach_kprobe(obj->progs.do_page_cache_ra_kretprobe,
-						   true,
-						   "__do_page_cache_readahead");
-		if (!obj->links.do_page_cache_ra_kretprobe)
-			return 1;
+						   true, "__do_page_cache_readahead");
 	}
+
+	/* Not set or Failed */
+	if (!obj->links.do_page_cache_ra_kretprobe)
+		return 1;
 
 	return 0;
 }
