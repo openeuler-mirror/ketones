@@ -90,7 +90,7 @@ const char argp_program_doc[] =
 "        Trace the write() call from libc to monitor writes to STDOUT\n"
 "trace 't:block:block_rq_complete'\n"
 "        Trace the block_rq_complete kernel tracepoint\n"
-"trace 't:block:block_rq_complete -K'\n"
+"trace -K 't:block:block_rq_complete'\n"
 "        Trace the block_rq_complete kernel tracepoint and print kernel stack\n";
 
 #define OPT_PERF_MAX_STACK_DEPTH	1	/* for --perf-max-stack-depth */
@@ -555,6 +555,9 @@ static char *parse_expr(const char *expr)
 
 	start = strchr(expr_tmp, '\"');
 	end = strrchr(expr_tmp, '\"');
+	if (start == end)
+		return NULL;
+
 	strncpy(format_str, start + 1, (unsigned long)(end - start - 1));
 
 	expr_array = calloc(1, sizeof(*expr_array));
