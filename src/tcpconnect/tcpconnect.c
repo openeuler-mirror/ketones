@@ -209,11 +209,13 @@ static void print_count(int map_fd_ipv4, int map_fd_ipv6)
 
 static void print_events_headers(void)
 {
+	__u32 pid_maxlen = get_pid_maxlen();
+
 	if (env.print_timestamp)
 		printf("%-9s ", "TIME(s)");
 	if (env.print_uid)
-		printf("%-7s ", "UID");
-	printf("%-7s %-16s %-2s %-25s %-25s",
+		printf("%-*s ", pid_maxlen, "UID");
+	printf("%-*s %-16s %-2s %-25s %-25s", pid_maxlen,
 	       "PID", "COMM", "IP", "SADDR", "DADDR");
 	if (env.source_port)
 		printf(" %-5s", "SPORT");
@@ -228,6 +230,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		struct in_addr  x4;
 		struct in6_addr x6;
 	} s, d;
+	__u32 pid_maxlen = get_pid_maxlen();
 
 	if (data_sz < sizeof(event)) {
 		warning("Packet too small\n");
@@ -252,9 +255,10 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		printf("%-9.3f ", time_since_start());
 
 	if (env.print_uid)
-		printf("%-7s ", get_uid_name(event.uid));
+		printf("%-*s ", pid_maxlen, get_uid_name(event.uid));
 
-	printf("%-7d %-16.16s %-2d %-25s %-25s",
+	printf("%-*d %-16.16s %-2d %-25s %-25s",
+	       pid_maxlen,
 	       event.pid, event.task,
 	       event.af == AF_INET ? 4 : 6,
 	       inet_ntop(event.af, &s, src, sizeof(src)),
