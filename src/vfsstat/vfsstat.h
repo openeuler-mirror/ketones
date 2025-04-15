@@ -8,6 +8,9 @@ enum stat_types {
 	S_FSYNC,
 	S_OPEN,
 	S_CREATE,
+	S_UNLINK,
+	S_MKDIR,
+	S_RMDIR,
 	S_MAXSTAT,
 };
 
