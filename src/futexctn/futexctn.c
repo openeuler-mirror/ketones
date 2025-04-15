@@ -9,15 +9,7 @@
 #include "futexctn.skel.h"
 #include "trace_helpers.h"
 
-#ifdef USE_BLAZESYM
-#include "blazesym.h"
-#endif
-
-#ifdef USE_BLAZESYM
-static blazesym *symbolizer;
-#else
 static struct syms_cache *syms_cache;
-#endif
 
 static struct env {
 	pid_t pid;
@@ -142,25 +134,10 @@ static void sig_handler(int sig)
 
 static int print_stack(struct futexctn_bpf *obj, struct hist_key *info)
 {
-#ifdef USE_BLAZESYM
-	blazesym_sym_src_cfg cfgs[] = {
-		{
-			.src_type = BLAZESYM_SRC_T_PROCESS,
-			.params = {
-				.process = {
-					.pid = info->pid_tgid >> 32
-				}
-			}
-		}
-	};
-	const blazesym_result *result = NULL;
-	const blazesym_csym *sym;
-#else
 	const struct syms *syms;
 	const struct sym *sym;
 	struct sym_info sinfo;
 	int idx = 0;
-#endif
 	int err = 0, fd;
 	uint64_t *ip;
 
@@ -177,19 +154,6 @@ static int print_stack(struct futexctn_bpf *obj, struct hist_key *info)
 		goto cleanup;
 	}
 
-#ifdef USE_BLAZESYM
-	result = blazesym_symbolize(symbolizer, cfgs, 1, ip, env.perf_max_stack_depth);
-
-	for (int i = 0; result && i < result->size; i++) {
-		if (result->entries[i].size == 0)
-			continue;
-		sym = &result->entries[i].syms[0];
-		if (sym->line_no)
-			printf("    %s:%lu\n", sym->symbol, sym->line_no);
-		else
-			printf("    %s\n", sym->symbol);
-	}
-#else
 	syms = syms_cache__get_syms(syms_cache, info->pid_tgid >> 32);
 	if (!syms) {
 		if (!env.verbose) {
@@ -219,12 +183,8 @@ static int print_stack(struct futexctn_bpf *obj, struct hist_key *info)
 			printf("\n");
 		}
 	}
-#endif
 
 cleanup:
-#ifdef USE_BLAZESYM
-	blazesym_result_free(result);
-#endif
 
 	free(ip);
 	return 0;
@@ -320,15 +280,11 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-#ifdef USE_BLAZESYM
-	symbolizer = blazesym_new();
-#else
 	syms_cache = syms_cache__new(0);
 	if (!syms_cache) {
 		warning("Failed to create syms_cache\n");
 		goto cleanup;
 	}
-#endif
 
 	signal(SIGINT, sig_handler);
 
@@ -354,10 +310,6 @@ int main(int argc, char *argv[])
 
 cleanup:
 	SKEL_DESTROY(obj);
-#ifdef USE_BLAZESYM
-	blazesym_free(symbolizer);
-#else
 	syms_cache__free(syms_cache);
-#endif
 	return err != 0;
 }

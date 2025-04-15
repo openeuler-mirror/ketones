@@ -9,15 +9,7 @@
 #include <libgen.h>
 #include <fcntl.h>
 
-#ifdef USE_BLAZESYM
-#include "blazesym.h"
-#endif
-
 static volatile sig_atomic_t exiting;
-
-#ifdef USE_BLAZESYM
-static blazesym *symbolizer;
-#endif
 
 static struct env {
 	pid_t pid;
@@ -32,9 +24,6 @@ static struct env {
 	bool fuller_extended;
 	bool failed;
 	char *name;
-#ifdef USE_BLAZESYM
-	bool callers;
-#endif
 } env = {
 	.uid = INVALID_UID
 };
@@ -91,11 +80,7 @@ const char argp_program_doc[] =
 "Trace open family syscalls\n"
 "\n"
 "USAGE: opensnoop [-h] [-T] [-U] [-x] [-P] [-p PID] [-t TID] [-u UID] [-d DURATION]\n"
-#ifdef USE_BLAZESYM
-"                 [-n NAME] [-e] [-c]\n"
-#else
 "                 [-n NAME] [-e]\n"
-#endif
 "\n"
 "EXAMPLES:\n"
 "    ./opensnoop           # trace all open() syscalls\n"
@@ -110,9 +95,6 @@ const char argp_program_doc[] =
 "    ./opensnoop -n main   # only print process names containing \"main\"\n"
 "    ./opensnoop -e        # show extended fields\n"
 "    ./opensnoop -E        # show formated extended fields\n"
-#ifdef USE_BLAZESYM
-"    ./opensnoop -c        # show calling functions\n"
-#endif
 "";
 
 static const struct argp_option opts[] = {
@@ -128,9 +110,6 @@ static const struct argp_option opts[] = {
 	{ "print-ppid", 'P', NULL, 0, "Print parent pid", 0 },
 	{ "verbose", 'v', NULL, 0, "Verbose debug output", 0 },
 	{ "failed", 'x', NULL, 0, "Failed opens only", 0 },
-#ifdef USE_BLAZESYM
-	{ "callers", 'c', NULL, 0, "Show calling functions", 0 },
-#endif
 	{ NULL, 'h', NULL, OPTION_HIDDEN, "Show the full help", 0 },
 	{}
 };
@@ -184,11 +163,6 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 			argp_usage(state);
 		}
 		break;
-#ifdef USE_BLAZESYM
-	case 'c':
-		env.callers = true;
-		break;
-#endif
 	case ARGP_KEY_ARG:
 		if (pos_args++) {
 			warning("Unrecognized positional argument: %s\n", arg);
@@ -260,11 +234,6 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	struct event e;
 	int fd, err, sps_cnt;
 	const char *program_name = basename((char *)ctx);
-#ifdef USE_BLAZESYM
-	blazesym_sym_src_cfg src_cfg;
-	const blazesym_result *result = NULL;
-	const blazesym_csym *sym;
-#endif
 
 	if (data_sz < sizeof(e)) {
 		warning("Packet too small\n");
@@ -273,11 +242,6 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 
 	/* Copy data as alignment in the perf buffer isn't guaranteed. */
 	memcpy(&e, data, sizeof(e));
-
-#ifdef USE_BLAZESYM
-	src_cfg.src_type = BLAZESYM_SRC_T_PROCESS;
-	src_cfg.params.process.pid = e.pid;
-#endif
 
 	/* name filtering is currently done in user space */
 	if (env.name && strstr(e.comm, env.name) == NULL)
@@ -295,12 +259,6 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		fd = -1;
 		err = - e.ret;
 	}
-
-#ifdef USE_BLAZESYM
-	if (env.callers)
-		result = blazesym_symbolize(symbolizer, &src_cfg, 1,
-					    (const uint64_t *)&e.callers, 2);
-#endif
 
 	/* print output */
 	sps_cnt = 0;
@@ -336,23 +294,6 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		parse_open_modes(e.modes, sps_cnt);
 		printf("\n");
 	}
-
-#ifdef USE_BLAZESYM
-	for (int i = 0; result && i < result->size; i++) {
-		if (result->entries[i].size == 0)
-			continue;
-		sym = &result->entries[i].syms[0];
-
-		for (int j = 0; j < sps_cnt; j++)
-			printf(" ");
-		if (sym->line_no)
-			printf("%s:%ld\n", sym->symbol, sym->line_no);
-		else
-			printf("%s\n", sym->symbol);
-	}
-
-	blazesym_result_free(result);
-#endif
 
 	return 0;
 }
@@ -432,11 +373,6 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-#ifdef USE_BLAZESYM
-	if (env.callers)
-		symbolizer = blazesym_new();
-#endif
-
 	/* print headers */
 	if (env.timestamp)
 		printf("%-8s ", "TIME");
@@ -448,10 +384,6 @@ int main(int argc, char *argv[])
 	if (env.extended)
 		printf("%-8s %-8s ", "FLAGS", "MODES");
 	printf("%s", "PATH");
-#ifdef USE_BLAZESYM
-	if (env.callers)
-		printf("/CALLER");
-#endif
 	printf("\n");
 
 	/* setup duration */
@@ -481,9 +413,6 @@ cleanup:
 	bpf_buffer__free(buf);
 	SKEL_DESTROY(obj);
 	cleanup_core_btf(&open_opts);
-#ifdef USE_BLAZESYM
-	blazesym_free(symbolizer);
-#endif
 
 	return err != 0;
 }
